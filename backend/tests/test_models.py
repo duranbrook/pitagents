@@ -39,7 +39,7 @@ def test_report_columns():
 
 def test_media_file_columns():
     cols = _col_names(MediaFile)
-    assert {"id", "session_id", "type", "tag", "s3_url", "filename"}.issubset(cols)
+    assert {"id", "session_id", "media_type", "tag", "s3_url", "filename"}.issubset(cols)
 
 
 def test_shop_tablename():

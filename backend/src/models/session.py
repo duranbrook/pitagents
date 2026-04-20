@@ -9,8 +9,8 @@ class InspectionSession(Base):
     __tablename__ = "inspection_sessions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    shop_id = Column(UUID(as_uuid=True), ForeignKey("shops.id"), nullable=False)
-    technician_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    shop_id = Column(UUID(as_uuid=True), ForeignKey("shops.id"), nullable=False, index=True)
+    technician_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     status = Column(
         SAEnum("recording", "processing", "complete", "failed", name="session_status_enum"),
         default="recording",
