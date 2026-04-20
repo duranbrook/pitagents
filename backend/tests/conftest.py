@@ -1,6 +1,13 @@
+import os
 import pytest
 from unittest.mock import patch
+
+# Set required env vars before any src module is imported during collection
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test_autoshop")
+os.environ.setdefault("JWT_SECRET", "test-secret-key-for-testing-only")
+
 from src.config import Settings
+
 
 @pytest.fixture(autouse=True)
 def mock_settings(monkeypatch):
