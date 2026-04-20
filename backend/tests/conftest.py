@@ -20,6 +20,7 @@ def mock_settings(monkeypatch):
     monkeypatch.setenv("S3_ENDPOINT_URL", "https://test.r2.cloudflarestorage.com")
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test-key-id")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test-secret")
+    monkeypatch.setenv("AWS_REGION", "auto")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "test-sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "test-token")
     monkeypatch.setenv("TWILIO_FROM_PHONE", "+15555555555")

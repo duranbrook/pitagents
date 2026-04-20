@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     S3_ENDPOINT_URL: str = ""
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: SecretStr = SecretStr("")
+    AWS_REGION: str = "auto"
 
     # Twilio
     TWILIO_ACCOUNT_SID: str = ""

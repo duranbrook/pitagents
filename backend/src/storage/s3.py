@@ -10,7 +10,7 @@ class StorageService:
         return aioboto3.Session(
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY.get_secret_value(),
-            region_name="auto",
+            region_name=settings.AWS_REGION,
         )
 
     def _client_kwargs(self) -> dict:
