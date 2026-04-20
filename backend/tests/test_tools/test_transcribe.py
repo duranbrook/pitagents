@@ -15,7 +15,7 @@ async def test_extract_audio_transcript_returns_transcript():
     mock_client = MagicMock()
     mock_client.listen.v1.media.transcribe_url = mock_transcribe_url
 
-    with patch("src.tools.transcribe.AsyncDeepgramClient", return_value=mock_client):
+    with patch("src.tools.transcribe._client", mock_client):
         result = await extract_audio_transcript("https://example.com/audio.wav")
 
     assert result == "Hello world"
@@ -38,7 +38,19 @@ async def test_extract_audio_transcript_returns_empty_when_no_speech():
     mock_client = MagicMock()
     mock_client.listen.v1.media.transcribe_url = mock_transcribe_url
 
-    with patch("src.tools.transcribe.AsyncDeepgramClient", return_value=mock_client):
+    with patch("src.tools.transcribe._client", mock_client):
         result = await extract_audio_transcript("https://example.com/silence.wav")
 
     assert result == ""
+
+
+@pytest.mark.asyncio
+async def test_extract_audio_transcript_raises_runtime_error_on_network_failure():
+    """Re-raises network/API exceptions from transcribe_url as RuntimeError."""
+    mock_transcribe_url = AsyncMock(side_effect=Exception("connection timeout"))
+    mock_client = MagicMock()
+    mock_client.listen.v1.media.transcribe_url = mock_transcribe_url
+
+    with patch("src.tools.transcribe._client", mock_client):
+        with pytest.raises(RuntimeError, match="Deepgram transcription failed: connection timeout"):
+            await extract_audio_transcript("https://example.com/audio.wav")
