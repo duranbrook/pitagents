@@ -1,6 +1,10 @@
+import Foundation
 import AVFoundation
-import Combine
 import Speech
+import Combine
+
+#if os(iOS)
+import UIKit
 
 class AudioRecorder: NSObject, ObservableObject {
     @Published var isRecording: Bool = false
@@ -147,3 +151,5 @@ extension AudioRecorder: AVAudioRecorderDelegate {
         }
     }
 }
+
+#endif

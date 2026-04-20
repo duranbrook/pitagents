@@ -1,6 +1,8 @@
 import SwiftUI
 import AVFoundation
 
+#if os(iOS)
+
 struct RecordingView: View {
     // MARK: - State
 
@@ -24,7 +26,7 @@ struct RecordingView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemGroupedBackground)
+                Color(UIColor.systemGroupedBackground)
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
@@ -64,7 +66,7 @@ struct RecordingView: View {
     private var cameraPreviewSection: some View {
         ZStack(alignment: .topTrailing) {
             CameraPreviewRepresentable(captureSession: videoCapture.captureSession)
-                .aspectRatio(16 / 9, contentMode: .fit)
+                .frame(maxWidth: .infinity)
                 .background(Color.black)
                 .clipped()
 
@@ -113,7 +115,7 @@ struct RecordingView: View {
             .frame(height: 140)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.secondarySystemBackground))
+                    .fill(Color(UIColor.secondarySystemBackground))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
@@ -259,3 +261,5 @@ struct RecordingIndicator: View {
 #Preview {
     RecordingView()
 }
+
+#endif
