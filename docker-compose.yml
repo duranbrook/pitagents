@@ -9,34 +9,60 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d autoshop"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@db:5432/autoshop
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
 
   backend:
     build: ./backend
-    depends_on:
-      - db
-      - redis
-    env_file: ./backend/.env.example
+    env_file: ./backend/.env
     environment:
       DATABASE_URL: postgresql+asyncpg://user:password@db:5432/autoshop
       REDIS_URL: redis://redis:6379
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
+      - ./backend/src:/app/src
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   web:
     build: ./web
-    depends_on:
-      - backend
     environment:
+      # API calls go from the browser → host machine → backend
       NEXT_PUBLIC_API_URL: http://localhost:8000
     ports:
       - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
