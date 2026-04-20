@@ -44,3 +44,29 @@ async def test_extract_empty_transcript_returns_empty():
 
     result = await extract_repair_findings("   ")
     assert result == {"summary": "", "findings": []}
+
+
+@pytest.mark.asyncio
+async def test_extract_transcript_with_curly_braces_does_not_raise():
+    """Transcripts containing { or } must not raise KeyError during prompt formatting."""
+    curly_transcript = 'Tech noted part number {ABC-123} and config {"key": "value"}.'
+
+    expected = {
+        "summary": "Part noted.",
+        "findings": [],
+    }
+
+    mock_message = MagicMock()
+    mock_message.content = [MagicMock(text=json.dumps(expected))]
+
+    mock_create = MagicMock(return_value=mock_message)
+    mock_client = MagicMock()
+    mock_client.messages.create = mock_create
+
+    with patch("src.tools.extract_findings._client", mock_client):
+        result = await extract_repair_findings(curly_transcript)
+
+    # Should not raise; result is either parsed JSON or the fallback dict
+    assert isinstance(result, dict)
+    assert "summary" in result
+    assert "findings" in result

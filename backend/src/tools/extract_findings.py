@@ -42,7 +42,7 @@ async def extract_repair_findings(transcript: str) -> dict:
         _client.messages.create,
         model="claude-haiku-4-5-20251001",
         max_tokens=1024,
-        messages=[{"role": "user", "content": PROMPT.format(transcript=transcript)}],
+        messages=[{"role": "user", "content": PROMPT.format(transcript=transcript.replace("{", "{{").replace("}", "}}"))}],
     )
 
     try:
