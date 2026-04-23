@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getChatHistory, streamChatMessage, ChatHistoryItem, ContentBlock, ToolCallRecord } from '@/lib/api'
+import { useRouter } from 'next/navigation'
+import { getChatHistory, streamChatMessage, ChatHistoryItem, ToolCallRecord } from '@/lib/api'
 import { MessageBubble } from './MessageBubble'
 import { VoiceButton } from './VoiceButton'
 import { ImageAttach } from './ImageAttach'
@@ -20,12 +21,14 @@ interface Props {
 }
 
 export function ChatPanel({ agentId, onNewMessage }: Props) {
+  const router = useRouter()
   const qc = useQueryClient()
   const bottomRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
   const [pendingImageUrl, setPendingImageUrl] = useState<string | undefined>()
   const [streaming, setStreaming] = useState<StreamingMessage | null>(null)
   const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState('')
 
   const [voiceMode] = useState<'hold' | 'toggle'>(() => {
     if (typeof window === 'undefined') return 'hold'
@@ -45,6 +48,7 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
     const text = input.trim()
     if (!text || sending) return
     setInput('')
+    setSendError('')
     setSending(true)
     setStreaming({ text: '', toolCalls: [] })
 
@@ -63,6 +67,14 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
           onNewMessage(accumulated.slice(0, 60))
         }
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('401')) {
+        router.replace('/login')
+      } else {
+        setSendError('Failed to send message. Please try again.')
+      }
+      setInput(text)
     } finally {
       setStreaming(null)
       setSending(false)
@@ -108,6 +120,13 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
         )}
         <div ref={bottomRef} />
       </div>
+
+      {/* Send error */}
+      {sendError && (
+        <div className="px-5 pb-1">
+          <p className="text-xs text-red-400">{sendError}</p>
+        </div>
+      )}
 
       {/* Pending image indicator */}
       {pendingImageUrl && (

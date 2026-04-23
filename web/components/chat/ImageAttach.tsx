@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { uploadImage } from '@/lib/api'
 
 interface Props {
@@ -10,36 +10,45 @@ interface Props {
 
 export function ImageAttach({ onImageUrl, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setUploading(true)
     try {
       const url = await uploadImage(file)
       onImageUrl(url)
     } catch (err) {
       console.error('Image upload failed:', err)
+      alert('Image upload failed. Please try again.')
     } finally {
+      setUploading(false)
       if (inputRef.current) inputRef.current.value = ''
     }
   }
+
+  const isDisabled = disabled || uploading
 
   return (
     <>
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
         className="hidden"
         onChange={handleChange}
-        disabled={disabled}
       />
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        disabled={disabled}
-        title="Attach image"
-        className="w-9 h-9 rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 flex items-center justify-center transition-colors flex-shrink-0"
+        disabled={isDisabled}
+        title={uploading ? 'Uploading…' : 'Attach image'}
+        className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
+          uploading
+            ? 'bg-indigo-700 text-white animate-pulse'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

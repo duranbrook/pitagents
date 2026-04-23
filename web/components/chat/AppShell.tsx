@@ -1,12 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AgentList } from './AgentList'
 import { ChatPanel } from './ChatPanel'
 
 export function AppShell() {
+  const router = useRouter()
   const [selectedAgent, setSelectedAgent] = useState('assistant')
   const [lastMessages, setLastMessages] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (!localStorage.getItem('token')) {
+      router.replace('/login')
+    }
+  }, [router])
 
   return (
     <div className="flex h-screen bg-gray-950 overflow-hidden">
