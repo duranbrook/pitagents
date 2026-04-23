@@ -6,14 +6,17 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.api.deps import get_current_user
-from src.db.base import get_db
+from src.db.base import get_db, AsyncSessionLocal
 from src.models.chat_message import ChatMessage
 from src.agents.assistant import stream_assistant
 from src.agents.tom import stream_tom
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-AGENTS = {"assistant", "tom"}
+AGENT_STREAMS = {
+    "assistant": stream_assistant,
+    "tom": stream_tom,
+}
 
 
 class MessageRequest(BaseModel):
@@ -42,20 +45,27 @@ async def _load_history(user_id: uuid.UUID, agent_id: str, db: AsyncSession) -> 
 async def _save_messages(
     user_id: uuid.UUID,
     agent_id: str,
+    user_content: list[dict],
     final_messages: list[dict],
     tool_calls: list[dict],
     db: AsyncSession,
 ) -> None:
-    # final_messages is the full thread; save only the new tail (user + assistant)
-    for msg in final_messages[-2:]:
-        tc = tool_calls if msg["role"] == "assistant" and tool_calls else None
-        db.add(ChatMessage(
-            user_id=user_id,
-            agent_id=agent_id,
-            role=msg["role"],
-            content=msg["content"],
-            tool_calls=tc,
-        ))
+    """Save the new user message and final assistant response to the DB."""
+    db.add(ChatMessage(
+        user_id=user_id,
+        agent_id=agent_id,
+        role="user",
+        content=user_content,
+    ))
+    # final_messages[-1] is always the final assistant response
+    assistant_msg = final_messages[-1]
+    db.add(ChatMessage(
+        user_id=user_id,
+        agent_id=agent_id,
+        role="assistant",
+        content=assistant_msg["content"],
+        tool_calls=tool_calls if tool_calls else None,
+    ))
     await db.commit()
 
 
@@ -65,7 +75,7 @@ async def get_history(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if agent_id not in AGENTS:
+    if agent_id not in AGENT_STREAMS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
     user_id = uuid.UUID(current_user["sub"])
     result = await db.execute(
@@ -93,7 +103,7 @@ async def send_message(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if agent_id not in AGENTS:
+    if agent_id not in AGENT_STREAMS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
 
     user_id = uuid.UUID(current_user["sub"])
@@ -103,13 +113,14 @@ async def send_message(
     async def event_generator():
         tool_calls: list[dict] = []
         final_messages: list[dict] = []
+        user_content_snapshot = user_content  # captured from outer scope
 
-        if agent_id == "assistant":
-            stream = stream_assistant(history=history, user_content=user_content)
-        else:
-            stream = stream_tom(history=history, user_content=user_content, db=db)
+        stream_fn = AGENT_STREAMS[agent_id]
+        stream_kwargs: dict = dict(history=history, user_content=user_content_snapshot)
+        if agent_id == "tom":
+            stream_kwargs["db"] = db
 
-        async for event in stream:
+        async for event in stream_fn(**stream_kwargs):
             if event["type"] == "done":
                 tool_calls = event.get("tool_calls", [])
                 final_messages = event.get("_messages", [])
@@ -117,6 +128,7 @@ async def send_message(
             yield f"data: {json.dumps(payload)}\n\n"
 
         if final_messages:
-            await _save_messages(user_id, agent_id, final_messages, tool_calls, db)
+            async with AsyncSessionLocal() as save_db:
+                await _save_messages(user_id, agent_id, user_content_snapshot, final_messages, tool_calls, save_db)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
