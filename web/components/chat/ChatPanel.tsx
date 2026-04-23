@@ -49,15 +49,17 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
     setStreaming({ text: '', toolCalls: [] })
 
     try {
+      let accumulated = ''
       for await (const event of streamChatMessage(agentId, text, pendingImageUrl)) {
         if (event.type === 'token') {
-          setStreaming(prev => prev ? { ...prev, text: prev.text + (event.content as string) } : null)
+          accumulated += event.content as string
+          setStreaming(prev => prev ? { ...prev, text: accumulated } : null)
         } else if (event.type === 'tool_end') {
           setStreaming(prev => prev
             ? { ...prev, toolCalls: [...prev.toolCalls, { name: event.tool as string, input: event.input as Record<string, unknown>, output: event.output as Record<string, unknown> }] }
             : null)
         } else if (event.type === 'done') {
-          onNewMessage(streaming?.text.slice(0, 60) ?? '')
+          onNewMessage(accumulated.slice(0, 60))
         }
       }
     } finally {
