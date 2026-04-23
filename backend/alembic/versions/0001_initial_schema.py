@@ -161,6 +161,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Intentionally destructive: drops all baseline tables.
+    # Only run in dev/test environments — never on a live production database.
     op.drop_index(op.f("ix_reports_share_token"), table_name="reports")
     op.drop_table("reports")
     op.drop_index(op.f("ix_media_files_session_id"), table_name="media_files")
