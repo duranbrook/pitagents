@@ -9,6 +9,7 @@ from src.models.user import User
 from src.models.session import InspectionSession
 from src.models.report import Report
 from src.models.media import MediaFile
+from src.models.chat_message import ChatMessage
 
 
 def _col_names(model) -> set[str]:
@@ -60,3 +61,19 @@ def test_report_tablename():
 
 def test_media_tablename():
     assert MediaFile.__tablename__ == "media_files"
+
+
+def test_chat_message_columns():
+    cols = _col_names(ChatMessage)
+    assert "id" in cols
+    assert "user_id" in cols
+    assert "agent_id" in cols
+    assert "role" in cols
+    assert "content" in cols
+    assert "tool_calls" in cols
+    assert "created_at" in cols
+
+
+def test_user_has_preferences_column():
+    cols = _col_names(User)
+    assert "preferences" in cols

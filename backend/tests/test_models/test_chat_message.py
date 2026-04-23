@@ -1,3 +1,4 @@
+import os
 import pytest
 import uuid
 from sqlalchemy import text
@@ -5,7 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from src.models.chat_message import ChatMessage
 from src.db.base import Base
 
-TEST_DB = "postgresql+asyncpg://user:password@db:5432/autoshop"
+TEST_DB = os.environ["DATABASE_URL"]
 
 
 @pytest.fixture
