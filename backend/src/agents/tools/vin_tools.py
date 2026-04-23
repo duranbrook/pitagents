@@ -17,11 +17,14 @@ VIN_TOOL_SCHEMAS = [
     },
     {
         "name": "extract_vin_from_image",
-        "description": "Extract a VIN number from a photo (e.g. dashboard sticker, door jamb). Provide the image URL.",
+        "description": (
+            "Extract a VIN from an externally-hosted image the user has provided as a URL in their text. "
+            "Do NOT use this tool if an image is already embedded in the current message — analyze it directly instead."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
-                "image_url": {"type": "string", "description": "Public URL of the image containing the VIN"}
+                "image_url": {"type": "string", "description": "HTTPS URL of the image containing the VIN (not a data: URL)"}
             },
             "required": ["image_url"],
         },
