@@ -27,7 +27,13 @@ class MessageRequest(BaseModel):
 def _build_user_content(message: str, image_url: str | None) -> list[dict]:
     content: list[dict] = []
     if image_url:
-        content.append({"type": "image", "source": {"type": "url", "url": image_url}})
+        if image_url.startswith("data:"):
+            # data:<media_type>;base64,<data>
+            header, _, encoded = image_url.partition(",")
+            media_type = header.split(":")[1].split(";")[0]
+            content.append({"type": "image", "source": {"type": "base64", "media_type": media_type, "data": encoded}})
+        else:
+            content.append({"type": "image", "source": {"type": "url", "url": image_url}})
     content.append({"type": "text", "text": message})
     return content
 
