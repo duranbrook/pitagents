@@ -27,10 +27,10 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
   const [streaming, setStreaming] = useState<StreamingMessage | null>(null)
   const [sending, setSending] = useState(false)
 
-  // Derive voice_mode from localStorage (set in settings page, defaulting to 'hold')
-  const voiceMode = (typeof window !== 'undefined'
-    ? (localStorage.getItem('voice_mode') as 'hold' | 'toggle' | null)
-    : null) ?? 'hold'
+  const [voiceMode] = useState<'hold' | 'toggle'>(() => {
+    if (typeof window === 'undefined') return 'hold'
+    return (localStorage.getItem('voice_mode') as 'hold' | 'toggle') ?? 'hold'
+  })
 
   const { data: history = [] } = useQuery<ChatHistoryItem[]>({
     queryKey: ['chat', agentId],
@@ -52,11 +52,12 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
       let accumulated = ''
       for await (const event of streamChatMessage(agentId, text, pendingImageUrl)) {
         if (event.type === 'token') {
-          accumulated += event.content as string
+          accumulated += (event as { type: 'token'; content: string }).content
           setStreaming(prev => prev ? { ...prev, text: accumulated } : null)
         } else if (event.type === 'tool_end') {
+          const te = event as { type: 'tool_end'; tool: string; input: Record<string, unknown>; output: Record<string, unknown> }
           setStreaming(prev => prev
-            ? { ...prev, toolCalls: [...prev.toolCalls, { name: event.tool as string, input: event.input as Record<string, unknown>, output: event.output as Record<string, unknown> }] }
+            ? { ...prev, toolCalls: [...prev.toolCalls, { name: te.tool, input: te.input, output: te.output }] }
             : null)
         } else if (event.type === 'done') {
           onNewMessage(accumulated.slice(0, 60))

@@ -52,6 +52,13 @@ export interface ChatHistoryItem {
   created_at: string
 }
 
+export type SSEEvent =
+  | { type: 'token'; content: string }
+  | { type: 'tool_start'; tool: string; input: Record<string, unknown> }
+  | { type: 'tool_end'; tool: string; input: Record<string, unknown>; output: Record<string, unknown> }
+  | { type: 'done' }
+  | { type: string }
+
 export const getChatHistory = (agentId: string): Promise<ChatHistoryItem[]> =>
   api.get(`/chat/${agentId}/history`).then(r => r.data)
 
@@ -59,7 +66,7 @@ export async function* streamChatMessage(
   agentId: string,
   message: string,
   imageUrl?: string,
-): AsyncGenerator<Record<string, unknown>> {
+): AsyncGenerator<SSEEvent> {
   const token = getToken()
   const res = await fetch(
     `${BASE_URL}/chat/${agentId}/message`,
@@ -84,7 +91,7 @@ export async function* streamChatMessage(
     buffer = lines.pop() ?? ''
     for (const line of lines) {
       if (line.startsWith('data: ')) {
-        yield JSON.parse(line.slice(6))
+        yield JSON.parse(line.slice(6)) as SSEEvent
       }
     }
   }
