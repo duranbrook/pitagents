@@ -25,3 +25,17 @@ def mock_settings(monkeypatch):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "test-token")
     monkeypatch.setenv("TWILIO_FROM_PHONE", "+15555555555")
     monkeypatch.setenv("SENDGRID_API_KEY", "test-sg-key")
+
+
+@pytest.fixture
+def auth_headers():
+    import jwt
+    from src.config import settings
+    from datetime import datetime, timedelta, timezone
+    token = jwt.encode(
+        {"sub": "test-user-id", "role": "owner", "email": "owner@shop.com",
+         "exp": datetime.now(timezone.utc) + timedelta(hours=1)},
+        settings.JWT_SECRET.get_secret_value(),
+        algorithm=settings.JWT_ALGORITHM,
+    )
+    return {"Authorization": f"Bearer {token}"}
