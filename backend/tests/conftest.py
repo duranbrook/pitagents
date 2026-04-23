@@ -35,7 +35,7 @@ def auth_headers():
     from src.config import settings
     from datetime import datetime, timedelta, timezone
     token = jwt.encode(
-        {"sub": "test-user-id", "role": "owner", "email": "owner@shop.com",
+        {"sub": "00000000-0000-0000-0000-000000000001", "role": "owner", "email": "owner@shop.com",
          "exp": datetime.now(timezone.utc) + timedelta(hours=1)},
         settings.JWT_SECRET.get_secret_value(),
         algorithm=settings.JWT_ALGORITHM,
