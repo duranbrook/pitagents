@@ -16,8 +16,8 @@ export function AppShell() {
           <span className="text-white text-xs font-bold">P</span>
         </div>
         <div className="w-px flex-1 bg-gray-800" />
-        <a href="/dashboard" className="w-7 h-7 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center" title="Reports">
-          <span className="text-gray-400 text-xs">≡</span>
+        <a href="/dashboard" aria-label="Reports" className="w-7 h-7 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center justify-center">
+          <span aria-hidden="true" className="text-gray-400 text-xs">≡</span>
         </a>
       </div>
 

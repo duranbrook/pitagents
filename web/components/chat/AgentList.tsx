@@ -31,6 +31,7 @@ export function AgentList({ selectedId, onSelect, lastMessages }: Props) {
           <button
             key={agent.id}
             onClick={() => onSelect(agent.id)}
+            aria-current={selectedId === agent.id ? 'true' : undefined}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-left transition-colors ${
               selectedId === agent.id ? 'bg-gray-700' : 'hover:bg-gray-800'
             }`}
