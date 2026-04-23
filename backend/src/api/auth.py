@@ -12,12 +12,12 @@ pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # In-memory test users (production would use a real DB lookup)
 _TEST_USERS: dict = {
     "owner@shop.com": {
-        "id": "owner-1",
+        "id": "00000000-0000-0000-0000-000000000001",
         "role": "owner",
         "hashed_password": pwd_ctx.hash("testpass"),
     },
     "tech@shop.com": {
-        "id": "tech-1",
+        "id": "00000000-0000-0000-0000-000000000002",
         "role": "technician",
         "hashed_password": pwd_ctx.hash("testpass"),
     },

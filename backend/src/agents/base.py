@@ -45,7 +45,12 @@ async def stream_response(
                 yield {"type": "token", "content": text}
             final = await stream.get_final_message()
 
-        assistant_content = [b.model_dump() for b in final.content]
+        assistant_content = []
+        for b in final.content:
+            if b.type == "text":
+                assistant_content.append({"type": "text", "text": b.text})
+            elif b.type == "tool_use":
+                assistant_content.append({"type": "tool_use", "id": b.id, "name": b.name, "input": b.input})
         messages.append({"role": "assistant", "content": assistant_content})
 
         tool_uses = [b for b in final.content if b.type == "tool_use"]

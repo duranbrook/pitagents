@@ -124,11 +124,10 @@ async def send_message(
             if event["type"] == "done":
                 tool_calls = event.get("tool_calls", [])
                 final_messages = event.get("_messages", [])
+                if final_messages:
+                    async with AsyncSessionLocal() as save_db:
+                        await _save_messages(user_id, agent_id, user_content_snapshot, final_messages, tool_calls, save_db)
             payload = {k: v for k, v in event.items() if k != "_messages"}
             yield f"data: {json.dumps(payload)}\n\n"
-
-        if final_messages:
-            async with AsyncSessionLocal() as save_db:
-                await _save_messages(user_id, agent_id, user_content_snapshot, final_messages, tool_calls, save_db)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
