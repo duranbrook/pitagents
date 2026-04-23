@@ -57,3 +57,26 @@ async def test_transcribe_deepgram_failure_returns_502(auth_headers):
                 headers={**auth_headers, "Content-Type": "audio/webm"},
             )
     assert resp.status_code == 502
+
+
+@pytest.mark.asyncio
+async def test_transcribe_oversized_body_returns_413(auth_headers):
+    oversized = b"x" * (25 * 1024 * 1024 + 1)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post(
+            "/transcribe",
+            content=oversized,
+            headers={**auth_headers, "Content-Type": "audio/webm"},
+        )
+    assert resp.status_code == 413
+
+
+@pytest.mark.asyncio
+async def test_transcribe_bad_content_type_returns_415(auth_headers):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post(
+            "/transcribe",
+            content=b"fake audio",
+            headers={**auth_headers, "Content-Type": "video/mp4"},
+        )
+    assert resp.status_code == 415
