@@ -27,3 +27,88 @@ export const sendReport = (id: string, payload: { phone?: string; email?: string
   api.post(`/reports/${id}/send`, payload).then(r => r.data)
 export const getConsumerReport = (token: string) =>
   api.get(`/r/${token}`).then(r => r.data)
+
+// ── Chat ──────────────────────────────────────────────────────────────────
+
+export type ChatRole = 'user' | 'assistant'
+
+export interface ContentBlock {
+  type: 'text' | 'image' | 'tool_use' | 'tool_result'
+  text?: string
+  source?: { type: string; url: string }
+}
+
+export interface ToolCallRecord {
+  name: string
+  input: Record<string, unknown>
+  output: Record<string, unknown>
+}
+
+export interface ChatHistoryItem {
+  id: string
+  role: ChatRole
+  content: ContentBlock[]
+  tool_calls: ToolCallRecord[] | null
+  created_at: string
+}
+
+export const getChatHistory = (agentId: string): Promise<ChatHistoryItem[]> =>
+  api.get(`/chat/${agentId}/history`).then(r => r.data)
+
+export async function* streamChatMessage(
+  agentId: string,
+  message: string,
+  imageUrl?: string,
+): AsyncGenerator<Record<string, unknown>> {
+  const token = getToken()
+  const res = await fetch(
+    `${BASE_URL}/chat/${agentId}/message`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ message, image_url: imageUrl }),
+    },
+  )
+  if (!res.ok) throw new Error(`Chat request failed: ${res.status}`)
+  const reader = res.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        yield JSON.parse(line.slice(6))
+      }
+    }
+  }
+}
+
+export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+  const res = await fetch(`${BASE_URL}/transcribe`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': audioBlob.type || 'audio/webm',
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: audioBlob,
+  })
+  if (!res.ok) throw new Error('Transcription failed')
+  const data = await res.json()
+  return data.transcript as string
+}
+
+export async function uploadImage(file: File): Promise<string> {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await api.post('/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return res.data.image_url as string
+}
