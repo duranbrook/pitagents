@@ -6,6 +6,7 @@ from unittest.mock import patch
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test_autoshop")
 os.environ.setdefault("JWT_SECRET", "test-secret-key-for-testing-only")
 os.environ.setdefault("DEEPGRAM_API_KEY", "test-deepgram-key")
+os.environ.setdefault("ANTHROPIC_API_KEY", "test-anthropic-key")
 
 from src.config import Settings
 

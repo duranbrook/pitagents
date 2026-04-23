@@ -5,17 +5,12 @@ from src.agents.tools.vin_tools import VIN_TOOL_SCHEMAS, lookup_vin, extract_vin
 
 _PROMPT = (Path(__file__).parent / "prompts" / "assistant.txt").read_text()
 
-_TOOLS = {
-    "lookup_vin": lambda inp: lookup_vin(inp["vin"]),
-    "extract_vin_from_image": lambda inp: extract_vin_from_image(inp["image_url"]),
-}
-
-
 async def _tool_executor(name: str, inp: dict) -> dict:
-    fn = _TOOLS.get(name)
-    if fn is None:
-        return {"error": f"Unknown tool: {name}"}
-    return await fn(inp)
+    if name == "lookup_vin":
+        return await lookup_vin(inp["vin"])
+    if name == "extract_vin_from_image":
+        return await extract_vin_from_image(inp["image_url"])
+    return {"error": f"Unknown tool: {name}"}
 
 
 async def stream_assistant(
