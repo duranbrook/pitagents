@@ -1,4 +1,5 @@
 """Shop DB query tools for the Tom agent."""
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.models.session import InspectionSession
@@ -58,7 +59,11 @@ async def list_sessions(db: AsyncSession, limit: int = 10) -> list[dict]:
 
 
 async def get_session_detail(db: AsyncSession, session_id: str) -> dict:
-    result = await db.execute(select(InspectionSession).where(InspectionSession.id == session_id))
+    try:
+        uid = uuid.UUID(session_id)
+    except ValueError:
+        return {"error": f"Invalid session_id: {session_id}"}
+    result = await db.execute(select(InspectionSession).where(InspectionSession.id == uid))
     session = result.scalar_one_or_none()
     if not session:
         return {"error": f"Session {session_id} not found"}
@@ -72,7 +77,11 @@ async def get_session_detail(db: AsyncSession, session_id: str) -> dict:
 
 
 async def get_report(db: AsyncSession, session_id: str) -> dict:
-    result = await db.execute(select(Report).where(Report.session_id == session_id))
+    try:
+        uid = uuid.UUID(session_id)
+    except ValueError:
+        return {"error": f"Invalid session_id: {session_id}"}
+    result = await db.execute(select(Report).where(Report.session_id == uid))
     report = result.scalar_one_or_none()
     if not report:
         return {"error": f"No report found for session {session_id}"}
@@ -81,4 +90,5 @@ async def get_report(db: AsyncSession, session_id: str) -> dict:
         "summary": report.summary,
         "findings": report.findings,
         "estimate_total": float(report.estimate_total) if report.estimate_total else None,
+        "created_at": report.created_at.isoformat() if report.created_at else None,
     }

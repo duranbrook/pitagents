@@ -30,6 +30,7 @@ VIN_TOOL_SCHEMAS = [
 
 
 async def lookup_vin(vin: str) -> dict:
+    vin = vin.upper().strip() if vin else vin
     if not vin or len(vin) != 17:
         return {"error": f"Invalid VIN: must be 17 characters, got '{vin}'"}
     return await lookup_vehicle_by_vin(vin)
