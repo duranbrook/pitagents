@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy import Column, String, ForeignKey, Enum as SAEnum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from src.db.base import Base
 
 
@@ -16,3 +16,5 @@ class User(Base):
         nullable=False,
     )
     name = Column(String(255), nullable=True)
+    # Stores {"voice_mode": "hold" | "toggle"}
+    preferences = Column(JSONB, nullable=False, server_default="{}")
