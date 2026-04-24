@@ -1,38 +1,33 @@
+import base64
 import pytest
 from httpx import AsyncClient, ASGITransport
-from unittest.mock import patch, AsyncMock
 from src.api.main import app
-from src.api.upload import _storage as _storage_ref
 
 
 @pytest.mark.asyncio
-async def test_upload_image_returns_url(auth_headers):
-    fake_image = b"\x89PNG\r\n..."
+async def test_upload_image_returns_base64_data_url(auth_headers):
+    fake_image = b"\x89PNG\r\n\x1a\n"  # minimal PNG header
 
-    with patch.object(_storage_ref, "upload", new_callable=AsyncMock) as mock_upload, \
-         patch.object(_storage_ref, "presigned_url", new_callable=AsyncMock,
-                      return_value="https://test.r2.dev/chat-uploads/abc.png") as mock_url:
-
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            resp = await client.post(
-                "/upload",
-                files={"file": ("photo.png", fake_image, "image/png")},
-                headers=auth_headers,
-            )
-
-    assert resp.status_code == 200
-    assert resp.json()["image_url"] == "https://test.r2.dev/chat-uploads/abc.png"
-    mock_upload.assert_called_once()
-    mock_url.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_upload_requires_auth():
-    fake_image = b"\x89PNG\r\n..."
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/upload",
             files={"file": ("photo.png", fake_image, "image/png")},
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 200
+    url = resp.json()["image_url"]
+    assert url.startswith("data:image/png;base64,")
+    decoded = base64.b64decode(url.split(",", 1)[1])
+    assert decoded == fake_image
+
+
+@pytest.mark.asyncio
+async def test_upload_requires_auth():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post(
+            "/upload",
+            files={"file": ("photo.png", b"\x89PNG\r\n\x1a\n", "image/png")},
         )
     assert resp.status_code == 401
 
@@ -50,7 +45,7 @@ async def test_upload_rejects_non_image(auth_headers):
 
 @pytest.mark.asyncio
 async def test_upload_oversized_image_returns_413(auth_headers):
-    oversized = b"x" * (10 * 1024 * 1024 + 1)
+    oversized = b"x" * (5 * 1024 * 1024 + 1)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/upload",
@@ -58,17 +53,3 @@ async def test_upload_oversized_image_returns_413(auth_headers):
             headers=auth_headers,
         )
     assert resp.status_code == 413
-
-
-@pytest.mark.asyncio
-async def test_upload_storage_failure_returns_502(auth_headers):
-    fake_image = b"\x89PNG\r\n..."
-    with patch("src.api.upload._storage.upload", new_callable=AsyncMock,
-               side_effect=Exception("S3 error")):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            resp = await client.post(
-                "/upload",
-                files={"file": ("photo.png", fake_image, "image/png")},
-                headers=auth_headers,
-            )
-    assert resp.status_code == 502

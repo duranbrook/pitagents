@@ -11,7 +11,7 @@ async def test_transcribe_returns_transcript(auth_headers):
     mock_response.results.channels[0].alternatives[0].transcript = "front brakes are worn"
 
     with patch("src.api.transcribe._client") as mock_client:
-        mock_client.listen.v1.media.transcribe_raw = AsyncMock(return_value=mock_response)
+        mock_client.listen.v1.media.transcribe_file = AsyncMock(return_value=mock_response)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.post(
@@ -49,7 +49,7 @@ async def test_transcribe_empty_body_returns_400(auth_headers):
 @pytest.mark.asyncio
 async def test_transcribe_deepgram_failure_returns_502(auth_headers):
     with patch("src.api.transcribe._client") as mock_client:
-        mock_client.listen.v1.media.transcribe_raw = AsyncMock(side_effect=Exception("network error"))
+        mock_client.listen.v1.media.transcribe_file = AsyncMock(side_effect=Exception("network error"))
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.post(
                 "/transcribe",
