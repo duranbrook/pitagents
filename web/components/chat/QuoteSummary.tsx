@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 
 interface LineItem {
   description: string
-  quantity: number | string
+  qty: number | string
   unit_price: number
   total: number
 }
@@ -70,8 +70,8 @@ export function QuoteSummary({ quoteId }: Props) {
     setFinalizing(true)
     setError('')
     try {
-      const res = await api.put<Quote>(`/quotes/${quoteId}/finalize`)
-      setQuote(res.data)
+      await api.put(`/quotes/${quoteId}/finalize`)
+      await fetchQuote()
     } catch {
       setError('Failed to finalize quote. Please try again.')
     } finally {
@@ -122,7 +122,7 @@ export function QuoteSummary({ quoteId }: Props) {
                   {quote.line_items.map((item, i) => (
                     <tr key={i} className="border-b border-gray-800/60">
                       <td className="py-2 text-gray-200 pr-2">{item.description}</td>
-                      <td className="py-2 text-gray-400 text-right">{item.quantity}</td>
+                      <td className="py-2 text-gray-400 text-right">{item.qty}</td>
                       <td className="py-2 text-gray-400 text-right">{formatCurrency(item.unit_price)}</td>
                       <td className="py-2 text-gray-200 text-right">{formatCurrency(item.total)}</td>
                     </tr>
