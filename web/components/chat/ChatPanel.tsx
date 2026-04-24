@@ -29,6 +29,8 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
   const [streaming, setStreaming] = useState<StreamingMessage | null>(null)
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState('')
+  // Optimistic user message — shown immediately on send, cleared after history refreshes
+  const [optimisticUserMsg, setOptimisticUserMsg] = useState<string | null>(null)
 
   const [voiceMode] = useState<'hold' | 'toggle'>(() => {
     if (typeof window === 'undefined') return 'hold'
@@ -42,7 +44,7 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [history, streaming])
+  }, [history, streaming, optimisticUserMsg])
 
   async function handleSend() {
     const text = input.trim()
@@ -50,6 +52,7 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
     setInput('')
     setSendError('')
     setSending(true)
+    setOptimisticUserMsg(text)   // show user message instantly
     setStreaming({ text: '', toolCalls: [] })
 
     try {
@@ -83,7 +86,8 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
       setStreaming(null)
       setSending(false)
       setPendingImageUrl(undefined)
-      qc.invalidateQueries({ queryKey: ['chat', agentId] })
+      await qc.invalidateQueries({ queryKey: ['chat', agentId] })
+      setOptimisticUserMsg(null)  // clear after history has refreshed
     }
   }
 
@@ -114,6 +118,14 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
             toolCalls={msg.tool_calls}
           />
         ))}
+        {/* Optimistic user message — visible immediately while waiting for response */}
+        {optimisticUserMsg && (
+          <MessageBubble
+            role="user"
+            content={[{ type: 'text', text: optimisticUserMsg }]}
+            toolCalls={null}
+          />
+        )}
         {streaming !== null && (
           <MessageBubble
             role="assistant"
