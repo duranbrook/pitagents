@@ -25,12 +25,19 @@ export function VoiceButton({ mode, onTranscript, disabled }: Props) {
       setPermError(true)
       return
     }
-    const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+
+    // Pick the first mimeType the browser actually supports
+    const PREFERRED = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
+    const mimeType = PREFERRED.find(t => MediaRecorder.isTypeSupported(t)) ?? ''
+
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
     chunksRef.current = []
     recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
     recorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop())
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+      const actualType = recorder.mimeType || mimeType || 'audio/webm'
+      const blob = new Blob(chunksRef.current, { type: actualType })
+      if (blob.size < 100) return  // too short — discard silently
       setLoading(true)
       try {
         const transcript = await transcribeAudio(blob)
