@@ -126,14 +126,21 @@ async def send_message(
         if agent_id == "tom":
             stream_kwargs["db"] = db
 
-        async for event in stream_fn(**stream_kwargs):
-            if event["type"] == "done":
-                tool_calls = event.get("tool_calls", [])
-                final_messages = event.get("_messages", [])
-                if final_messages:
-                    async with AsyncSessionLocal() as save_db:
-                        await _save_messages(user_id, agent_id, user_content_snapshot, final_messages, tool_calls, save_db)
-            payload = {k: v for k, v in event.items() if k != "_messages"}
-            yield f"data: {json.dumps(payload)}\n\n"
+        try:
+            async for event in stream_fn(**stream_kwargs):
+                if event["type"] == "done":
+                    tool_calls = event.get("tool_calls", [])
+                    final_messages = event.get("_messages", [])
+                    if final_messages:
+                        async with AsyncSessionLocal() as save_db:
+                            await _save_messages(user_id, agent_id, user_content_snapshot, final_messages, tool_calls, save_db)
+                payload = {k: v for k, v in event.items() if k != "_messages"}
+                yield f"data: {json.dumps(payload)}\n\n"
+        except Exception as exc:
+            import anthropic as _anthropic
+            if isinstance(exc, _anthropic.APIStatusError) and exc.status_code == 529:
+                yield f"data: {json.dumps({'type': 'error', 'code': 'overloaded', 'message': 'The AI is overloaded right now. Please try again in a moment.'})}\n\n"
+            else:
+                yield f"data: {json.dumps({'type': 'error', 'code': 'server_error', 'message': 'Something went wrong. Please try again.'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

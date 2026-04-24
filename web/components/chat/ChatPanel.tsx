@@ -65,6 +65,10 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
             : null)
         } else if (event.type === 'done') {
           onNewMessage(accumulated.slice(0, 60))
+        } else if (event.type === 'error') {
+          const errMsg = (event as { type: 'error'; message?: string }).message ?? 'Something went wrong. Please try again.'
+          setSendError(errMsg)
+          setInput(text)
         }
       }
     } catch (err) {

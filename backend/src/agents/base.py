@@ -1,4 +1,5 @@
 """Shared streaming loop for all chat agents."""
+import asyncio
 import json
 from collections.abc import AsyncGenerator
 from typing import Callable, Awaitable
@@ -40,10 +41,19 @@ async def stream_response(
         create_kwargs["tools"] = tool_schemas
 
     while True:
-        async with _anthropic_client.messages.stream(**create_kwargs) as stream:
-            async for text in stream.text_stream:
-                yield {"type": "token", "content": text}
-            final = await stream.get_final_message()
+        # Retry on transient overload (529) with backoff
+        for attempt in range(3):
+            try:
+                async with _anthropic_client.messages.stream(**create_kwargs) as stream:
+                    async for text in stream.text_stream:
+                        yield {"type": "token", "content": text}
+                    final = await stream.get_final_message()
+                break
+            except anthropic.APIStatusError as exc:
+                if exc.status_code == 529 and attempt < 2:
+                    await asyncio.sleep(2 ** attempt)
+                    continue
+                raise
 
         assistant_content = []
         for b in final.content:
