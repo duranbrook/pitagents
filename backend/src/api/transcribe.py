@@ -1,9 +1,12 @@
+import logging
+
 from deepgram import AsyncDeepgramClient
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from pydantic import BaseModel
 from src.api.deps import get_current_user
 from src.config import settings
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/transcribe", tags=["transcribe"])
 
 MAX_AUDIO_BYTES = 25 * 1024 * 1024  # 25 MB
@@ -40,7 +43,7 @@ async def transcribe_audio(
             detail="Audio file too large (max 25 MB)",
         )
 
-    content_type = request.headers.get("content-type", "audio/webm")
+    content_type = request.headers.get("content-type", "audio/webm").split(";")[0].strip()
     if content_type not in ALLOWED_MIMETYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -48,15 +51,15 @@ async def transcribe_audio(
         )
 
     try:
-        response = await _client.listen.v1.media.transcribe_raw(
-            audio=audio_bytes,
-            mimetype=content_type,
+        response = await _client.listen.v1.media.transcribe_file(
+            request=audio_bytes,
             model="nova-3",
             smart_format=True,
             punctuate=True,
             language="en-US",
         )
     except Exception as exc:
+        logger.exception("Deepgram transcription failed")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Transcription failed: {exc}",
