@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -10,6 +11,8 @@ from src.db.base import get_db, AsyncSessionLocal
 from src.models.chat_message import ChatMessage
 from src.agents.assistant import stream_assistant
 from src.agents.tom import stream_tom
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -139,6 +142,7 @@ async def send_message(
             if isinstance(exc, _anthropic.APIStatusError) and exc.status_code == 529:
                 yield f"data: {json.dumps({'type': 'error', 'code': 'overloaded', 'message': 'The AI is overloaded right now. Please try again in a moment.'})}\n\n"
             else:
+                logger.exception("Agent stream error [agent=%s user=%s]", agent_id, user_id)
                 yield f"data: {json.dumps({'type': 'error', 'code': 'server_error', 'message': 'Something went wrong. Please try again.'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
