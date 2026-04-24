@@ -1,25 +1,54 @@
 from pathlib import Path
 from collections.abc import AsyncGenerator
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.agents.base import stream_response
 from src.agents.tools.vin_tools import VIN_TOOL_SCHEMAS, lookup_vin, extract_vin_from_image
+from src.agents.tools.quote_tools import (
+    QUOTE_TOOL_SCHEMAS,
+    lookup_part_price,
+    estimate_labor,
+    create_quote,
+    create_quote_item,
+    list_quote_items,
+    finalize_quote,
+)
 
 _PROMPT = (Path(__file__).parent / "prompts" / "assistant.txt").read_text()
 
-async def _tool_executor(name: str, inp: dict) -> dict:
-    if name == "lookup_vin":
-        return await lookup_vin(inp["vin"])
-    if name == "extract_vin_from_image":
-        return await extract_vin_from_image(inp["image_url"])
-    return {"error": f"Unknown tool: {name}"}
+_TOOL_SCHEMAS = VIN_TOOL_SCHEMAS + QUOTE_TOOL_SCHEMAS
 
 
 async def stream_assistant(
     history: list[dict],
     user_content: list[dict],
+    db: AsyncSession,
 ) -> AsyncGenerator[dict, None]:
+
+    async def _tool_executor(name: str, inp: dict) -> dict:
+        if name == "lookup_vin":
+            return await lookup_vin(inp["vin"])
+        if name == "extract_vin_from_image":
+            return await extract_vin_from_image(inp["image_url"])
+        if name == "lookup_part_price":
+            return await lookup_part_price(inp["part_name"])
+        if name == "estimate_labor":
+            return await estimate_labor(inp["task_name"], inp["hours"], db)
+        if name == "create_quote":
+            return await create_quote(inp.get("session_id"), db)
+        if name == "create_quote_item":
+            return await create_quote_item(
+                inp["quote_id"], inp["item_type"], inp["description"],
+                inp["qty"], inp["unit_price"], db,
+            )
+        if name == "list_quote_items":
+            return await list_quote_items(inp["quote_id"], db)
+        if name == "finalize_quote":
+            return await finalize_quote(inp["quote_id"], db)
+        return {"error": f"Unknown tool: {name}"}
+
     async for event in stream_response(
         system_prompt=_PROMPT,
-        tool_schemas=VIN_TOOL_SCHEMAS,
+        tool_schemas=_TOOL_SCHEMAS,
         tool_executor=_tool_executor,
         history=history,
         user_content=user_content,

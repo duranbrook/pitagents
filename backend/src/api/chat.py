@@ -10,14 +10,12 @@ from src.db.base import get_db, AsyncSessionLocal
 from src.models.chat_message import ChatMessage
 from src.agents.assistant import stream_assistant
 from src.agents.tom import stream_tom
-from src.agents.quote_agent import stream_quote
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 AGENT_STREAMS = {
     "assistant": stream_assistant,
     "tom": stream_tom,
-    "quote": stream_quote,
 }
 
 
@@ -124,11 +122,7 @@ async def send_message(
         user_content_snapshot = user_content  # captured from outer scope
 
         stream_fn = AGENT_STREAMS[agent_id]
-        stream_kwargs: dict = dict(history=history, user_content=user_content_snapshot)
-        if agent_id == "tom":
-            stream_kwargs["db"] = db
-        elif agent_id == "quote":
-            stream_kwargs["db"] = db
+        stream_kwargs: dict = dict(history=history, user_content=user_content_snapshot, db=db)
 
         try:
             async for event in stream_fn(**stream_kwargs):
