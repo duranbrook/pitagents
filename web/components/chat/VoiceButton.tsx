@@ -13,8 +13,10 @@ export function VoiceButton({ mode, onTranscript, disabled }: Props) {
   const [recording, setRecording] = useState(false)
   const [loading, setLoading] = useState(false)
   const [permError, setPermError] = useState(false)
+  const [hint, setHint] = useState<string | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
+  const startTimeRef = useRef<number>(0)
 
   async function startRecording() {
     setPermError(false)
@@ -35,17 +37,33 @@ export function VoiceButton({ mode, onTranscript, disabled }: Props) {
     recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
     recorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop())
+      const duration = Date.now() - startTimeRef.current
+      if (duration < 400) {
+        setHint('Hold longer while speaking')
+        setTimeout(() => setHint(null), 2500)
+        return
+      }
       const actualType = recorder.mimeType || mimeType || 'audio/webm'
       const blob = new Blob(chunksRef.current, { type: actualType })
-      if (blob.size < 100) return  // too short — discard silently
+      if (blob.size < 100) {
+        setHint('No audio captured')
+        setTimeout(() => setHint(null), 2500)
+        return
+      }
       setLoading(true)
       try {
         const transcript = await transcribeAudio(blob)
-        if (transcript) onTranscript(transcript)
+        if (transcript) {
+          onTranscript(transcript)
+        } else {
+          setHint('No speech detected')
+          setTimeout(() => setHint(null), 2500)
+        }
       } finally {
         setLoading(false)
       }
     }
+    startTimeRef.current = Date.now()
     recorder.start()
     recorderRef.current = recorder
     setRecording(true)
@@ -111,9 +129,9 @@ export function VoiceButton({ mode, onTranscript, disabled }: Props) {
           </svg>
         )}
       </button>
-      {permError && (
-        <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 text-red-400 text-xs px-2 py-1 rounded whitespace-nowrap">
-          Mic access denied
+      {(permError || hint) && (
+        <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 text-xs px-2 py-1 rounded whitespace-nowrap" style={{ color: permError ? '#f87171' : '#facc15' }}>
+          {permError ? 'Mic access denied' : hint}
         </div>
       )}
     </div>
