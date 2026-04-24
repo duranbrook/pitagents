@@ -32,6 +32,7 @@ class Settings(BaseSettings):
 
     # SendGrid
     SENDGRID_API_KEY: SecretStr = SecretStr("")
+    SENDGRID_FROM_EMAIL: str = ""
 
     # Auth — JWT_SECRET is required, no default
     JWT_SECRET: SecretStr  # required — must be set via env
