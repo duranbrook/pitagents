@@ -66,6 +66,23 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [history, streaming, optimisticUserMsg])
 
+  // Restore quoteId from history so the sidebar persists across reloads
+  useEffect(() => {
+    if (agentId !== 'assistant' || quoteId) return
+    for (let i = history.length - 1; i >= 0; i--) {
+      const msg = history[i]
+      if (msg.tool_calls) {
+        const hit = msg.tool_calls.find(
+          tc => tc.name === 'create_quote' && typeof tc.output?.quote_id === 'string'
+        )
+        if (hit) {
+          setQuoteId(hit.output.quote_id as string)
+          break
+        }
+      }
+    }
+  }, [history, agentId, quoteId])
+
   async function handleSend(overrideText?: string) {
     const text = (overrideText ?? input).trim()
     if (!text || sending) return
