@@ -7,13 +7,15 @@ import { getChatHistory, streamChatMessage, ChatHistoryItem, ToolCallRecord } fr
 import { MessageBubble } from './MessageBubble'
 import { VoiceButton } from './VoiceButton'
 import { ImageAttach } from './ImageAttach'
+import { QuoteSummary } from './QuoteSummary'
 
 interface StreamingMessage {
   text: string
   toolCalls: ToolCallRecord[]
 }
 
-const AGENT_NAMES: Record<string, string> = { assistant: 'Assistant', tom: 'Tom' }
+const AGENT_NAMES: Record<string, string> = { assistant: 'Assistant', tom: 'Tom', quote: 'Quote Agent' }
+const AGENT_HEADER_COLORS: Record<string, string> = { assistant: 'bg-indigo-600', tom: 'bg-emerald-700', quote: 'bg-amber-700' }
 
 interface Props {
   agentId: string
@@ -31,6 +33,9 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
   const [sendError, setSendError] = useState('')
   // Optimistic user message — shown immediately on send, cleared after history refreshes
   const [optimisticUserMsg, setOptimisticUserMsg] = useState<string | null>(null)
+
+  // Track quote_id from tool results when agentId === 'quote'
+  const [quoteId, setQuoteId] = useState<string | null>(null)
 
   const [voiceMode] = useState<'hold' | 'toggle'>(() => {
     if (typeof window === 'undefined') return 'hold'
@@ -66,6 +71,10 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
           setStreaming(prev => prev
             ? { ...prev, toolCalls: [...prev.toolCalls, { name: te.tool, input: te.input, output: te.output }] }
             : null)
+          // Extract quote_id from tool results for the quote agent
+          if (agentId === 'quote' && te.output && typeof te.output.quote_id === 'string') {
+            setQuoteId(te.output.quote_id)
+          }
         } else if (event.type === 'done') {
           onNewMessage(accumulated.slice(0, 60))
         } else if (event.type === 'error') {
@@ -98,11 +107,14 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
     }
   }
 
+  const headerColor = AGENT_HEADER_COLORS[agentId] ?? 'bg-indigo-600'
+
   return (
-    <div className="flex flex-col h-full bg-gray-950">
+    <div className="flex h-full">
+    <div className="flex flex-col flex-1 min-w-0 bg-gray-950">
       {/* Header */}
       <div className="border-b border-gray-800 px-5 py-3 flex items-center gap-3">
-        <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-semibold">
+        <div className={`w-7 h-7 rounded-full ${headerColor} flex items-center justify-center text-white text-xs font-semibold`}>
           {AGENT_NAMES[agentId]?.[0] ?? '?'}
         </div>
         <span className="font-medium text-white text-sm">{AGENT_NAMES[agentId] ?? agentId}</span>
@@ -179,6 +191,9 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
           </svg>
         </button>
       </div>
+    </div>
+    {/* Quote sidebar — only shown for the quote agent */}
+    {agentId === 'quote' && <QuoteSummary quoteId={quoteId} />}
     </div>
   )
 }

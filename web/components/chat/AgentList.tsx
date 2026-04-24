@@ -12,6 +12,7 @@ interface Agent {
 const AGENTS: Agent[] = [
   { id: 'assistant', name: 'Assistant', role: 'General assistant', color: '#4f46e5', initials: 'A' },
   { id: 'tom', name: 'Tom', role: 'Technician AI', color: '#059669', initials: 'T' },
+  { id: 'quote', name: 'Quote Agent', role: 'Build repair estimates', color: '#b45309', initials: '$' },
 ]
 
 interface Props {
