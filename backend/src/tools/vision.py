@@ -7,10 +7,18 @@ from src.config import settings
 _client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY.get_secret_value())
 
 
+def _image_source(url: str) -> dict:
+    if url.startswith("data:"):
+        header, _, data = url.partition(",")
+        media_type = header.split(":")[1].split(";")[0]
+        return {"type": "base64", "media_type": media_type, "data": data}
+    return {"type": "url", "url": url}
+
+
 def _image_content(urls: list[str], prompt: str) -> list[dict]:
     content = []
     for url in urls[:3]:  # max 3 frames per call
-        content.append({"type": "image", "source": {"type": "url", "url": url}})
+        content.append({"type": "image", "source": _image_source(url)})
     content.append({"type": "text", "text": prompt})
     return content
 

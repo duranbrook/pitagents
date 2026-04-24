@@ -8,7 +8,7 @@ WORKDIR /app
 COPY pyproject.toml .
 # hatchling needs the src package to exist for editable install metadata
 COPY src/ src/
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e ".[dev]"
 
 # Copy the rest of the project
 COPY . .

@@ -5,6 +5,8 @@ from unittest.mock import patch
 # Set required env vars before any src module is imported during collection
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test_autoshop")
 os.environ.setdefault("JWT_SECRET", "test-secret-key-for-testing-only")
+os.environ.setdefault("DEEPGRAM_API_KEY", "test-deepgram-key")
+os.environ.setdefault("ANTHROPIC_API_KEY", "test-anthropic-key")
 
 from src.config import Settings
 
@@ -25,3 +27,17 @@ def mock_settings(monkeypatch):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "test-token")
     monkeypatch.setenv("TWILIO_FROM_PHONE", "+15555555555")
     monkeypatch.setenv("SENDGRID_API_KEY", "test-sg-key")
+
+
+@pytest.fixture
+def auth_headers():
+    import jwt
+    from src.config import settings
+    from datetime import datetime, timedelta, timezone
+    token = jwt.encode(
+        {"sub": "00000000-0000-0000-0000-000000000001", "role": "owner", "email": "owner@shop.com",
+         "exp": datetime.now(timezone.utc) + timedelta(hours=1)},
+        settings.JWT_SECRET.get_secret_value(),
+        algorithm=settings.JWT_ALGORITHM,
+    )
+    return {"Authorization": f"Bearer {token}"}
