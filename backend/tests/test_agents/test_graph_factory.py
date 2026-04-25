@@ -2,6 +2,19 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
+def test_agent_state_has_intent_and_assembled_prompt():
+    from src.agents.state import AgentState
+    state: AgentState = {
+        "messages": [],
+        "tool_calls_log": [],
+        "stop_reason": "",
+        "intent": "QUOTE_BUILD",
+        "assembled_prompt": "You are helpful.",
+    }
+    assert state["intent"] == "QUOTE_BUILD"
+    assert state["assembled_prompt"] == "You are helpful."
+
+
 def test_agent_state_importable():
     from src.agents.state import AgentState
     state: AgentState = {
