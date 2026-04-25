@@ -10,7 +10,15 @@ class Report(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id = Column(UUID(as_uuid=True), ForeignKey("inspection_sessions.id"), nullable=False)
+    vehicle_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("vehicles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     summary = Column(String, nullable=True)
+    title = Column(String(255), nullable=True)
+    status = Column(String(10), nullable=False, default="draft", server_default="draft")
     findings = Column(JSON, default=list)
     estimate_total = Column(Numeric(10, 2), default=0)
     share_token = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, nullable=False, index=True)

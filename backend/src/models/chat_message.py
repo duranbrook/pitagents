@@ -16,4 +16,9 @@ class ChatMessage(Base):
     # Filled only on assistant messages: [{"name":"lookup_vin","input":{...},"output":{...}}]
     tool_calls = Column(JSONB, nullable=True)
     rating = Column(Integer, nullable=True)
+    vehicle_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("vehicles.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -7,8 +7,9 @@ from src.models.chat_message import ChatMessage
 from src.models.quote import Quote
 from src.models.customer import Customer
 from src.models.vehicle import Vehicle
+from src.models.customer_message import CustomerMessage
 
 __all__ = [
-    "Shop", "User", "InspectionSession", "Report",
-    "MediaFile", "ChatMessage", "Quote", "Customer", "Vehicle",
+    "Shop", "User", "InspectionSession", "Report", "MediaFile",
+    "ChatMessage", "Quote", "Customer", "Vehicle", "CustomerMessage",
 ]
