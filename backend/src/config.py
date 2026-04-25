@@ -49,7 +49,7 @@ class Settings(BaseSettings):
 
     # Qdrant vector store
     QDRANT_URL: str = "http://localhost:6333"
-    QDRANT_API_KEY: str = ""
+    QDRANT_API_KEY: SecretStr = SecretStr("")
 
     # OpenAI (used for text-embedding-3-small)
     OPENAI_API_KEY: SecretStr = SecretStr("")
