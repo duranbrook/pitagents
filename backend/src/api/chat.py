@@ -131,14 +131,17 @@ async def send_message(
 
         try:
             async for event in graph.astream(initial_state, config, stream_mode="custom"):
+                payload = {k: v for k, v in event.items() if k != "_messages"}
+                yield f"data: {json.dumps(payload)}\n\n"
                 if event.get("type") == "done":
                     tool_calls = event.get("tool_calls", [])
                     final_messages = event.get("_messages", [])
                     if final_messages:
-                        async with AsyncSessionLocal() as save_db:
-                            await _save_messages(user_id, agent_id, user_content, final_messages, tool_calls, save_db)
-                payload = {k: v for k, v in event.items() if k != "_messages"}
-                yield f"data: {json.dumps(payload)}\n\n"
+                        try:
+                            async with AsyncSessionLocal() as save_db:
+                                await _save_messages(user_id, agent_id, user_content, final_messages, tool_calls, save_db)
+                        except Exception:
+                            logger.exception("Failed to persist chat messages [agent=%s user=%s]", agent_id, user_id)
         except Exception as exc:
             import anthropic as _anthropic
             if isinstance(exc, _anthropic.APIStatusError) and exc.status_code == 529:
