@@ -38,8 +38,8 @@ fun LoginScreen(
     authApi: AuthApi,
     onLoginSuccess: () -> Unit,
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("owner@shop.com") }
+    var password by remember { mutableStateOf("secret") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
