@@ -176,3 +176,72 @@ async def send_message(
                 yield f"data: {json.dumps({'type': 'error', 'code': 'server_error', 'message': 'Something went wrong. Please try again.'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+class SyncMessageResponse(BaseModel):
+    text: str
+
+
+@router.post("/{agent_id}/message/sync", response_model=SyncMessageResponse)
+async def send_message_sync(
+    agent_id: str,
+    body: MessageRequest,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SyncMessageResponse:
+    if agent_id not in AGENT_GRAPHS:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
+
+    blocked = _check_guardrails(body.message)
+    if blocked:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Message blocked by content policy.",
+        )
+
+    user_id = uuid.UUID(current_user["sub"])
+    history = await _load_history(user_id, agent_id, db)
+    user_content = _build_user_content(body.message, body.image_url)
+
+    initial_state = {
+        "messages": history + [{"role": "user", "content": user_content}],
+        "tool_calls_log": [],
+        "stop_reason": "",
+        "intent": "",
+        "assembled_prompt": "",
+    }
+    config = {"configurable": {"db": db}}
+
+    graph = AGENT_GRAPHS[agent_id]
+    tool_calls: list[dict] = []
+    final_messages: list[dict] = []
+
+    try:
+        async for event in graph.astream(initial_state, config, stream_mode="custom"):
+            if event.get("type") == "done":
+                tool_calls = event.get("tool_calls", [])
+                final_messages = event.get("_messages", [])
+    except Exception as exc:
+        import anthropic as _anthropic
+        if isinstance(exc, _anthropic.APIStatusError) and exc.status_code == 529:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI is overloaded. Please try again.")
+        logger.exception("Agent sync error [agent=%s user=%s]", agent_id, user_id)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong.")
+
+    if final_messages:
+        try:
+            await _save_messages(user_id, agent_id, user_content, final_messages, tool_calls, db)
+        except Exception:
+            logger.exception("Failed to persist chat messages [agent=%s user=%s]", agent_id, user_id)
+
+    response_text = ""
+    if final_messages:
+        last_content = final_messages[-1].get("content", [])
+        if isinstance(last_content, list):
+            response_text = " ".join(
+                block.get("text", "") for block in last_content if block.get("type") == "text"
+            ).strip()
+        elif isinstance(last_content, str):
+            response_text = last_content
+
+    return SyncMessageResponse(text=response_text)
