@@ -50,6 +50,7 @@ export interface ChatHistoryItem {
   content: ContentBlock[]
   tool_calls: ToolCallRecord[] | null
   created_at: string
+  rating?: number | null  // +1, -1, or null
 }
 
 export type SSEEvent =
@@ -118,4 +119,12 @@ export async function uploadImage(file: File): Promise<string> {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
   return res.data.image_url as string
+}
+
+export async function rateFeedback(
+  agentId: string,
+  messageId: string,
+  rating: 1 | -1,
+): Promise<void> {
+  await api.post(`/chat/${agentId}/feedback`, { message_id: messageId, rating })
 }

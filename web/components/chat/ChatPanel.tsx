@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { getChatHistory, streamChatMessage, ChatHistoryItem, ToolCallRecord } from '@/lib/api'
+import { getChatHistory, streamChatMessage, rateFeedback, ChatHistoryItem, ToolCallRecord } from '@/lib/api'
 import { MessageBubble } from './MessageBubble'
 import { VoiceButton } from './VoiceButton'
 import { ImageAttach } from './ImageAttach'
@@ -49,6 +49,8 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
   const [sendError, setSendError] = useState('')
   const [optimisticUserMsg, setOptimisticUserMsg] = useState<string | null>(null)
 
+  const [ratings, setRatings] = useState<Record<string, 1 | -1>>({})
+
   // Track quote_id from tool results (assistant can now create quotes)
   const [quoteId, setQuoteId] = useState<string | null>(null)
 
@@ -82,6 +84,15 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
       }
     }
   }, [history, agentId, quoteId])
+
+  async function handleRate(messageId: string, rating: 1 | -1) {
+    setRatings(prev => ({ ...prev, [messageId]: rating }))
+    try {
+      await rateFeedback(agentId, messageId, rating)
+    } catch {
+      // silent — don't block the user on a failed rating
+    }
+  }
 
   async function handleSend(overrideText?: string) {
     const text = (overrideText ?? input).trim()
@@ -174,12 +185,39 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
           ) : (
             <>
               {history.map(msg => (
-                <MessageBubble
-                  key={msg.id}
-                  role={msg.role}
-                  content={msg.content}
-                  toolCalls={msg.tool_calls}
-                />
+                <div key={msg.id}>
+                  <MessageBubble
+                    role={msg.role}
+                    content={msg.content}
+                    toolCalls={msg.tool_calls}
+                  />
+                  {msg.role === 'assistant' && (
+                    <div className="flex gap-2 pl-2 pb-1 mt-0.5">
+                      <button
+                        onClick={() => handleRate(msg.id, 1)}
+                        title="Good response"
+                        className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
+                          ratings[msg.id] === 1
+                            ? 'text-green-400'
+                            : 'text-gray-600 hover:text-green-400'
+                        }`}
+                      >
+                        👍
+                      </button>
+                      <button
+                        onClick={() => handleRate(msg.id, -1)}
+                        title="Bad response"
+                        className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
+                          ratings[msg.id] === -1
+                            ? 'text-red-400'
+                            : 'text-gray-600 hover:text-red-400'
+                        }`}
+                      >
+                        👎
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
               {optimisticUserMsg && (
                 <MessageBubble
