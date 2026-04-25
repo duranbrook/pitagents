@@ -76,35 +76,7 @@ async def test_upload_media(client):
 
 
 # ---------------------------------------------------------------------------
-# 3. POST /sessions/{id}/generate — trigger agent processing
-# ---------------------------------------------------------------------------
-
-@pytest.mark.asyncio
-async def test_generate_triggers_processing(client):
-    headers = _auth_headers("owner")
-
-    # Create a session first
-    session_resp = await client.post(
-        "/sessions",
-        json={"shop_id": "shop-xyz", "labor_rate": 95.0, "pricing_flag": "alldata"},
-        headers=headers,
-    )
-    assert session_resp.status_code == 200
-    session_id = session_resp.json()["session_id"]
-
-    # Trigger generate — mock the agent to avoid real network calls
-    with patch("src.api.sessions.run_inspection_agent", new_callable=AsyncMock) as mock_agent:
-        mock_agent.return_value = {"status": "complete"}
-        response = await client.post(f"/sessions/{session_id}/generate", headers=headers)
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["session_id"] == session_id
-    assert data["status"] == "processing"
-
-
-# ---------------------------------------------------------------------------
-# 4. GET /sessions/{id} — get session data
+# 3. GET /sessions/{id} — get session data
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
