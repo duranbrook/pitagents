@@ -11,6 +11,7 @@ from src.api import chat
 from src.api import quotes
 from src.api import feedback
 from src.api import customers
+from src.api import vehicles
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -33,3 +34,4 @@ app.include_router(chat.router)
 app.include_router(quotes.router)
 app.include_router(feedback.router)
 app.include_router(customers.router)
+app.include_router(vehicles.router)
