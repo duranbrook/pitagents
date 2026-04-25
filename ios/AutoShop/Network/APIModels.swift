@@ -118,30 +118,23 @@ struct ContentBlock: Decodable {
 }
 
 struct ChatHistoryItem: Decodable, Identifiable {
+    let id: String
     let role: String
     let content: [ContentBlock]
     let createdAt: String
-    var id: String { createdAt + role }
     var displayText: String {
         content.filter { $0.type == "text" }.compactMap(\.text).joined(separator: " ")
     }
     enum CodingKeys: String, CodingKey {
-        case role, content
+        case id, role, content
         case createdAt = "created_at"
     }
 }
 
 struct ChatRequest: Encodable {
     let message: String
-    let agentId: String?
-    let vehicleId: String?
-    enum CodingKeys: String, CodingKey {
-        case message
-        case agentId = "agent_id"
-        case vehicleId = "vehicle_id"
-    }
 }
 
 struct ChatResponse: Decodable {
-    let response: String
+    let text: String
 }

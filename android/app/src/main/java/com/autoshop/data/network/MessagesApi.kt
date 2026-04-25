@@ -1,9 +1,8 @@
 package com.autoshop.data.network
 
-import com.autoshop.data.model.ChatHistoryResponse
-import com.autoshop.data.model.ChatMessage
+import com.autoshop.data.model.ChatHistoryItem
 import com.autoshop.data.model.ChatMessageRequest
-import com.autoshop.data.model.ChatMessageResponse
+import com.autoshop.data.model.ChatSyncResponse
 import com.autoshop.data.model.CreateMessageRequest
 import com.autoshop.data.model.Message
 import com.autoshop.data.model.Report
@@ -27,9 +26,12 @@ interface MessagesApi {
     @GET("vehicles/{id}/reports")
     suspend fun listReports(@Path("id") vehicleId: String): Response<List<Report>>
 
-    @GET("chat/history")
-    suspend fun getChatHistory(): Response<ChatHistoryResponse>
+    @GET("chat/{agentId}/history")
+    suspend fun getChatHistory(@Path("agentId") agentId: String): Response<List<ChatHistoryItem>>
 
-    @POST("chat/message")
-    suspend fun sendChatMessage(@Body request: ChatMessageRequest): Response<ChatMessageResponse>
+    @POST("chat/{agentId}/message/sync")
+    suspend fun sendChatMessage(
+        @Path("agentId") agentId: String,
+        @Body request: ChatMessageRequest,
+    ): Response<ChatSyncResponse>
 }

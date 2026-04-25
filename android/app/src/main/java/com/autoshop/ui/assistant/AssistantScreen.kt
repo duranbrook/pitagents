@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.autoshop.data.model.ChatMessage
 import com.autoshop.data.model.ChatMessageRequest
+import com.autoshop.data.model.ChatHistoryItem
 import com.autoshop.data.network.MessagesApi
 import kotlinx.coroutines.launch
 
@@ -67,9 +68,11 @@ fun AssistantScreen(messagesApi: MessagesApi) {
             isLoading = true
             errorMessage = null
             try {
-                val response = messagesApi.getChatHistory()
+                val response = messagesApi.getChatHistory("assistant")
                 if (response.isSuccessful) {
-                    messages = response.body()?.messages ?: emptyList()
+                    messages = response.body()?.map { item ->
+                        ChatMessage(role = item.role, content = item.displayText, createdAt = item.createdAt)
+                    } ?: emptyList()
                     scrollToBottom()
                 } else {
                     errorMessage = "Failed to load history (HTTP ${response.code()})."
@@ -137,14 +140,14 @@ fun AssistantScreen(messagesApi: MessagesApi) {
                             messages = messages + ChatMessage(role = "user", content = content, createdAt = null)
                             scrollToBottom()
                             try {
-                                val response = messagesApi.sendChatMessage(ChatMessageRequest(content = content))
+                                val response = messagesApi.sendChatMessage("assistant", ChatMessageRequest(message = content))
                                 if (response.isSuccessful) {
                                     val reply = response.body()
                                     if (reply != null) {
                                         messages = messages + ChatMessage(
-                                            role = reply.role,
-                                            content = reply.content,
-                                            createdAt = reply.createdAt,
+                                            role = "assistant",
+                                            content = reply.text,
+                                            createdAt = null,
                                         )
                                         scrollToBottom()
                                     }

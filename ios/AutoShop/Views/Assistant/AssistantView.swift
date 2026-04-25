@@ -18,7 +18,7 @@ final class AssistantViewModel: ObservableObject {
         isSending = true
         defer { isSending = false }
         do {
-            let req = ChatRequest(message: text, agentId: "assistant", vehicleId: nil)
+            let req = ChatRequest(message: text)
             _ = try await APIClient.shared.sendChatMessage(req)
             await load()
         } catch { errorMessage = error.localizedDescription }

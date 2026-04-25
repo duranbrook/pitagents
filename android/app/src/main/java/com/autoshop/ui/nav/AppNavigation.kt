@@ -11,6 +11,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -67,6 +69,15 @@ fun AppNavigation(
     val navController = rememberNavController()
     val startDestination = if (tokenStore.getToken() != null) Screen.CustomerList.route
                            else Screen.Login.route
+
+    val isLoggedIn by tokenStore.isLoggedIn.collectAsState()
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn && navController.currentDestination?.route != Screen.Login.route) {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
