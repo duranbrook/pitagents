@@ -1,0 +1,30 @@
+name: AutoShop
+options:
+  bundleIdPrefix: com.autoshop
+  deploymentTarget: "17.0"
+  xcodeVersion: "15.0"
+  createIntermediateGroups: true
+targets:
+  AutoShop:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: AutoShop
+    info:
+      path: AutoShop/Info.plist
+      properties:
+        CFBundleDisplayName: AutoShop
+        UILaunchScreen: {}
+        NSMicrophoneUsageDescription: "Required for inspection audio recording"
+        NSCameraUsageDescription: "Required for inspection video capture"
+        NSBluetoothAlwaysUsageDescription: "Required to connect to Bluetooth microphone"
+        NSLocalNetworkUsageDescription: "Required to connect to local development server"
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.autoshop.app
+        SWIFT_VERSION: "5.9"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        ENABLE_PREVIEWS: YES
