@@ -76,18 +76,19 @@ class AudioRecorder(private val context: Context) {
             CHANNEL_CONFIG,
             AUDIO_FORMAT,
             bufferSize
-        ).also { record ->
+        ).let { record ->
             if (record.state != AudioRecord.STATE_INITIALIZED) {
                 Log.w(TAG, "AudioRecord failed to initialize; retrying with MIC source.")
                 record.release()
-                // Retry with plain MIC source as a safety fallback
-                return@also AudioRecord(
+                AudioRecord(
                     MediaRecorder.AudioSource.MIC,
                     SAMPLE_RATE,
                     CHANNEL_CONFIG,
                     AUDIO_FORMAT,
                     bufferSize
                 )
+            } else {
+                record
             }
         }
 

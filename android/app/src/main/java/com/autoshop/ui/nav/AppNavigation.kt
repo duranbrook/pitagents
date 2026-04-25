@@ -3,8 +3,8 @@ package com.autoshop.ui.nav
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -54,8 +54,8 @@ private data class TabItem(
 )
 
 private val bottomTabs = listOf(
-    TabItem(Screen.CustomerList, "Customers", Icons.Filled.People),
-    TabItem(Screen.Assistant,    "Assistant", Icons.Filled.Chat),
+    TabItem(Screen.CustomerList, "Customers", Icons.Filled.Person),
+    TabItem(Screen.Assistant,    "Assistant", Icons.Filled.Email),
     TabItem(Screen.Profile,      "Profile",   Icons.Filled.AccountCircle),
 )
 

@@ -13,7 +13,7 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.11" }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

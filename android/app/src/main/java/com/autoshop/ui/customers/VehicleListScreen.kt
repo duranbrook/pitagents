@@ -14,7 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -133,7 +133,7 @@ fun VehicleListScreen(
                                 )
                             },
                             leadingContent = {
-                                Icon(Icons.Filled.DirectionsCar, contentDescription = null)
+                                Icon(Icons.Filled.Build, contentDescription = null)
                             },
                             trailingContent = {
                                 IconButton(onClick = {
