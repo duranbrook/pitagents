@@ -41,7 +41,7 @@ def client(mock_settings):
 
 
 @pytest.fixture
-def auth_headers():
+def auth_headers(mock_settings):
     import jwt
     from src.config import settings
     from datetime import datetime, timedelta, timezone

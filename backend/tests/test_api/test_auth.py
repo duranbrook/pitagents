@@ -52,6 +52,6 @@ async def test_login_token_contains_shop_id(client):
     payload = pyjwt.decode(
         resp.json()["access_token"],
         settings.JWT_SECRET.get_secret_value(),
-        algorithms=["HS256"],
+        algorithms=[settings.JWT_ALGORITHM],
     )
     assert payload.get("shop_id") == "00000000-0000-0000-0000-000000000099"
