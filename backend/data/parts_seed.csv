@@ -1,0 +1,179 @@
+description,part_number,brand,category,unit_price,make
+Engine Oil Filter,PH3614,Wix,Oil Filter,8.99,
+Engine Oil Filter,PH3593,Wix,Oil Filter,7.49,CHEVROLET
+Engine Oil Filter,PH3675,Wix,Oil Filter,8.49,FORD
+Engine Oil Filter,PH7317,Wix,Oil Filter,9.99,BMW
+Engine Oil Filter,PH3593A,Fram,Oil Filter,6.99,GMC
+Engine Oil Filter,PH2825,Fram,Oil Filter,7.49,TOYOTA
+Engine Oil Filter,PH3600,Fram,Oil Filter,7.99,HONDA
+Engine Oil Filter,PH4967,Mobil1,Oil Filter,11.99,
+Engine Oil Filter Extended Performance,M1-110,Mobil1,Oil Filter,12.49,FORD
+Engine Oil Filter Extended Performance,M1-108,Mobil1,Oil Filter,11.99,TOYOTA
+Air Filter Panel,CA10755,Wix,Air Filter,16.99,CHEVROLET
+Air Filter Panel,CA9546,Wix,Air Filter,14.99,FORD
+Air Filter Panel,CA11999,Wix,Air Filter,18.99,HONDA
+Air Filter Panel,CA10013,Wix,Air Filter,15.49,TOYOTA
+Air Filter Panel,CA10166,Wix,Air Filter,17.99,BMW
+Air Filter Panel,CA11291,Fram,Air Filter,13.99,NISSAN
+Air Filter Panel,CA9600,Fram,Air Filter,12.99,JEEP
+Air Filter Panel,CA11058,Bosch,Air Filter,19.99,VOLKSWAGEN
+Cabin Air Filter,CF10285,Fram,Cabin Air Filter,19.99,
+Cabin Air Filter,CF11663,Wix,Cabin Air Filter,17.49,FORD
+Cabin Air Filter,CF10546,Bosch,Cabin Air Filter,22.99,BMW
+Cabin Air Filter,CF10134,Wix,Cabin Air Filter,16.99,TOYOTA
+Cabin Air Filter,CF11066,Fram,Cabin Air Filter,18.99,HONDA
+Cabin Air Filter,CF10285A,ACDelco,Cabin Air Filter,21.49,CHEVROLET
+Cabin Air Filter HEPA,CF10285H,Bosch,Cabin Air Filter,28.99,
+Front Brake Pad Set Semi-Metallic,17D1367M,ACDelco,Brake Pads,42.99,CHEVROLET
+Front Brake Pad Set Ceramic,17D1367CH,ACDelco,Brake Pads,54.99,CHEVROLET
+Front Brake Pad Set,D906,Raybestos,Brake Pads,38.99,FORD
+Front Brake Pad Set Ceramic,D906C,Raybestos,Brake Pads,49.99,FORD
+Front Brake Pad Set,D823,Raybestos,Brake Pads,36.99,TOYOTA
+Front Brake Pad Set Ceramic,D997C,Wagner,Brake Pads,52.99,HONDA
+Rear Brake Pad Set,D1225,Raybestos,Brake Pads,34.99,
+Rear Brake Pad Set Ceramic,D1225C,Raybestos,Brake Pads,44.99,
+Rear Brake Pad Set,D1428,Bosch,Brake Pads,39.99,BMW
+Rear Brake Pad Set QuietCast,BC906,Bosch,Brake Pads,47.99,FORD
+Front Brake Rotor Vented,980533,Raybestos,Brake Rotors,38.99,FORD
+Front Brake Rotor Vented,980720,Raybestos,Brake Rotors,41.99,CHEVROLET
+Front Brake Rotor Drilled Slotted,981090R,PowerStop,Brake Rotors,64.99,TOYOTA
+Front Brake Rotor Vented,96699,ACDelco,Brake Rotors,44.99,GMC
+Front Brake Rotor,980100,Brembo,Brake Rotors,69.99,BMW
+Rear Brake Rotor Solid,982078,Raybestos,Brake Rotors,29.99,
+Rear Brake Rotor Solid,980945,Raybestos,Brake Rotors,32.99,HONDA
+Rear Brake Rotor Vented,982210,Brembo,Brake Rotors,54.99,BMW
+Brake Caliper Front Left,18B4742,ACDelco,Brake Calipers,69.99,CHEVROLET
+Brake Caliper Front Right,18B4743,ACDelco,Brake Calipers,69.99,CHEVROLET
+Brake Caliper Rear Left,19B2779,Raybestos,Brake Calipers,59.99,FORD
+Brake Caliper Rear Right,19B2780,Raybestos,Brake Calipers,59.99,FORD
+Iridium Spark Plug,SK20R11,NGK,Spark Plugs,9.99,TOYOTA
+Iridium Spark Plug,ZFR5FIX,NGK,Spark Plugs,10.99,HONDA
+Platinum Spark Plug,3402,Bosch,Spark Plugs,8.99,
+Double Platinum Spark Plug,4417,Bosch,Spark Plugs,12.99,FORD
+Iridium Spark Plug,SPLZFR6A13,Champion,Spark Plugs,11.49,HONDA
+Double Iridium Spark Plug,9508,ACDelco,Spark Plugs,13.99,CHEVROLET
+Ruthenium HX Spark Plug,SILZKBR8D8S,NGK,Spark Plugs,15.99,BMW
+Spark Plug Set 4-Pack,SP546,Motorcraft,Spark Plugs,34.99,FORD
+Serpentine Belt,K060845,Gates,Belts,18.99,
+Serpentine Belt,K080823,Gates,Belts,22.99,CHEVROLET
+Serpentine Belt,K060885,Dayco,Belts,17.49,FORD
+Serpentine Belt,K060810,Dayco,Belts,16.99,HONDA
+Timing Belt,T263,Gates,Belts,28.99,HONDA
+Timing Belt,T295,Gates,Belts,31.99,TOYOTA
+Timing Belt Kit,TCK285,Gates,Belts,89.99,HONDA
+Drive Belt Tensioner,38157,Gates,Belt Tensioner,49.99,FORD
+Drive Belt Tensioner,38419,Dayco,Belt Tensioner,44.99,CHEVROLET
+Idler Pulley,36203,Gates,Belt Tensioner,24.99,
+Fuel Filter In-Line,33001,Wix,Fuel Filter,12.99,
+Fuel Filter,33531,Wix,Fuel Filter,18.99,FORD
+Fuel Filter,33694,Wix,Fuel Filter,24.99,CHEVROLET
+Fuel Filter,G6582,Motorcraft,Fuel Filter,21.99,FORD
+Transmission Filter Kit,58696,Wix,Transmission Filter,19.99,CHEVROLET
+Transmission Filter Kit,58653,Wix,Transmission Filter,17.49,FORD
+Automatic Transmission Filter,TF-100,ACDelco,Transmission Filter,22.99,GMC
+PCV Valve,CV773C,Motorcraft,PCV Valve,6.99,FORD
+PCV Valve,CV840C,Standard,PCV Valve,7.49,CHEVROLET
+PCV Valve,V294,ACDelco,PCV Valve,8.99,GMC
+PCV Valve,12-467,Stant,PCV Valve,5.99,
+Thermostat 195 Degree,33473,Stant,Thermostat,14.99,
+Thermostat 195 Degree,33440,Motorcraft,Thermostat,16.99,FORD
+Thermostat Kit 195 Degree,TH385180,Gates,Thermostat,19.99,CHEVROLET
+Thermostat 195 Degree,33469,Stant,Thermostat,13.99,TOYOTA
+Thermostat 195 Degree,33426,Gates,Thermostat,12.99,HONDA
+Radiator Upper Hose,24620L,Gates,Cooling Hoses,14.99,
+Radiator Lower Hose,21823,Gates,Cooling Hoses,12.99,FORD
+Radiator Upper Hose,20462,Gates,Cooling Hoses,16.99,TOYOTA
+Coolant Reservoir Hose,HZ157,ACDelco,Cooling Hoses,9.99,CHEVROLET
+Radiator Cap 15 PSI,31502,Stant,Radiator Cap,7.99,
+Radiator Cap 16 PSI,ST3112,Motorcraft,Radiator Cap,8.49,FORD
+Water Pump,P2018N,ACDelco,Water Pump,54.99,CHEVROLET
+Water Pump,WP9083LX,Gates,Water Pump,64.99,TOYOTA
+Water Pump,W0133-1624548,Airtex,Water Pump,49.99,HONDA
+Water Pump with Gasket,WP9025HD,Gates,Water Pump,69.99,FORD
+Battery Group 35 500 CCA,PC1500MJT,Optima,Battery,189.99,
+Battery Group 65 750 CCA,78-7YR,ACDelco,Battery,129.99,CHEVROLET
+Battery Group 65 750 CCA,65-PC,Motorcraft,Battery,139.99,FORD
+Battery Group 35 640 CCA,35-PC,DieHard,Battery,119.99,TOYOTA
+Battery Group 51R 410 CCA,51R-PC,DieHard,Battery,109.99,HONDA
+Oxygen Sensor Upstream,250-24436,Walker,Oxygen Sensor,49.99,FORD
+Oxygen Sensor Downstream,250-24893,Walker,Oxygen Sensor,44.99,FORD
+Oxygen Sensor Upstream,234-4209,Denso,Oxygen Sensor,54.99,TOYOTA
+Oxygen Sensor Downstream,234-4210,Denso,Oxygen Sensor,49.99,TOYOTA
+Oxygen Sensor,SG1819,Bosch,Oxygen Sensor,52.99,CHEVROLET
+Mass Air Flow Sensor,245-1087,Standard,Mass Air Flow Sensor,79.99,FORD
+Mass Air Flow Sensor,22680-7S000,Denso,Mass Air Flow Sensor,89.99,NISSAN
+Mass Air Flow Sensor,25019850,ACDelco,Mass Air Flow Sensor,84.99,CHEVROLET
+Throttle Position Sensor,TH315,Standard,Throttle Position Sensor,34.99,
+Idle Air Control Valve,AC236,Standard,Idle Air Control Valve,44.99,FORD
+Crankshaft Position Sensor,PC374,Standard,Crankshaft Position Sensor,29.99,CHEVROLET
+Camshaft Position Sensor,PC605,Standard,Camshaft Position Sensor,32.99,FORD
+Ignition Coil,DR49T,ACDelco,Ignition Coil,29.99,CHEVROLET
+Ignition Coil Pack,DG508,Motorcraft,Ignition Coil,39.99,FORD
+Ignition Coil,IC545,Standard,Ignition Coil,34.99,TOYOTA
+Alternator Remanufactured 130A,AL8780X,Bosch,Alternator,149.99,FORD
+Alternator Remanufactured 105A,AL8612N,Bosch,Alternator,134.99,TOYOTA
+Alternator Remanufactured 120A,15300132,ACDelco,Alternator,139.99,CHEVROLET
+Starter Motor Remanufactured,6978N,ACDelco,Starter,124.99,CHEVROLET
+Starter Motor Remanufactured,17798,Remy,Starter,119.99,FORD
+Starter Motor Remanufactured,17562,Remy,Starter,114.99,TOYOTA
+Fuel Pump Module Assembly,P74681M,Airtex,Fuel Pump,129.99,FORD
+Fuel Pump Module Assembly,P76299M,Airtex,Fuel Pump,139.99,CHEVROLET
+Fuel Pump Module Assembly,P90063M,Airtex,Fuel Pump,124.99,TOYOTA
+Strut Assembly Front Left,71375,KYB,Struts,79.99,TOYOTA
+Strut Assembly Front Right,71376,KYB,Struts,79.99,TOYOTA
+Strut Assembly Front Left,234259,Monroe,Struts,84.99,FORD
+Strut Assembly Front Right,234260,Monroe,Struts,84.99,FORD
+Strut Assembly Complete Front,SR4151,Monroe,Struts,109.99,CHEVROLET
+Shock Absorber Rear,5574,Monroe,Shocks,44.99,
+Shock Absorber Rear,344374,Monroe,Shocks,49.99,FORD
+Shock Absorber Rear,235921,KYB,Shocks,54.99,CHEVROLET
+Sway Bar Link Front,K750015,Moog,Sway Bar,24.99,
+Sway Bar Link Front,K80038,Moog,Sway Bar,22.99,TOYOTA
+Sway Bar Link Rear,K80227,Moog,Sway Bar,26.99,FORD
+Tie Rod End Outer,ES3492L,Moog,Tie Rods,29.99,CHEVROLET
+Tie Rod End Outer,EV800235,TRW,Tie Rods,27.99,FORD
+Tie Rod End Inner,EV800398,TRW,Tie Rods,32.99,TOYOTA
+Ball Joint Lower Front,K8695T,Moog,Ball Joints,44.99,CHEVROLET
+Ball Joint Lower Front,MK8192T,Moog,Ball Joints,49.99,FORD
+Wheel Bearing Hub Assembly Front,515039,SKF,Wheel Bearings,89.99,FORD
+Wheel Bearing Hub Assembly Front,BR930393,Timken,Wheel Bearings,84.99,CHEVROLET
+Wheel Bearing Hub Assembly Rear,512334,Timken,Wheel Bearings,79.99,TOYOTA
+CV Axle Shaft Front Left,66-6133,GSP,CV Axle,89.99,HONDA
+CV Axle Shaft Front Right,66-6134,GSP,CV Axle,89.99,HONDA
+CV Axle Shaft Front Left,FD8059,Cardone,CV Axle,94.99,FORD
+CV Boot Kit Front,BK90-027,Beck Arnley,CV Boot,19.99,TOYOTA
+Power Steering Fluid 1 Qt,1040016,Prestone,Fluids,7.99,
+Power Steering Fluid with Stop Leak 12oz,AS262,Bar's Leaks,Fluids,9.99,
+Engine Coolant Antifreeze 1 Gallon,AF-3100,Prestone,Fluids,14.99,
+Engine Coolant 50/50 Pre-Mixed 1 Gallon,AF-2100,Prestone,Fluids,12.99,
+Transmission Fluid ATF+4 1 Qt,10009,Mopar,Fluids,8.49,CHRYSLER
+Transmission Fluid Mercon V 1 Qt,XT-5-QMC,Motorcraft,Fluids,7.99,FORD
+Brake Fluid DOT 3 1 Qt,DF512,Prestone,Fluids,5.99,
+Brake Fluid DOT 4 1 Qt,AS800B,Castrol,Fluids,7.49,
+Engine Oil SAE 5W-30 Full Synthetic 5 Qt,5122065020,Mobil1,Engine Oil,28.99,
+Engine Oil SAE 5W-20 Full Synthetic 5 Qt,104980,Valvoline,Engine Oil,26.99,
+Engine Oil SAE 0W-20 Full Synthetic 5 Qt,112979,Valvoline,Engine Oil,31.99,TOYOTA
+Engine Oil SAE 5W-30 High Mileage 5 Qt,3701,Pennzoil,Engine Oil,24.99,
+Engine Oil SAE 5W-40 Full Synthetic 1 Qt,550046352,Mobil1,Engine Oil,9.99,BMW
+Wiper Blade Beam 22 Inch,4422,Bosch,Wiper Blades,18.99,
+Wiper Blade Beam 24 Inch,4824,Bosch,Wiper Blades,21.99,
+Wiper Blade Traditional 21 Inch,2621,Trico,Wiper Blades,9.99,
+Wiper Blade Rear 14 Inch,14A,Rain-X,Wiper Blades,11.99,
+Headlight Bulb H11,H11-55W,Sylvania,Lighting,9.99,
+Headlight Bulb 9005,9005,Sylvania,Lighting,8.99,
+Headlight Bulb H7 Silverstar Ultra,H7SU,Sylvania,Lighting,19.99,BMW
+LED Headlight Bulb H11 Conversion,H11LED,Auxbeam,Lighting,34.99,
+Tail Light Bulb 3157,3157,Sylvania,Lighting,4.99,
+Brake Light Bulb 7443,7443,Sylvania,Lighting,4.49,
+Fuse Box Assortment,ATC-KIT,Bussmann,Fuses,12.99,
+Fuse ATC 15A 5-Pack,ATC-15,Bussmann,Fuses,3.99,
+Fuse ATC 20A 5-Pack,ATC-20,Bussmann,Fuses,3.99,
+Air Filter Housing Clamp,37793,Dayco,Engine Hardware,3.99,
+Valve Cover Gasket,VS50514,Fel-Pro,Gaskets & Seals,18.99,FORD
+Valve Cover Gasket,VS50520,Fel-Pro,Gaskets & Seals,16.99,TOYOTA
+Oil Pan Gasket,OS30755,Fel-Pro,Gaskets & Seals,12.99,CHEVROLET
+Head Gasket Set,HS26204PT,Fel-Pro,Gaskets & Seals,89.99,FORD
+Intake Manifold Gasket,MS93223,Fel-Pro,Gaskets & Seals,22.99,CHEVROLET
+Exhaust Manifold Gasket,MS96930,Fel-Pro,Gaskets & Seals,14.99,TOYOTA
+Crankshaft Seal Front,BS40640,Fel-Pro,Gaskets & Seals,7.99,
+Rear Main Seal,BS40639,Fel-Pro,Gaskets & Seals,9.99,FORD
