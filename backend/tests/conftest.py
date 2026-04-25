@@ -34,6 +34,13 @@ def mock_settings(monkeypatch):
 
 
 @pytest.fixture
+def client(mock_settings):
+    from fastapi.testclient import TestClient
+    from src.api.main import app
+    return TestClient(app)
+
+
+@pytest.fixture
 def auth_headers():
     import jwt
     from src.config import settings
