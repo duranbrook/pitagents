@@ -97,23 +97,32 @@ data class Report(
 // AI Chat
 // ---------------------------------------------------------------------------
 
-data class ChatMessageRequest(
-    val content: String,
-    @SerializedName("agent_id") val agentId: String = "assistant",
+data class ContentBlock(
+    val type: String,
+    val text: String? = null,
 )
 
+data class ChatMessageRequest(
+    val message: String,
+)
+
+// Used for optimistic UI and display
 data class ChatMessage(
     val role: String,
     val content: String,
     @SerializedName("created_at") val createdAt: String?,
 )
 
-data class ChatMessageResponse(
+data class ChatHistoryItem(
+    val id: String,
     val role: String,
-    val content: String,
+    val content: List<ContentBlock>,
     @SerializedName("created_at") val createdAt: String?,
-)
+) {
+    val displayText: String
+        get() = content.filter { it.type == "text" }.mapNotNull { it.text }.joinToString(" ")
+}
 
-data class ChatHistoryResponse(
-    val messages: List<ChatMessage>,
+data class ChatSyncResponse(
+    val text: String,
 )
