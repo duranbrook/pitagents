@@ -47,5 +47,12 @@ class Settings(BaseSettings):
     ALLDATA_API_KEY: str = ""
     ALLDATA_API_URL: Optional[str] = None
 
+    # Qdrant vector store
+    QDRANT_URL: str = "http://localhost:6333"
+    QDRANT_API_KEY: SecretStr = SecretStr("")
+
+    # OpenAI (used for text-embedding-3-small)
+    OPENAI_API_KEY: SecretStr = SecretStr("")
+
 
 settings = Settings()

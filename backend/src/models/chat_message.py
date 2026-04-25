@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, ForeignKey, DateTime, func
+from sqlalchemy import Column, String, ForeignKey, DateTime, Integer, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from src.db.base import Base
 
@@ -15,4 +15,5 @@ class ChatMessage(Base):
     content = Column(JSONB, nullable=False)
     # Filled only on assistant messages: [{"name":"lookup_vin","input":{...},"output":{...}}]
     tool_calls = Column(JSONB, nullable=True)
+    rating = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

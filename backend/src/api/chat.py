@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -9,16 +10,31 @@ from sqlalchemy import select
 from src.api.deps import get_current_user
 from src.db.base import get_db, AsyncSessionLocal
 from src.models.chat_message import ChatMessage
-from src.agents.assistant import stream_assistant
-from src.agents.tom import stream_tom
+from src.agents.assistant import assistant_graph
+from src.agents.tom import tom_graph
 
 logger = logging.getLogger(__name__)
 
+_GUARDRAIL_PATTERNS = [
+    re.compile(r"\b(medical|doctor|prescription)\b", re.IGNORECASE),
+    re.compile(r"\b(legal advice|lawsuit|sue)\b", re.IGNORECASE),
+    re.compile(r"\b(stock|crypto|invest)\b", re.IGNORECASE),
+    re.compile(r"ignore (previous|all) instructions", re.IGNORECASE),
+]
+
+
+def _check_guardrails(message: str) -> str | None:
+    """Returns the matched pattern string if blocked, None if the message is OK."""
+    for pattern in _GUARDRAIL_PATTERNS:
+        if pattern.search(message):
+            return pattern.pattern
+    return None
+
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-AGENT_STREAMS = {
-    "assistant": stream_assistant,
-    "tom": stream_tom,
+AGENT_GRAPHS: dict = {
+    "assistant": assistant_graph,
+    "tom": tom_graph,
 }
 
 
@@ -31,7 +47,6 @@ def _build_user_content(message: str, image_url: str | None) -> list[dict]:
     content: list[dict] = []
     if image_url:
         if image_url.startswith("data:"):
-            # data:<media_type>;base64,<data>
             header, _, encoded = image_url.partition(",")
             media_type = header.split(":")[1].split(";")[0]
             content.append({"type": "image", "source": {"type": "base64", "media_type": media_type, "data": encoded}})
@@ -59,14 +74,12 @@ async def _save_messages(
     tool_calls: list[dict],
     db: AsyncSession,
 ) -> None:
-    """Save the new user message and final assistant response to the DB."""
     db.add(ChatMessage(
         user_id=user_id,
         agent_id=agent_id,
         role="user",
         content=user_content,
     ))
-    # final_messages[-1] is always the final assistant response
     assistant_msg = final_messages[-1]
     db.add(ChatMessage(
         user_id=user_id,
@@ -84,7 +97,7 @@ async def get_history(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if agent_id not in AGENT_STREAMS:
+    if agent_id not in AGENT_GRAPHS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
     user_id = uuid.UUID(current_user["sub"])
     result = await db.execute(
@@ -112,31 +125,48 @@ async def send_message(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if agent_id not in AGENT_STREAMS:
+    if agent_id not in AGENT_GRAPHS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
+
+    blocked = _check_guardrails(body.message)
+    if blocked:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Message blocked by content policy.",
+        )
 
     user_id = uuid.UUID(current_user["sub"])
     history = await _load_history(user_id, agent_id, db)
     user_content = _build_user_content(body.message, body.image_url)
 
+    initial_state = {
+        "messages": history + [{"role": "user", "content": user_content}],
+        "tool_calls_log": [],
+        "stop_reason": "",
+        "intent": "",
+        "assembled_prompt": "",
+    }
+    config = {"configurable": {"db": db}}
+
     async def event_generator():
         tool_calls: list[dict] = []
         final_messages: list[dict] = []
-        user_content_snapshot = user_content  # captured from outer scope
 
-        stream_fn = AGENT_STREAMS[agent_id]
-        stream_kwargs: dict = dict(history=history, user_content=user_content_snapshot, db=db)
+        graph = AGENT_GRAPHS[agent_id]
 
         try:
-            async for event in stream_fn(**stream_kwargs):
-                if event["type"] == "done":
+            async for event in graph.astream(initial_state, config, stream_mode="custom"):
+                payload = {k: v for k, v in event.items() if k != "_messages"}
+                yield f"data: {json.dumps(payload)}\n\n"
+                if event.get("type") == "done":
                     tool_calls = event.get("tool_calls", [])
                     final_messages = event.get("_messages", [])
                     if final_messages:
-                        async with AsyncSessionLocal() as save_db:
-                            await _save_messages(user_id, agent_id, user_content_snapshot, final_messages, tool_calls, save_db)
-                payload = {k: v for k, v in event.items() if k != "_messages"}
-                yield f"data: {json.dumps(payload)}\n\n"
+                        try:
+                            async with AsyncSessionLocal() as save_db:
+                                await _save_messages(user_id, agent_id, user_content, final_messages, tool_calls, save_db)
+                        except Exception:
+                            logger.exception("Failed to persist chat messages [agent=%s user=%s]", agent_id, user_id)
         except Exception as exc:
             import anthropic as _anthropic
             if isinstance(exc, _anthropic.APIStatusError) and exc.status_code == 529:
