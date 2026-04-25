@@ -5,9 +5,8 @@ import json
 from typing import Callable, Awaitable, Any
 
 import anthropic
-from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, END
-from langgraph.types import StreamWriter
+from langgraph.types import RunnableConfig, StreamWriter
 
 from src.agents.state import AgentState
 from src.config import settings
@@ -100,6 +99,9 @@ def build_react_graph(
         blocks = last_msg.get("content", [])
 
         tool_uses = [b for b in blocks if b.get("type") == "tool_use"]
+        if not tool_uses:
+            return {"messages": [], "tool_calls_log": []}
+
         tool_results = []
         new_log_entries = []
 
