@@ -45,7 +45,7 @@ def upgrade() -> None:
                 nullable=False,
             ),
         )
-        op.create_index("ix_customers_shop_id", "customers", ["shop_id"])
+        op.create_index(op.f("ix_customers_shop_id"), "customers", ["shop_id"])
 
     if "vehicles" not in existing_tables:
         op.create_table(
@@ -75,11 +75,16 @@ def upgrade() -> None:
                 nullable=False,
             ),
         )
-        op.create_index("ix_vehicles_customer_id", "vehicles", ["customer_id"])
+        op.create_index(op.f("ix_vehicles_customer_id"), "vehicles", ["customer_id"])
 
 
 def downgrade() -> None:
-    op.drop_index("ix_vehicles_customer_id", table_name="vehicles")
-    op.drop_table("vehicles")
-    op.drop_index("ix_customers_shop_id", table_name="customers")
-    op.drop_table("customers")
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_tables = inspector.get_table_names()
+    if "vehicles" in existing_tables:
+        op.drop_index(op.f("ix_vehicles_customer_id"), table_name="vehicles")
+        op.drop_table("vehicles")
+    if "customers" in existing_tables:
+        op.drop_index(op.f("ix_customers_shop_id"), table_name="customers")
+        op.drop_table("customers")
