@@ -49,6 +49,24 @@ services:
     command: ["alembic", "upgrade", "head"]
     restart: "no"
 
+  seed:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@db:5432/autoshop
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    command: >
+      python -m src.scripts.ingest_parts
+      --file data/parts_seed.csv
+      --qdrant-url http://qdrant:6333
+      --openai-api-key ${OPENAI_API_KEY}
+    restart: "no"
+
   backend:
     build: ./backend
     env_file: ./backend/.env
@@ -59,6 +77,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/src:/app/src
+      - ./backend/tests:/app/tests
+      - ./backend/alembic:/app/alembic
     depends_on:
       db:
         condition: service_healthy
@@ -67,6 +87,8 @@ services:
       qdrant:
         condition: service_healthy
       migrate:
+        condition: service_completed_successfully
+      seed:
         condition: service_completed_successfully
 
   web:
