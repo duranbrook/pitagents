@@ -30,3 +30,13 @@ def require_owner(current_user: dict = Depends(get_current_user)) -> dict:
             detail="Owner role required",
         )
     return current_user
+
+
+def get_current_shop_id(current_user: dict = Depends(get_current_user)) -> str:
+    shop_id = current_user.get("shop_id")
+    if not shop_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token does not contain shop_id",
+        )
+    return shop_id

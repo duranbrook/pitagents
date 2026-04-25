@@ -41,3 +41,17 @@ async def test_technician_cannot_access_owner_route(client):
     # Attempt to access owner-only route
     response = await client.get("/reports", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_login_token_contains_shop_id(client):
+    import jwt as pyjwt
+    from src.config import settings
+    resp = await client.post("/auth/login", json={"email": "owner@shop.com", "password": "testpass"})
+    assert resp.status_code == 200
+    payload = pyjwt.decode(
+        resp.json()["access_token"],
+        settings.JWT_SECRET.get_secret_value(),
+        algorithms=["HS256"],
+    )
+    assert payload.get("shop_id") == "00000000-0000-0000-0000-000000000099"

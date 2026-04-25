@@ -13,11 +13,13 @@ pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _TEST_USERS: dict = {
     "owner@shop.com": {
         "id": "00000000-0000-0000-0000-000000000001",
+        "shop_id": "00000000-0000-0000-0000-000000000099",
         "role": "owner",
         "hashed_password": pwd_ctx.hash("testpass"),
     },
     "tech@shop.com": {
         "id": "00000000-0000-0000-0000-000000000002",
+        "shop_id": "00000000-0000-0000-0000-000000000099",
         "role": "technician",
         "hashed_password": pwd_ctx.hash("testpass"),
     },
@@ -55,5 +57,10 @@ async def login(request: LoginRequest) -> TokenResponse:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = create_access_token({"sub": user["id"], "role": user["role"], "email": request.email})
+    token = create_access_token({
+        "sub": user["id"],
+        "shop_id": user["shop_id"],
+        "role": user["role"],
+        "email": request.email,
+    })
     return TokenResponse(access_token=token)
