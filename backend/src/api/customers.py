@@ -69,13 +69,13 @@ async def create_customer(
 
 @router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_customer(
-    customer_id: str,
+    customer_id: uuid.UUID,
     shop_id: str = Depends(get_current_shop_id),
     db: AsyncSession = Depends(get_db),
 ) -> None:
     result = await db.execute(
         select(Customer).where(
-            Customer.id == uuid.UUID(customer_id),
+            Customer.id == customer_id,
             Customer.shop_id == uuid.UUID(shop_id),
         )
     )
