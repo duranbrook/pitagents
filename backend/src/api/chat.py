@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -13,6 +14,21 @@ from src.agents.assistant import assistant_graph
 from src.agents.tom import tom_graph
 
 logger = logging.getLogger(__name__)
+
+_GUARDRAIL_PATTERNS = [
+    re.compile(r"\b(medical|doctor|prescription)\b", re.IGNORECASE),
+    re.compile(r"\b(legal advice|lawsuit|sue)\b", re.IGNORECASE),
+    re.compile(r"\b(stock|crypto|invest)\b", re.IGNORECASE),
+    re.compile(r"ignore (previous|all) instructions", re.IGNORECASE),
+]
+
+
+def _check_guardrails(message: str) -> str | None:
+    """Returns the matched pattern string if blocked, None if the message is OK."""
+    for pattern in _GUARDRAIL_PATTERNS:
+        if pattern.search(message):
+            return pattern.pattern
+    return None
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -112,6 +128,13 @@ async def send_message(
     if agent_id not in AGENT_GRAPHS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
 
+    blocked = _check_guardrails(body.message)
+    if blocked:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Message blocked by content policy.",
+        )
+
     user_id = uuid.UUID(current_user["sub"])
     history = await _load_history(user_id, agent_id, db)
     user_content = _build_user_content(body.message, body.image_url)
@@ -120,6 +143,8 @@ async def send_message(
         "messages": history + [{"role": "user", "content": user_content}],
         "tool_calls_log": [],
         "stop_reason": "",
+        "intent": "",
+        "assembled_prompt": "",
     }
     config = {"configurable": {"db": db}}
 
