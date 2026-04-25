@@ -5,5 +5,10 @@ from src.models.report import Report
 from src.models.media import MediaFile
 from src.models.chat_message import ChatMessage
 from src.models.quote import Quote
+from src.models.customer import Customer
+from src.models.vehicle import Vehicle
 
-__all__ = ["Shop", "User", "InspectionSession", "Report", "MediaFile", "ChatMessage", "Quote"]
+__all__ = [
+    "Shop", "User", "InspectionSession", "Report",
+    "MediaFile", "ChatMessage", "Quote", "Customer", "Vehicle",
+]
