@@ -60,11 +60,15 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    command: >
+    command: >-
+      sh -c 'if [ -z "$$OPENAI_API_KEY" ]; then
+        echo "OPENAI_API_KEY not set — skipping parts seed";
+        exit 0;
+      fi &&
       python -m src.scripts.ingest_parts
       --file data/parts_seed.csv
       --qdrant-url http://qdrant:6333
-      --openai-api-key ${OPENAI_API_KEY}
+      --openai-api-key "$$OPENAI_API_KEY"'
     restart: "no"
 
   backend:
