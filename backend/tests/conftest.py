@@ -7,6 +7,8 @@ os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:
 os.environ.setdefault("JWT_SECRET", "test-secret-key-for-testing-only")
 os.environ.setdefault("DEEPGRAM_API_KEY", "test-deepgram-key")
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-anthropic-key")
+os.environ.setdefault("QDRANT_URL", "http://localhost:6333")
+os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
 
 from src.config import Settings
 
@@ -27,6 +29,8 @@ def mock_settings(monkeypatch):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "test-token")
     monkeypatch.setenv("TWILIO_FROM_PHONE", "+15555555555")
     monkeypatch.setenv("SENDGRID_API_KEY", "test-sg-key")
+    monkeypatch.setenv("QDRANT_URL", "http://localhost:6333")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
 
 
 @pytest.fixture
