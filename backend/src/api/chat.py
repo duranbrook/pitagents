@@ -9,16 +9,16 @@ from sqlalchemy import select
 from src.api.deps import get_current_user
 from src.db.base import get_db, AsyncSessionLocal
 from src.models.chat_message import ChatMessage
-from src.agents.assistant import stream_assistant
-from src.agents.tom import stream_tom
+from src.agents.assistant import assistant_graph
+from src.agents.tom import tom_graph
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-AGENT_STREAMS = {
-    "assistant": stream_assistant,
-    "tom": stream_tom,
+AGENT_GRAPHS: dict = {
+    "assistant": assistant_graph,
+    "tom": tom_graph,
 }
 
 
@@ -31,7 +31,6 @@ def _build_user_content(message: str, image_url: str | None) -> list[dict]:
     content: list[dict] = []
     if image_url:
         if image_url.startswith("data:"):
-            # data:<media_type>;base64,<data>
             header, _, encoded = image_url.partition(",")
             media_type = header.split(":")[1].split(";")[0]
             content.append({"type": "image", "source": {"type": "base64", "media_type": media_type, "data": encoded}})
@@ -59,14 +58,12 @@ async def _save_messages(
     tool_calls: list[dict],
     db: AsyncSession,
 ) -> None:
-    """Save the new user message and final assistant response to the DB."""
     db.add(ChatMessage(
         user_id=user_id,
         agent_id=agent_id,
         role="user",
         content=user_content,
     ))
-    # final_messages[-1] is always the final assistant response
     assistant_msg = final_messages[-1]
     db.add(ChatMessage(
         user_id=user_id,
@@ -84,7 +81,7 @@ async def get_history(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if agent_id not in AGENT_STREAMS:
+    if agent_id not in AGENT_GRAPHS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
     user_id = uuid.UUID(current_user["sub"])
     result = await db.execute(
@@ -112,29 +109,34 @@ async def send_message(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if agent_id not in AGENT_STREAMS:
+    if agent_id not in AGENT_GRAPHS:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
 
     user_id = uuid.UUID(current_user["sub"])
     history = await _load_history(user_id, agent_id, db)
     user_content = _build_user_content(body.message, body.image_url)
 
+    initial_state = {
+        "messages": history + [{"role": "user", "content": user_content}],
+        "tool_calls_log": [],
+        "stop_reason": "",
+    }
+    config = {"configurable": {"db": db}}
+
     async def event_generator():
         tool_calls: list[dict] = []
         final_messages: list[dict] = []
-        user_content_snapshot = user_content  # captured from outer scope
 
-        stream_fn = AGENT_STREAMS[agent_id]
-        stream_kwargs: dict = dict(history=history, user_content=user_content_snapshot, db=db)
+        graph = AGENT_GRAPHS[agent_id]
 
         try:
-            async for event in stream_fn(**stream_kwargs):
-                if event["type"] == "done":
+            async for event in graph.astream(initial_state, config, stream_mode="custom"):
+                if event.get("type") == "done":
                     tool_calls = event.get("tool_calls", [])
                     final_messages = event.get("_messages", [])
                     if final_messages:
                         async with AsyncSessionLocal() as save_db:
-                            await _save_messages(user_id, agent_id, user_content_snapshot, final_messages, tool_calls, save_db)
+                            await _save_messages(user_id, agent_id, user_content, final_messages, tool_calls, save_db)
                 payload = {k: v for k, v in event.items() if k != "_messages"}
                 yield f"data: {json.dumps(payload)}\n\n"
         except Exception as exc:
