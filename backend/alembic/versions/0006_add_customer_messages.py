@@ -121,11 +121,14 @@ def downgrade() -> None:
     existing_tables = inspector.get_table_names()
 
     # Remove vehicle_id from chat_messages if present
-    chat_cols = {c["name"] for c in inspector.get_columns("chat_messages")}
-    if "vehicle_id" in chat_cols:
-        op.drop_column("chat_messages", "vehicle_id")
+    if "chat_messages" in existing_tables:
+        chat_cols = {c["name"] for c in inspector.get_columns("chat_messages")}
+        if "vehicle_id" in chat_cols:
+            op.drop_column("chat_messages", "vehicle_id")
 
     # Remove added columns from reports
+    if "reports" not in existing_tables:
+        return
     reports_cols = {c["name"] for c in inspector.get_columns("reports")}
     if "vehicle_id" in reports_cols:
         op.drop_index(op.f("ix_reports_vehicle_id"), table_name="reports")
