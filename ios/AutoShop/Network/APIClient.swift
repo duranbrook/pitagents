@@ -77,11 +77,11 @@ final class APIClient {
     // MARK: - Chat
 
     func chatHistory(agentId: String = "assistant") async throws -> [ChatHistoryItem] {
-        try await get("/chat/history?agent_id=\(agentId)")
+        try await get("/chat/\(agentId)/history")
     }
 
     func sendChatMessage(_ body: ChatRequest) async throws -> ChatResponse {
-        try await post("/chat/message", body: body)
+        try await post("/chat/assistant/message/sync", body: body)
     }
 
     // MARK: - Helpers
