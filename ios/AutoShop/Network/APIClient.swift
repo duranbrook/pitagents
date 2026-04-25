@@ -1,0 +1,147 @@
+import Foundation
+
+enum APIError: LocalizedError {
+    case invalidURL
+    case unauthorized
+    case serverError(Int, String)
+    case decodingError(Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL: return "Invalid URL"
+        case .unauthorized: return "Session expired — please log in again"
+        case .serverError(let code, let body): return "Server error \(code): \(body)"
+        case .decodingError(let e): return "Decoding failed: \(e.localizedDescription)"
+        }
+    }
+}
+
+@MainActor
+final class APIClient {
+    static let shared = APIClient()
+
+    private let baseURL = SessionAPI.baseURL
+    private let encoder = JSONEncoder()
+    private var onUnauthorized: (() -> Void)?
+
+    private init() {}
+
+    func setUnauthorizedHandler(_ handler: @escaping () -> Void) {
+        onUnauthorized = handler
+    }
+
+    // MARK: - Auth
+
+    func login(email: String, password: String) async throws -> TokenResponse {
+        try await post("/auth/login", body: LoginRequest(email: email, password: password), auth: false)
+    }
+
+    // MARK: - Customers
+
+    func listCustomers() async throws -> [CustomerResponse] { try await get("/customers") }
+
+    func createCustomer(_ body: CustomerCreate) async throws -> CustomerResponse {
+        try await post("/customers", body: body)
+    }
+
+    func deleteCustomer(id: String) async throws { try await delete("/customers/\(id)") }
+
+    // MARK: - Vehicles
+
+    func listVehicles(customerId: String) async throws -> [VehicleResponse] {
+        try await get("/customers/\(customerId)/vehicles")
+    }
+
+    func createVehicle(customerId: String, body: VehicleCreate) async throws -> VehicleResponse {
+        try await post("/customers/\(customerId)/vehicles", body: body)
+    }
+
+    func deleteVehicle(id: String) async throws { try await delete("/vehicles/\(id)") }
+
+    // MARK: - Reports
+
+    func listReports(vehicleId: String) async throws -> [ReportSummary] {
+        try await get("/vehicles/\(vehicleId)/reports")
+    }
+
+    // MARK: - Messages
+
+    func listMessages(vehicleId: String) async throws -> [MessageResponse] {
+        try await get("/vehicles/\(vehicleId)/messages")
+    }
+
+    func sendMessage(vehicleId: String, body: MessageCreate) async throws -> MessageResponse {
+        try await post("/vehicles/\(vehicleId)/messages", body: body)
+    }
+
+    // MARK: - Chat
+
+    func chatHistory(agentId: String = "assistant") async throws -> [ChatHistoryItem] {
+        try await get("/chat/history?agent_id=\(agentId)")
+    }
+
+    func sendChatMessage(_ body: ChatRequest) async throws -> ChatResponse {
+        try await post("/chat/message", body: body)
+    }
+
+    // MARK: - Helpers
+
+    private func get<T: Decodable>(_ path: String) async throws -> T {
+        guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
+        var req = URLRequest(url: url)
+        injectAuth(&req)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try validate(data: data, response: response)
+        return try decode(T.self, from: data)
+    }
+
+    private func post<B: Encodable, T: Decodable>(
+        _ path: String, body: B, auth: Bool = true
+    ) async throws -> T {
+        guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try encoder.encode(body)
+        if auth { injectAuth(&req) }
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try validate(data: data, response: response)
+        return try decode(T.self, from: data)
+    }
+
+    private func delete(_ path: String) async throws {
+        guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        injectAuth(&req)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try validate(data: data, response: response)
+    }
+
+    private func injectAuth(_ request: inout URLRequest) {
+        if let token = KeychainStore.shared.load() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+    }
+
+    private func validate(data: Data, response: URLResponse) throws {
+        guard let http = response as? HTTPURLResponse else { return }
+        if http.statusCode == 401 {
+            KeychainStore.shared.delete()
+            onUnauthorized?()
+            throw APIError.unauthorized
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? "<binary>"
+            throw APIError.serverError(http.statusCode, body)
+        }
+    }
+
+    private func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+        do {
+            return try JSONDecoder().decode(type, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+}
