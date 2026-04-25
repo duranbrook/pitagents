@@ -28,6 +28,7 @@ def mock_settings(monkeypatch):
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "test-sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "test-token")
     monkeypatch.setenv("TWILIO_FROM_PHONE", "+15555555555")
+    monkeypatch.setenv("TWILIO_WHATSAPP_FROM", "+14155238886")
     monkeypatch.setenv("SENDGRID_API_KEY", "test-sg-key")
     monkeypatch.setenv("QDRANT_URL", "http://localhost:6333")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")

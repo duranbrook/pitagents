@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: SecretStr = SecretStr("")
     TWILIO_FROM_PHONE: str = ""
+    TWILIO_WHATSAPP_FROM: str = ""
 
     # SendGrid
     SENDGRID_API_KEY: SecretStr = SecretStr("")
