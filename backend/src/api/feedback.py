@@ -71,7 +71,6 @@ async def rate_message(
                     payload={
                         "message_id": str(msg_id),
                         "agent_id": agent_id,
-                        "intent": "",
                         "response_text": response_text,
                         "rating": body.rating,
                     },

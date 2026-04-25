@@ -36,7 +36,7 @@ def make_classify_intent_node(intent_labels: list[str]):
                     ),
                 }],
             )
-            result = resp.content[0].text.strip().split()[0]
+            result = resp.content[0].text.strip().split()[0].rstrip(".,;:!?")
             intent = result if result in intent_labels else "GENERAL"
         except Exception:
             intent = "GENERAL"
