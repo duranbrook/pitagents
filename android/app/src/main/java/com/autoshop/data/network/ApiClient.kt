@@ -11,7 +11,8 @@ private const val BASE_URL = "http://10.0.2.2:8000/"
 
 fun buildRetrofit(tokenStore: TokenStore): Retrofit {
     val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (com.autoshop.BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                else HttpLoggingInterceptor.Level.NONE
     }
 
     val auth = Interceptor { chain ->
