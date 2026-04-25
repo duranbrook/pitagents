@@ -2,15 +2,14 @@ from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.agents.graph_factory import build_react_graph
-from src.agents.tools.shop_tools import (
-    SHOP_TOOL_SCHEMAS,
-    list_sessions,
-    get_session_detail,
-    get_report,
-)
+from src.agents.tools.shop_tools import SHOP_TOOL_SCHEMAS, list_sessions, get_session_detail, get_report
 from src.agents.prompts.tom_blocks import TOM_BLOCKS
 
-_PROMPT = (Path(__file__).parent / "prompts" / "tom.txt").read_text()
+_FALLBACK_PROMPT = (Path(__file__).parent / "prompts" / "tom.txt").read_text()
+
+INTENT_LABELS = [
+    "ANALYTICS_SESSIONS", "ANALYTICS_REVENUE", "ANALYTICS_TECHNICIAN", "GENERAL",
+]
 
 
 async def _execute_tool(name: str, inp: dict, db: AsyncSession) -> dict:
@@ -24,9 +23,9 @@ async def _execute_tool(name: str, inp: dict, db: AsyncSession) -> dict:
 
 
 tom_graph = build_react_graph(
-    system_prompt=_PROMPT,
+    system_prompt=_FALLBACK_PROMPT,
     tool_schemas=SHOP_TOOL_SCHEMAS,
     tool_executor=_execute_tool,
-    intent_labels=list(TOM_BLOCKS.keys()),
+    intent_labels=INTENT_LABELS,
     prompt_blocks=TOM_BLOCKS,
 )
