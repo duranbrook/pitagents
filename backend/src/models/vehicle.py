@@ -9,11 +9,6 @@ class Vehicle(Base):
     __tablename__ = "vehicles"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-
-    def __init__(self, **kwargs):
-        if "id" not in kwargs:
-            kwargs["id"] = uuid.uuid4()
-        super().__init__(**kwargs)
     customer_id = Column(
         UUID(as_uuid=True),
         ForeignKey("customers.id", ondelete="CASCADE"),
@@ -27,3 +22,7 @@ class Vehicle(Base):
     vin = Column(String(17), nullable=True, unique=True)
     color = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("id", uuid.uuid4())
+        super().__init__(**kwargs)
