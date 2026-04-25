@@ -12,6 +12,7 @@ from src.agents.tools.quote_tools import (
     list_quote_items,
     finalize_quote,
 )
+from src.agents.prompts.assistant_blocks import ASSISTANT_BLOCKS
 
 _PROMPT = (Path(__file__).parent / "prompts" / "assistant.txt").read_text()
 
@@ -45,4 +46,6 @@ assistant_graph = build_react_graph(
     system_prompt=_PROMPT,
     tool_schemas=_TOOL_SCHEMAS,
     tool_executor=_execute_tool,
+    intent_labels=list(ASSISTANT_BLOCKS.keys()),
+    prompt_blocks=ASSISTANT_BLOCKS,
 )

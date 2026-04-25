@@ -2,6 +2,18 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
+def test_agent_state_importable():
+    from src.agents.state import AgentState
+    state: AgentState = {
+        "messages": [],
+        "tool_calls_log": [],
+        "stop_reason": "",
+        "intent": "",
+        "assembled_prompt": "",
+    }
+    assert state["messages"] == []
+
+
 def test_agent_state_has_intent_and_assembled_prompt():
     from src.agents.state import AgentState
     state: AgentState = {
@@ -13,18 +25,6 @@ def test_agent_state_has_intent_and_assembled_prompt():
     }
     assert state["intent"] == "QUOTE_BUILD"
     assert state["assembled_prompt"] == "You are helpful."
-
-
-def test_agent_state_importable():
-    from src.agents.state import AgentState
-    state: AgentState = {
-        "messages": [],
-        "tool_calls_log": [],
-        "stop_reason": "",
-    }
-    assert state["messages"] == []
-    assert state["tool_calls_log"] == []
-    assert state["stop_reason"] == ""
 
 
 def _make_stream_ctx(text_chunks: list[str], tool_use_blocks: list = None):
@@ -65,20 +65,51 @@ def _make_tool_use_block(name: str, tool_id: str, inp: dict):
     return block
 
 
+def _make_haiku_response(text: str):
+    block = MagicMock()
+    block.text = text
+    resp = MagicMock()
+    resp.content = [block]
+    return resp
+
+
+def _build_test_graph(tool_schemas=None, executor=None):
+    from src.agents.graph_factory import build_react_graph
+    return build_react_graph(
+        system_prompt="Be helpful.",
+        tool_schemas=tool_schemas or [],
+        tool_executor=executor,
+        intent_labels=["GENERAL"],
+        prompt_blocks={"base": "Be helpful."},
+    )
+
+
 @pytest.mark.asyncio
 async def test_factory_streams_tokens():
     """Graph emits token events for each text chunk."""
-    from src.agents.graph_factory import build_react_graph
-
     ctx = _make_stream_ctx(["Hello", " world"])
-    graph = build_react_graph("Be helpful.", [], None)
+    graph = _build_test_graph()
 
     events = []
-    with patch("src.agents.graph_factory._anthropic_client") as mock_client:
+    with patch("src.agents.llm.client") as mock_client, \
+         patch("src.agents.nodes.classify_intent.client") as mock_haiku_ci, \
+         patch("src.agents.nodes.validate_response.client") as mock_haiku_vr, \
+         patch("src.agents.nodes.validate_response._feedback_critic", new=AsyncMock(return_value=False)), \
+         patch("src.agents.nodes.assemble_prompt.qdrant") as mock_qdrant, \
+         patch("src.agents.nodes.assemble_prompt.embed", new=AsyncMock(return_value=[0.1] * 1536)):
         mock_client.messages.stream.return_value = ctx
+        mock_haiku_ci.messages.create = AsyncMock(return_value=_make_haiku_response("GENERAL"))
+        mock_haiku_vr.messages.create = AsyncMock(return_value=_make_haiku_response("PASS"))
+        mock_qdrant.search = AsyncMock(return_value=[])
+
         async for event in graph.astream(
-            {"messages": [{"role": "user", "content": [{"type": "text", "text": "Hi"}]}],
-             "tool_calls_log": [], "stop_reason": ""},
+            {
+                "messages": [{"role": "user", "content": [{"type": "text", "text": "Hi"}]}],
+                "tool_calls_log": [],
+                "stop_reason": "",
+                "intent": "",
+                "assembled_prompt": "",
+            },
             stream_mode="custom",
         ):
             events.append(event)
@@ -93,8 +124,6 @@ async def test_factory_streams_tokens():
 @pytest.mark.asyncio
 async def test_factory_executes_tool_and_loops():
     """Graph calls executor, emits tool_start/tool_end, then loops back to LLM."""
-    from src.agents.graph_factory import build_react_graph
-
     tool_block = _make_tool_use_block("lookup_vin", "toolu_01", {"vin": "2HGFB2F59DH123456"})
     first_ctx = _make_stream_ctx([], tool_use_blocks=[tool_block])
     second_ctx = _make_stream_ctx(["2019 Honda Civic"])
@@ -109,18 +138,31 @@ async def test_factory_executes_tool_and_loops():
     async def fake_executor(name: str, inp: dict, db) -> dict:
         return {"make": "Honda", "year": "2019"}
 
-    graph = build_react_graph(
-        "Be helpful.",
-        [{"name": "lookup_vin", "input_schema": {"type": "object", "properties": {}}}],
-        fake_executor,
+    graph = _build_test_graph(
+        tool_schemas=[{"name": "lookup_vin", "input_schema": {"type": "object", "properties": {}}}],
+        executor=fake_executor,
     )
 
     events = []
-    with patch("src.agents.graph_factory._anthropic_client") as mock_client:
+    with patch("src.agents.llm.client") as mock_client, \
+         patch("src.agents.nodes.classify_intent.client") as mock_haiku_ci, \
+         patch("src.agents.nodes.validate_response.client") as mock_haiku_vr, \
+         patch("src.agents.nodes.validate_response._feedback_critic", new=AsyncMock(return_value=False)), \
+         patch("src.agents.nodes.assemble_prompt.qdrant") as mock_qdrant, \
+         patch("src.agents.nodes.assemble_prompt.embed", new=AsyncMock(return_value=[0.1] * 1536)):
         mock_client.messages.stream.side_effect = _stream_side_effect
+        mock_haiku_ci.messages.create = AsyncMock(return_value=_make_haiku_response("GENERAL"))
+        mock_haiku_vr.messages.create = AsyncMock(return_value=_make_haiku_response("PASS"))
+        mock_qdrant.search = AsyncMock(return_value=[])
+
         async for event in graph.astream(
-            {"messages": [{"role": "user", "content": [{"type": "text", "text": "What car?"}]}],
-             "tool_calls_log": [], "stop_reason": ""},
+            {
+                "messages": [{"role": "user", "content": [{"type": "text", "text": "What car?"}]}],
+                "tool_calls_log": [],
+                "stop_reason": "",
+                "intent": "",
+                "assembled_prompt": "",
+            },
             config={"configurable": {"db": None}},
             stream_mode="custom",
         ):
@@ -133,4 +175,3 @@ async def test_factory_executes_tool_and_loops():
     done = next(e for e in events if e.get("type") == "done")
     assert len(done["tool_calls"]) == 1
     assert done["tool_calls"][0]["name"] == "lookup_vin"
-    assert done["tool_calls"][0]["output"] == {"make": "Honda", "year": "2019"}

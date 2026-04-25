@@ -1,5 +1,4 @@
 """Factory that builds a LangGraph ReAct loop for any chat agent."""
-
 import asyncio
 import json
 from typing import Callable, Awaitable, Any
@@ -9,14 +8,11 @@ from langgraph.graph import StateGraph, END
 from langgraph.types import RunnableConfig, StreamWriter
 
 from src.agents.state import AgentState
-from src.config import settings
-
-_anthropic_client = anthropic.AsyncAnthropic(
-    api_key=settings.ANTHROPIC_API_KEY.get_secret_value()
-)
-
-MODEL = "claude-sonnet-4-6"
-MAX_TOKENS = 4096
+import src.agents.llm as _llm
+from src.agents.llm import MODEL, MAX_TOKENS
+from src.agents.nodes.classify_intent import make_classify_intent_node
+from src.agents.nodes.assemble_prompt import make_assemble_prompt_node
+from src.agents.nodes.validate_response import make_validate_response_node
 
 ToolExecutor = Callable[[str, dict, Any], Awaitable[dict]]
 
@@ -25,17 +21,16 @@ def build_react_graph(
     system_prompt: str,
     tool_schemas: list[dict],
     tool_executor: ToolExecutor | None,
+    intent_labels: list[str],
+    prompt_blocks: dict[str, str],
 ):
     """Return a compiled LangGraph ReAct agent.
 
-    Streams custom events via StreamWriter:
-      {"type": "token",      "content": str}
-      {"type": "tool_start", "tool": str, "input": dict}
-      {"type": "tool_end",   "tool": str, "output": dict}
-      {"type": "done",       "tool_calls": list, "_messages": list}
+    Graph nodes: classify_intent → assemble_prompt → call_llm ↔ execute_tools → validate_response
 
-    tool_executor signature: async (name, input_dict, db) -> dict
-    db is taken from config["configurable"]["db"] at call time.
+    system_prompt: fallback used by call_llm when assembled_prompt is empty
+    intent_labels: label set for this agent
+    prompt_blocks: {"base": "...", "<LABEL>": "..."} blocks assembled per intent
     """
 
     async def call_llm(
@@ -43,9 +38,10 @@ def build_react_graph(
         writer: StreamWriter,
         config: RunnableConfig,
     ) -> dict:
+        system = state.get("assembled_prompt") or system_prompt
         kwargs: dict = dict(
             model=MODEL,
-            system=system_prompt,
+            system=system,
             max_tokens=MAX_TOKENS,
             messages=list(state["messages"]),
         )
@@ -54,7 +50,7 @@ def build_react_graph(
 
         for attempt in range(3):
             try:
-                async with _anthropic_client.messages.stream(**kwargs) as stream:
+                async with _llm.client.messages.stream(**kwargs) as stream:
                     async for text in stream.text_stream:
                         writer({"type": "token", "content": text})
                     final = await stream.get_final_message()
@@ -78,15 +74,7 @@ def build_react_graph(
                 })
 
         new_msg = {"role": "assistant", "content": assistant_content}
-
-        if final.stop_reason != "tool_use":
-            all_messages = list(state["messages"]) + [new_msg]
-            writer({
-                "type": "done",
-                "tool_calls": list(state["tool_calls_log"]),
-                "_messages": all_messages,
-            })
-
+        # done event is emitted by validate_response, not here
         return {"messages": [new_msg], "stop_reason": final.stop_reason}
 
     async def execute_tools(
@@ -124,13 +112,23 @@ def build_react_graph(
         }
 
     def should_continue(state: AgentState) -> str:
-        return "execute_tools" if state.get("stop_reason") == "tool_use" else END
+        return "execute_tools" if state.get("stop_reason") == "tool_use" else "validate_response"
+
+    classify_intent = make_classify_intent_node(intent_labels)
+    assemble_prompt = make_assemble_prompt_node(prompt_blocks)
+    validate_response = make_validate_response_node(system_prompt, tool_schemas)
 
     builder = StateGraph(AgentState)
+    builder.add_node("classify_intent", classify_intent)
+    builder.add_node("assemble_prompt", assemble_prompt)
     builder.add_node("call_llm", call_llm)
     builder.add_node("execute_tools", execute_tools)
-    builder.set_entry_point("call_llm")
+    builder.add_node("validate_response", validate_response)
+    builder.set_entry_point("classify_intent")
+    builder.add_edge("classify_intent", "assemble_prompt")
+    builder.add_edge("assemble_prompt", "call_llm")
     builder.add_conditional_edges("call_llm", should_continue)
     builder.add_edge("execute_tools", "call_llm")
+    builder.add_edge("validate_response", END)
 
     return builder.compile()

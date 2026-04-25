@@ -8,6 +8,7 @@ from src.agents.tools.shop_tools import (
     get_session_detail,
     get_report,
 )
+from src.agents.prompts.tom_blocks import TOM_BLOCKS
 
 _PROMPT = (Path(__file__).parent / "prompts" / "tom.txt").read_text()
 
@@ -26,4 +27,6 @@ tom_graph = build_react_graph(
     system_prompt=_PROMPT,
     tool_schemas=SHOP_TOOL_SCHEMAS,
     tool_executor=_execute_tool,
+    intent_labels=list(TOM_BLOCKS.keys()),
+    prompt_blocks=TOM_BLOCKS,
 )

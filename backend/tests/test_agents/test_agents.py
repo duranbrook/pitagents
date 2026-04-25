@@ -19,6 +19,14 @@ def _make_stream_ctx(text_chunks):
     return ctx
 
 
+def _make_haiku_response(text: str):
+    block = MagicMock()
+    block.text = text
+    resp = MagicMock()
+    resp.content = [block]
+    return resp
+
+
 @pytest.mark.asyncio
 async def test_assistant_graph_importable():
     from src.agents.assistant import assistant_graph
@@ -31,11 +39,24 @@ async def test_assistant_graph_streams_events():
 
     ctx = _make_stream_ctx(["Hello"])
     events = []
-    with patch("src.agents.graph_factory._anthropic_client") as mock_client:
+    with patch("src.agents.llm.client") as mock_client, \
+         patch("src.agents.nodes.classify_intent.client") as mock_haiku_ci, \
+         patch("src.agents.nodes.validate_response.client") as mock_haiku_vr, \
+         patch("src.agents.nodes.validate_response._feedback_critic", new=AsyncMock(return_value=False)), \
+         patch("src.agents.nodes.assemble_prompt.qdrant") as mock_qdrant, \
+         patch("src.agents.nodes.assemble_prompt.embed", new=AsyncMock(return_value=[0.1] * 1536)):
         mock_client.messages.stream.return_value = ctx
+        mock_haiku_ci.messages.create = AsyncMock(return_value=_make_haiku_response("GENERAL"))
+        mock_haiku_vr.messages.create = AsyncMock(return_value=_make_haiku_response("PASS"))
+        mock_qdrant.search = AsyncMock(return_value=[])
         async for event in assistant_graph.astream(
-            {"messages": [{"role": "user", "content": [{"type": "text", "text": "Hi"}]}],
-             "tool_calls_log": [], "stop_reason": ""},
+            {
+                "messages": [{"role": "user", "content": [{"type": "text", "text": "Hi"}]}],
+                "tool_calls_log": [],
+                "stop_reason": "",
+                "intent": "",
+                "assembled_prompt": "",
+            },
             config={"configurable": {"db": AsyncMock()}},
             stream_mode="custom",
         ):
@@ -57,11 +78,24 @@ async def test_tom_graph_streams_events():
 
     ctx = _make_stream_ctx(["2 sessions"])
     events = []
-    with patch("src.agents.graph_factory._anthropic_client") as mock_client:
+    with patch("src.agents.llm.client") as mock_client, \
+         patch("src.agents.nodes.classify_intent.client") as mock_haiku_ci, \
+         patch("src.agents.nodes.validate_response.client") as mock_haiku_vr, \
+         patch("src.agents.nodes.validate_response._feedback_critic", new=AsyncMock(return_value=False)), \
+         patch("src.agents.nodes.assemble_prompt.qdrant") as mock_qdrant, \
+         patch("src.agents.nodes.assemble_prompt.embed", new=AsyncMock(return_value=[0.1] * 1536)):
         mock_client.messages.stream.return_value = ctx
+        mock_haiku_ci.messages.create = AsyncMock(return_value=_make_haiku_response("GENERAL"))
+        mock_haiku_vr.messages.create = AsyncMock(return_value=_make_haiku_response("PASS"))
+        mock_qdrant.search = AsyncMock(return_value=[])
         async for event in tom_graph.astream(
-            {"messages": [{"role": "user", "content": [{"type": "text", "text": "How many sessions?"}]}],
-             "tool_calls_log": [], "stop_reason": ""},
+            {
+                "messages": [{"role": "user", "content": [{"type": "text", "text": "How many sessions?"}]}],
+                "tool_calls_log": [],
+                "stop_reason": "",
+                "intent": "",
+                "assembled_prompt": "",
+            },
             config={"configurable": {"db": AsyncMock()}},
             stream_mode="custom",
         ):
