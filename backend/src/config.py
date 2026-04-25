@@ -52,8 +52,8 @@ class Settings(BaseSettings):
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_API_KEY: SecretStr = SecretStr("")
 
-    # OpenAI (used for text-embedding-3-small)
-    OPENAI_API_KEY: SecretStr = SecretStr("")
+    # Gemini (used for text-embedding-004)
+    GEMINI_API_KEY: SecretStr = SecretStr("")
 
 
 settings = Settings()

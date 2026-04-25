@@ -3,19 +3,19 @@
 
 Usage:
     python -m src.scripts.seed_few_shots \\
-        --openai-api-key sk-... \\
+        --gemini-api-key AIza... \\
         [--qdrant-url http://localhost:6333] \\
         [--qdrant-api-key ""]
 """
 import argparse
 import uuid
 
+import google.generativeai as genai
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, Distance, VectorParams
-from openai import OpenAI
 
-EMBED_MODEL = "text-embedding-3-small"
-EMBED_DIM = 1536
+EMBED_MODEL = "models/text-embedding-004"
+EMBED_DIM = 768
 
 FEW_SHOTS = [
     {"agent_id": "assistant", "intent": "VIN_LOOKUP",
@@ -59,6 +59,13 @@ FEW_SHOTS = [
 
 def _ensure_collection(qdrant: QdrantClient) -> None:
     existing = {c.name for c in qdrant.get_collections().collections}
+    if "few_shots" in existing:
+        info = qdrant.get_collection("few_shots")
+        current_dim = info.config.params.vectors.size
+        if current_dim != EMBED_DIM:
+            print(f"'few_shots' collection has dim={current_dim}, expected {EMBED_DIM}. Recreating.")
+            qdrant.delete_collection("few_shots")
+            existing.discard("few_shots")
     if "few_shots" not in existing:
         qdrant.create_collection(
             collection_name="few_shots",
@@ -71,17 +78,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Seed few-shot examples into Qdrant")
     parser.add_argument("--qdrant-url", default="http://localhost:6333")
     parser.add_argument("--qdrant-api-key", default="")
-    parser.add_argument("--openai-api-key", required=True)
+    parser.add_argument("--gemini-api-key", required=True)
     args = parser.parse_args()
 
+    genai.configure(api_key=args.gemini_api_key)
     qdrant = QdrantClient(url=args.qdrant_url, api_key=args.qdrant_api_key or None)
-    openai_client = OpenAI(api_key=args.openai_api_key)
 
     _ensure_collection(qdrant)
 
     questions = [fs["question"] for fs in FEW_SHOTS]
-    resp = openai_client.embeddings.create(model=EMBED_MODEL, input=questions)
-    vectors = [e.embedding for e in resp.data]
+    resp = genai.embed_content(
+        model=EMBED_MODEL,
+        content=questions,
+        task_type="retrieval_document",
+    )
+    vectors = resp["embedding"]
 
     points = [
         PointStruct(

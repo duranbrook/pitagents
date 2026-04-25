@@ -4,32 +4,24 @@
 Usage:
     python -m src.scripts.ingest_parts \\
         --file path/to/parts.csv \\
-        --mapping path/to/mapping.json \\
-        --openai-api-key sk-... \\
+        --gemini-api-key AIza... \\
+        [--mapping path/to/mapping.json] \\
         [--qdrant-url http://localhost:6333] \\
         [--qdrant-api-key ""] \\
         [--dry-run]
-
-Default mapping (UsableDatabases CSV column names):
-    description  -> part_name
-    part_number  -> manufacturer_number
-    brand        -> brand
-    category     -> category
-    unit_price   -> regular_price
-    make         -> (not present -- leave empty)
 """
 import argparse
 import csv
 import json
 import uuid
 
+import google.generativeai as genai
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, Distance, VectorParams
-from openai import OpenAI
 
-EMBED_MODEL = "text-embedding-3-small"
-EMBED_DIM = 1536
-BATCH_SIZE = 500
+EMBED_MODEL = "models/text-embedding-004"
+EMBED_DIM = 768
+BATCH_SIZE = 100  # Gemini batch limit is lower than OpenAI's
 
 DEFAULT_MAPPING = {
     "description": "part_name",
@@ -55,6 +47,13 @@ def _get(row: dict, mapping: dict, field: str) -> str:
 
 def _ensure_collection(qdrant: QdrantClient) -> None:
     existing = {c.name for c in qdrant.get_collections().collections}
+    if "parts" in existing:
+        info = qdrant.get_collection("parts")
+        current_dim = info.config.params.vectors.size
+        if current_dim != EMBED_DIM:
+            print(f"'parts' collection has dim={current_dim}, expected {EMBED_DIM}. Recreating.")
+            qdrant.delete_collection("parts")
+            existing.discard("parts")
     if "parts" not in existing:
         qdrant.create_collection(
             collection_name="parts",
@@ -69,13 +68,13 @@ def main() -> None:
     parser.add_argument("--mapping", default=None)
     parser.add_argument("--qdrant-url", default="http://localhost:6333")
     parser.add_argument("--qdrant-api-key", default="")
-    parser.add_argument("--openai-api-key", required=True)
+    parser.add_argument("--gemini-api-key", required=True)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
+    genai.configure(api_key=args.gemini_api_key)
     mapping = _load_mapping(args.mapping)
     qdrant = QdrantClient(url=args.qdrant_url, api_key=args.qdrant_api_key or None)
-    openai_client = OpenAI(api_key=args.openai_api_key)
 
     if not args.dry_run:
         _ensure_collection(qdrant)
@@ -117,8 +116,12 @@ def main() -> None:
             texts = [r["_embed_text"] for r in batch]
 
             if not args.dry_run:
-                resp = openai_client.embeddings.create(model=EMBED_MODEL, input=texts)
-                vectors = [e.embedding for e in resp.data]
+                resp = genai.embed_content(
+                    model=EMBED_MODEL,
+                    content=texts,
+                    task_type="retrieval_document",
+                )
+                vectors = resp["embedding"]
                 points = [
                     PointStruct(
                         id=str(uuid.uuid5(uuid.NAMESPACE_OID, r["part_number"])),

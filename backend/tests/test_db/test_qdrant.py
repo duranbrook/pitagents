@@ -4,15 +4,13 @@ from unittest.mock import AsyncMock, patch, MagicMock
 
 @pytest.mark.asyncio
 async def test_embed_returns_list_of_floats():
-    mock_embedding = MagicMock()
-    mock_embedding.embedding = [0.1, 0.2, 0.3]
-    mock_response = MagicMock()
-    mock_response.data = [mock_embedding]
+    mock_result = {"embedding": [0.1, 0.2, 0.3]}
 
-    with patch("src.db.qdrant._openai") as mock_openai:
-        mock_openai.embeddings.create = AsyncMock(return_value=mock_response)
-        from src.db.qdrant import embed
-        result = await embed("brake pads")
+    with patch("src.db.qdrant.genai") as mock_genai:
+        with patch("src.db.qdrant.asyncio.to_thread", new_callable=AsyncMock) as mock_thread:
+            mock_thread.return_value = mock_result
+            from src.db.qdrant import embed
+            result = await embed("brake pads")
 
     assert isinstance(result, list)
     assert result == [0.1, 0.2, 0.3]

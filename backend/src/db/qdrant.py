@@ -1,6 +1,8 @@
+import asyncio
+
+import google.generativeai as genai
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, VectorParams
-from openai import AsyncOpenAI
 from src.config import settings
 
 _qdrant = AsyncQdrantClient(
@@ -8,10 +10,10 @@ _qdrant = AsyncQdrantClient(
     api_key=settings.QDRANT_API_KEY.get_secret_value() or None,
 )
 
-_openai = AsyncOpenAI(api_key=settings.OPENAI_API_KEY.get_secret_value())
+genai.configure(api_key=settings.GEMINI_API_KEY.get_secret_value())
 
-EMBED_MODEL = "text-embedding-3-small"
-EMBED_DIM = 1536
+EMBED_MODEL = "models/text-embedding-004"
+EMBED_DIM = 768
 
 COLLECTIONS = {
     "parts": VectorParams(size=EMBED_DIM, distance=Distance.COSINE),
@@ -23,8 +25,13 @@ qdrant = _qdrant
 
 
 async def embed(text: str) -> list[float]:
-    resp = await _openai.embeddings.create(model=EMBED_MODEL, input=text)
-    return resp.data[0].embedding
+    result = await asyncio.to_thread(
+        genai.embed_content,
+        model=EMBED_MODEL,
+        content=text,
+        task_type="retrieval_query",
+    )
+    return result["embedding"]
 
 
 async def ensure_collections() -> None:
