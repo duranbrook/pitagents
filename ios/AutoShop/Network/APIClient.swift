@@ -64,6 +64,10 @@ final class APIClient {
         try await get("/vehicles/\(vehicleId)/reports")
     }
 
+    func getReport(reportId: String) async throws -> ReportDetail {
+        try await get("/reports/\(reportId)")
+    }
+
     // MARK: - Messages
 
     func listMessages(vehicleId: String) async throws -> [MessageResponse] {

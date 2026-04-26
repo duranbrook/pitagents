@@ -34,6 +34,7 @@ struct LoginView: View {
                     .padding()
                     .background(Color(.secondarySystemBackground))
                     .cornerRadius(10)
+                    .onSubmit { if canSubmit { Task { await login() } } }
             }
 
             if let error = errorMessage {

@@ -67,7 +67,7 @@ struct VehicleListView: View {
                     ForEach(vm.vehicles) { vehicle in
                         NavigationLink(value: vehicle) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("\(vehicle.year) \(vehicle.make) \(vehicle.model)")
+                                Text(verbatim: "\(vehicle.year) \(vehicle.make) \(vehicle.model)")
                                     .font(.headline)
                                 if let vin = vehicle.vin {
                                     Text("VIN: \(vin)").font(.caption).foregroundStyle(.secondary)

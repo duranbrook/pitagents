@@ -1,0 +1,252 @@
+import SwiftUI
+
+// MARK: - ViewModel
+
+@MainActor
+final class ReportDetailViewModel: ObservableObject {
+    @Published var report: ReportDetail?
+    @Published var isLoading = true
+    @Published var errorMessage: String?
+
+    private let reportId: String
+
+    init(reportId: String) { self.reportId = reportId }
+
+    func load() async {
+        isLoading = true
+        defer { isLoading = false }
+        do { report = try await APIClient.shared.getReport(reportId: reportId) }
+        catch { errorMessage = error.localizedDescription }
+    }
+}
+
+// MARK: - Main View
+
+struct ReportDetailView: View {
+    let reportId: String
+    let vehicleLabel: String
+
+    @StateObject private var vm: ReportDetailViewModel
+
+    init(reportId: String, vehicleLabel: String) {
+        self.reportId = reportId
+        self.vehicleLabel = vehicleLabel
+        _vm = StateObject(wrappedValue: ReportDetailViewModel(reportId: reportId))
+    }
+
+    var body: some View {
+        Group {
+            if vm.isLoading {
+                ProgressView("Loading report…").frame(maxHeight: .infinity)
+            } else if let report = vm.report {
+                reportContent(report)
+            } else {
+                ContentUnavailableView("Report Not Found", systemImage: "doc.text.magnifyingglass")
+                    .frame(maxHeight: .infinity)
+            }
+        }
+        .navigationTitle(vehicleLabel)
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Error", isPresented: Binding(
+            get: { vm.errorMessage != nil },
+            set: { if !$0 { vm.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { vm.errorMessage = nil }
+        } message: { Text(vm.errorMessage ?? "") }
+        .task { await vm.load() }
+    }
+
+    @ViewBuilder
+    private func reportContent(_ r: ReportDetail) -> some View {
+        let backendBase = SessionAPI.baseURL
+        let shareURL = URL(string: "\(backendBase)/r/\(r.shareToken)")
+
+        ScrollView {
+            VStack(spacing: 16) {
+                // Vehicle card
+                vehicleCard(r.vehicle)
+
+                // Summary
+                if let summary = r.summary, !summary.isEmpty {
+                    sectionCard(title: "Summary") {
+                        Text(summary)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                // Findings
+                if !r.findings.isEmpty {
+                    sectionCard(title: "Inspection Findings") {
+                        VStack(spacing: 10) {
+                            ForEach(r.findings) { finding in
+                                FindingRow(finding: finding)
+                                if finding.id != r.findings.last?.id {
+                                    Divider()
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Estimate
+                if !r.estimate.isEmpty {
+                    sectionCard(title: "Estimate") {
+                        VStack(spacing: 0) {
+                            // Header row
+                            HStack {
+                                Text("Service").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+                                Text("Labor").font(.caption).foregroundStyle(.secondary).frame(width: 54, alignment: .trailing)
+                                Text("Parts").font(.caption).foregroundStyle(.secondary).frame(width: 54, alignment: .trailing)
+                                Text("Total").font(.caption).foregroundStyle(.secondary).frame(width: 60, alignment: .trailing)
+                            }
+                            .padding(.bottom, 6)
+                            Divider()
+
+                            ForEach(r.estimate) { item in
+                                HStack(alignment: .top) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.part).font(.subheadline).fontWeight(.medium)
+                                        Text("\(String(format: "%.1f", item.laborHours)) hrs @ \(formatCurrency(item.laborCost / max(item.laborHours, 0.1)))/hr")
+                                            .font(.caption2)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    Text(formatCurrency(item.laborCost)).font(.caption).frame(width: 54, alignment: .trailing)
+                                    Text(formatCurrency(item.partsCost)).font(.caption).frame(width: 54, alignment: .trailing)
+                                    Text(formatCurrency(item.total)).font(.subheadline.bold()).frame(width: 60, alignment: .trailing)
+                                }
+                                .padding(.vertical, 8)
+                                Divider()
+                            }
+
+                            // Grand total
+                            HStack {
+                                Text("Grand Total").font(.subheadline.bold()).frame(maxWidth: .infinity, alignment: .leading)
+                                Text(formatCurrency(r.total)).font(.title3.bold()).foregroundStyle(.blue)
+                            }
+                            .padding(.top, 8)
+                        }
+                    }
+                }
+
+                // Share button
+                if let url = shareURL {
+                    ShareLink(item: url, subject: Text("Vehicle Inspection Report"), message: Text("Your inspection report is ready.")) {
+                        Label("Share with Customer", systemImage: "square.and.arrow.up")
+                            .font(.subheadline.bold())
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color.blue)
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.horizontal)
+                }
+
+                // Footer
+                if let createdAt = r.createdAt, let date = parseDate(createdAt) {
+                    Text("Report generated \(date.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .padding(.bottom, 8)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 12)
+        }
+        .background(Color(.systemGroupedBackground))
+    }
+
+    @ViewBuilder
+    private func vehicleCard(_ vehicle: ReportVehicle?) -> some View {
+        sectionCard(title: "Vehicle") {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    if let v = vehicle {
+                        let parts = [v.year.map(String.init), v.make, v.model].compactMap { $0 }
+                        Text(parts.joined(separator: " "))
+                            .font(.headline)
+                        if let trim = v.trim { Text(trim).font(.subheadline).foregroundStyle(.secondary) }
+                    }
+                }
+                Spacer()
+                if let vin = vehicle?.vin {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("VIN").font(.caption2).foregroundStyle(.tertiary)
+                        Text(vin).font(.caption.monospaced()).foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func sectionCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.caption.uppercaseSmallCaps())
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+            VStack(alignment: .leading, spacing: 0) {
+                content()
+            }
+            .padding()
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private func formatCurrency(_ value: Double) -> String {
+        value == 0 ? "—" : String(format: "$%.2f", value)
+    }
+
+    private func parseDate(_ iso: String) -> Date? {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
+    }
+}
+
+// MARK: - Finding Row
+
+struct FindingRow: View {
+    let finding: ReportFinding
+
+    private var severityConfig: (color: Color, label: String, icon: String) {
+        switch finding.severity.lowercased() {
+        case "high", "urgent":   return (.red, "Urgent", "exclamationmark.triangle.fill")
+        case "medium", "moderate": return (.orange, "Monitor", "exclamationmark.circle.fill")
+        default:                 return (.green, "OK", "checkmark.circle.fill")
+        }
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: severityConfig.icon)
+                .foregroundStyle(severityConfig.color)
+                .font(.title3)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(finding.part)
+                    .font(.subheadline.bold())
+                Text(finding.notes)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer()
+
+            Text(severityConfig.label)
+                .font(.caption2.bold())
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(severityConfig.color.opacity(0.12))
+                .foregroundStyle(severityConfig.color)
+                .clipShape(Capsule())
+        }
+    }
+}

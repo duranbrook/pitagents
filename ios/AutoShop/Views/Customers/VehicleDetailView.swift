@@ -175,6 +175,10 @@ struct ReportsTab: View {
         _vm = StateObject(wrappedValue: ReportsViewModel(vehicle: vehicle))
     }
 
+    private var vehicleLabel: String {
+        "\(vehicle.year) \(vehicle.make) \(vehicle.model)"
+    }
+
     var body: some View {
         Group {
             if vm.isLoading && vm.reports.isEmpty {
@@ -184,19 +188,29 @@ struct ReportsTab: View {
                     .frame(maxHeight: .infinity)
             } else {
                 List(vm.reports) { report in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(report.title ?? "Untitled").font(.headline)
-                        HStack {
-                            Text(report.status.capitalized)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            if let total = report.estimateTotal {
-                                Text(String(format: "$%.2f", total)).font(.subheadline.bold())
+                    NavigationLink(destination: ReportDetailView(reportId: report.reportId, vehicleLabel: vehicleLabel)) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(report.title ?? "Inspection Report")
+                                .font(.subheadline.bold())
+                            HStack {
+                                StatusBadge(status: report.status)
+                                Spacer()
+                                if let total = report.estimateTotal, total > 0 {
+                                    Text(String(format: "$%.2f", total))
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                            if let date = parseReportDate(report.createdAt) {
+                                Text(date.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
                             }
                         }
+                        .padding(.vertical, 4)
                     }
                 }
+                .listStyle(.insetGrouped)
             }
         }
         .alert("Error", isPresented: Binding(
@@ -206,5 +220,31 @@ struct ReportsTab: View {
             Button("OK", role: .cancel) { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
         .task { await vm.load() }
+    }
+
+    private func parseReportDate(_ iso: String) -> Date? {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
+    }
+}
+
+struct StatusBadge: View {
+    let status: String
+    private var config: (color: Color, label: String) {
+        switch status.lowercased() {
+        case "final": return (.green, "Final")
+        case "draft": return (.orange, "Draft")
+        default:      return (.gray, status.capitalized)
+        }
+    }
+    var body: some View {
+        Text(config.label)
+            .font(.caption2.bold())
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(config.color.opacity(0.12))
+            .foregroundStyle(config.color)
+            .clipShape(Capsule())
     }
 }

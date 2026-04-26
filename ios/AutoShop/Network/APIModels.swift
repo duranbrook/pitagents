@@ -70,6 +70,38 @@ struct VehicleCreate: Encodable {
     let color: String?
 }
 
+// MARK: - Quotes
+
+struct QuoteLineItem: Decodable, Identifiable {
+    let type: String
+    let description: String
+    let qty: Double
+    let unitPrice: Double
+    let total: Double
+    var id: String { "\(type)-\(description)" }
+    enum CodingKeys: String, CodingKey {
+        case type, description, qty, total
+        case unitPrice = "unit_price"
+    }
+}
+
+struct QuoteResponse: Decodable, Identifiable {
+    let quoteId: String
+    let status: String
+    let total: Double
+    let lineItems: [QuoteLineItem]
+    let sessionId: String?
+    let createdAt: String?
+    var id: String { quoteId }
+    enum CodingKeys: String, CodingKey {
+        case quoteId = "quote_id"
+        case status, total
+        case lineItems = "line_items"
+        case sessionId = "session_id"
+        case createdAt = "created_at"
+    }
+}
+
 // MARK: - Reports
 
 struct ReportSummary: Decodable, Identifiable {
@@ -83,6 +115,53 @@ struct ReportSummary: Decodable, Identifiable {
         case reportId = "report_id"
         case title, status
         case estimateTotal = "estimate_total"
+        case createdAt = "created_at"
+    }
+}
+
+struct ReportVehicle: Decodable {
+    let year: Int?
+    let make: String?
+    let model: String?
+    let trim: String?
+    let vin: String?
+}
+
+struct ReportFinding: Decodable, Identifiable {
+    let part: String
+    let severity: String
+    let notes: String
+    var id: String { part + severity }
+}
+
+struct ReportEstimateItem: Decodable, Identifiable {
+    let part: String
+    let laborHours: Double
+    let laborCost: Double
+    let partsCost: Double
+    let total: Double
+    var id: String { part }
+    enum CodingKeys: String, CodingKey {
+        case part
+        case laborHours = "labor_hours"
+        case laborCost = "labor_cost"
+        case partsCost = "parts_cost"
+        case total
+    }
+}
+
+struct ReportDetail: Decodable, Identifiable {
+    let id: String
+    let vehicle: ReportVehicle?
+    let summary: String?
+    let findings: [ReportFinding]
+    let estimate: [ReportEstimateItem]
+    let total: Double
+    let shareToken: String
+    let createdAt: String?
+    enum CodingKeys: String, CodingKey {
+        case id, vehicle, summary, findings, estimate, total
+        case shareToken = "share_token"
         case createdAt = "created_at"
     }
 }
@@ -115,6 +194,7 @@ struct MessageCreate: Encodable {
 struct ContentBlock: Decodable {
     let type: String
     let text: String?
+    init(type: String, text: String?) { self.type = type; self.text = text }
 }
 
 struct ChatHistoryItem: Decodable, Identifiable {
@@ -128,6 +208,14 @@ struct ChatHistoryItem: Decodable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, role, content
         case createdAt = "created_at"
+    }
+
+    // Convenience init for optimistic local messages before server confirms
+    init(role: String, content: String) {
+        self.id = UUID().uuidString
+        self.role = role
+        self.content = [ContentBlock(type: "text", text: content)]
+        self.createdAt = ""
     }
 }
 

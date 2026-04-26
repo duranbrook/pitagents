@@ -17,6 +17,7 @@ targets:
         CFBundleDisplayName: AutoShop
         UILaunchScreen: {}
         NSMicrophoneUsageDescription: "Required for inspection audio recording"
+        NSSpeechRecognitionUsageDescription: "Required to transcribe technician notes during inspection"
         NSCameraUsageDescription: "Required for inspection video capture"
         NSBluetoothAlwaysUsageDescription: "Required to connect to Bluetooth microphone"
         NSLocalNetworkUsageDescription: "Required to connect to local development server"
@@ -28,3 +29,5 @@ targets:
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         ENABLE_PREVIEWS: YES
+        DEVELOPMENT_TEAM: L4YD55GDF5
+        CODE_SIGN_STYLE: Automatic
