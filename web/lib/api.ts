@@ -1,3 +1,4 @@
+import type { Customer, Vehicle, ReportSummary, ReportDetail } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -7,6 +8,20 @@ function getToken(): string {
     return localStorage.getItem('token') || ''
   }
   return ''
+}
+
+function getTokenPayload(): Record<string, string> {
+  const token = getToken()
+  if (!token) return {}
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch {
+    return {}
+  }
+}
+
+export function getShopId(): string {
+  return getTokenPayload().shop_id ?? ''
 }
 
 export const api = axios.create({
@@ -128,3 +143,67 @@ export async function rateFeedback(
 ): Promise<void> {
   await api.post(`/chat/${agentId}/feedback`, { message_id: messageId, rating })
 }
+
+// ── Customers ─────────────────────────────────────────────────────────────
+
+export const getCustomers = (): Promise<Customer[]> =>
+  api.get('/customers').then(r => r.data)
+
+export const createCustomer = (data: {
+  name: string
+  email?: string
+  phone?: string
+}): Promise<Customer> =>
+  api.post('/customers', data).then(r => r.data)
+
+// ── Vehicles ──────────────────────────────────────────────────────────────
+
+export const getVehicles = (customerId: string): Promise<Vehicle[]> =>
+  api.get(`/customers/${customerId}/vehicles`).then(r => r.data)
+
+export const createVehicle = (
+  customerId: string,
+  data: {
+    year: number
+    make: string
+    model: string
+    trim?: string
+    vin?: string
+    color?: string
+  },
+): Promise<Vehicle> =>
+  api.post(`/customers/${customerId}/vehicles`, data).then(r => r.data)
+
+// ── Reports ───────────────────────────────────────────────────────────────
+
+export const getAllReports = (): Promise<ReportSummary[]> =>
+  api.get('/reports').then(r => r.data)
+
+// ── Sessions ──────────────────────────────────────────────────────────────
+
+export const createSession = (vehicleId: string): Promise<{ session_id: string }> =>
+  api.post('/sessions', {
+    shop_id: getShopId(),
+    vehicle_id: vehicleId,
+    labor_rate: 120.0,
+    pricing_flag: 'shop',
+  }).then(r => r.data)
+
+export async function uploadSessionMedia(
+  sessionId: string,
+  file: File,
+  mediaType: 'audio' | 'video' | 'photo',
+): Promise<{ media_id: string; s3_url: string }> {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('media_type', mediaType)
+  const res = await api.post(`/sessions/${sessionId}/media`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return res.data
+}
+
+export const generateReport = (
+  sessionId: string,
+): Promise<{ report_id: string; share_token: string; report_url: string }> =>
+  api.post(`/sessions/${sessionId}/generate-report`).then(r => r.data)
