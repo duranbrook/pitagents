@@ -137,6 +137,23 @@ struct SessionAPI {
         return quoteId
     }
 
+    // MARK: - Get Quote
+
+    func getQuote(quoteId: String) async throws -> QuoteResponse {
+        guard let url = URL(string: "\(SessionAPI.baseURL)/quotes/\(quoteId)") else {
+            throw SessionAPIError.invalidURL
+        }
+        let request = authedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(data: data, response: response)
+        let decoder = JSONDecoder()
+        do {
+            return try decoder.decode(QuoteResponse.self, from: data)
+        } catch {
+            throw SessionAPIError.decodingError(error.localizedDescription)
+        }
+    }
+
     // MARK: - Finalize Quote
 
     func finalizeQuote(quoteId: String) async throws -> FinalizeQuoteResponse {
