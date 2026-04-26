@@ -16,6 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.deps import get_current_user
 from src.db.base import get_db
 from src.models.quote import Quote
+from src.models.report import Report
+from src.models.session import InspectionSession
+from src.models.shop import Shop
+from src.models.media import MediaFile
+from src.services.pdf import PDFService
+from src.storage.s3 import StorageService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["quotes"])
@@ -58,6 +64,10 @@ class FinalizeQuoteResponse(BaseModel):
     quote_id: str
     status: str
     total: float
+    pdf_url: str | None = None
+    report_id: str | None = None
+    report_pdf_url: str | None = None
+    share_token: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -200,10 +210,8 @@ async def finalize_quote(
     try:
         qid = uuid.UUID(quote_id)
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid quote_id: {quote_id}",
-        )
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail=f"Invalid quote_id: {quote_id}")
 
     result = await db.execute(select(Quote).where(Quote.id == qid))
     quote = result.scalar_one_or_none()
@@ -214,10 +222,141 @@ async def finalize_quote(
     await db.commit()
     await db.refresh(quote)
 
+    # ── Load related objects ──
+    session_obj: InspectionSession | None = None
+    if quote.session_id:
+        r2 = await db.execute(select(InspectionSession).where(InspectionSession.id == quote.session_id))
+        session_obj = r2.scalar_one_or_none()
+
+    shop_obj: Shop | None = None
+    shop_id_str = current_user.get("shop_id")
+    if shop_id_str:
+        try:
+            sid = uuid.UUID(shop_id_str)
+            r3 = await db.execute(select(Shop).where(Shop.id == sid))
+            shop_obj = r3.scalar_one_or_none()
+        except ValueError:
+            pass
+    shop = {
+        "name": shop_obj.name if shop_obj else "AutoShop",
+        "address": shop_obj.address if shop_obj else "",
+        "phone": "",
+    }
+
+    session_dict: dict = {}
+    vehicle_snapshot: dict = {}
+    if session_obj:
+        vehicle_snapshot = session_obj.vehicle or {}
+        session_dict = {"vehicle": vehicle_snapshot, "transcript": session_obj.transcript or ""}
+
+    # ── Upsert Report row ──
+    report_obj: Report | None = None
+    if session_obj:
+        rr = await db.execute(select(Report).where(Report.session_id == session_obj.id))
+        report_obj = rr.scalar_one_or_none()
+
+    vehicle_id_val: uuid.UUID | None = None
+    vid_str = vehicle_snapshot.get("vehicle_id")
+    if vid_str:
+        try:
+            vehicle_id_val = uuid.UUID(vid_str)
+        except ValueError:
+            pass
+
+    year  = vehicle_snapshot.get("year", "")
+    make  = vehicle_snapshot.get("make", "")
+    model_name = vehicle_snapshot.get("model", "")
+    title = f"{year} {make} {model_name} — Inspection".strip(" —")
+
+    if session_obj:
+        if report_obj is None:
+            report_obj = Report(
+                session_id=session_obj.id,
+                vehicle_id=vehicle_id_val,
+                title=title,
+                summary="",
+                findings=[],
+                estimate={"line_items": list(quote.line_items or [])},
+                estimate_total=quote.total,
+                vehicle=vehicle_snapshot,
+                status="final",
+            )
+            db.add(report_obj)
+            await db.commit()
+            await db.refresh(report_obj)
+        else:
+            report_obj.vehicle_id = vehicle_id_val
+            report_obj.title = title
+            report_obj.estimate = {"line_items": list(quote.line_items or [])}
+            report_obj.estimate_total = quote.total
+            report_obj.vehicle = vehicle_snapshot
+            report_obj.status = "final"
+            await db.commit()
+            await db.refresh(report_obj)
+
+    # ── Gather media URLs ──
+    media_urls: list[str] = []
+    if session_obj:
+        mr = await db.execute(select(MediaFile).where(MediaFile.session_id == session_obj.id))
+        media_urls = [m.s3_url for m in mr.scalars().all() if m.s3_url and m.s3_url.startswith("http")]
+
+    # ── Generate PDFs ──
+    quote_dict = {
+        "line_items": list(quote.line_items or []),
+        "total": float(quote.total or 0),
+    }
+    report_dict: dict = {}
+    if report_obj:
+        report_dict = {
+            "id": str(report_obj.id),
+            "summary": report_obj.summary or "",
+            "findings": list(report_obj.findings or []),
+            "estimate": report_obj.estimate or {},
+            "estimate_total": float(report_obj.estimate_total or 0),
+            "vehicle": report_obj.vehicle or {},
+            "share_token": str(report_obj.share_token),
+        }
+
+    storage = StorageService()
+    estimate_pdf_url: str | None = None
+    report_pdf_url: str | None = None
+
+    try:
+        estimate_bytes = PDFService.generate_estimate(quote_dict, session_dict, shop)
+        estimate_pdf_url = await storage.upload(
+            estimate_bytes,
+            f"quotes/{quote_id}/estimate.pdf",
+            "application/pdf",
+        )
+        try:
+            quote.pdf_url = estimate_pdf_url  # type: ignore[attr-defined]
+            await db.commit()
+        except Exception:
+            pass
+    except Exception:
+        logger.exception("Failed to generate/upload estimate PDF for quote %s", quote_id)
+
+    if report_obj and report_dict:
+        try:
+            report_bytes = PDFService.generate_report(report_dict, media_urls, shop)
+            report_pdf_url = await storage.upload(
+                report_bytes,
+                f"reports/{report_obj.id}/report.pdf",
+                "application/pdf",
+            )
+            report_obj.pdf_url = report_pdf_url
+            await db.commit()
+        except Exception:
+            logger.exception("Failed to generate/upload report PDF for report %s", report_obj.id if report_obj else 'unknown')
+
     return FinalizeQuoteResponse(
         quote_id=str(quote.id),
         status="final",
-        total=float(quote.total) if quote.total is not None else 0.0,
+        total=float(quote.total or 0),
+        pdf_url=estimate_pdf_url,
+        report_id=str(report_obj.id) if report_obj else None,
+        report_pdf_url=report_pdf_url,
+        share_token=str(report_obj.share_token) if report_obj else None,
     )
 
 

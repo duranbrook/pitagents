@@ -13,11 +13,14 @@ struct RecordingView: View {
     @State private var sessionId: String = ""
     @State private var isSessionActive: Bool = false
     @State private var isGeneratingQuote: Bool = false
-    @State private var capturedCount: Int = 0
     @State private var showCamera: Bool = false
-    @State private var quoteId: String?
     @State private var errorMessage: String?
     @State private var showError: Bool = false
+    @State private var generatedQuoteId: String?
+    @State private var navigateToQuote: Bool = false
+
+    @ObservedObject private var uploadManager = UploadManager.shared
+    @FocusState private var transcriptFocused: Bool
 
     private let api = SessionAPI()
 
@@ -29,6 +32,9 @@ struct RecordingView: View {
                     if isSessionActive {
                         sessionInfoBar
                         transcriptSection
+                        if !uploadManager.items(for: sessionId).isEmpty {
+                            mediaThumbnailStrip
+                        }
                         captureControls
                     }
                     Spacer()
@@ -38,18 +44,18 @@ struct RecordingView: View {
             }
             .navigationTitle("Inspection Recorder")
             .navigationBarTitleDisplayMode(.inline)
-            .fullScreenCover(isPresented: $showCamera) {
+            .fullScreenCover(isPresented: $showCamera, onDismiss: { transcriptFocused = false }) {
                 CameraShootView(videoCapture: videoCapture) { url, type in
-                    Task { await uploadMedia(url: url, type: type) }
+                    enqueueMedia(localURL: url, type: type)
                 }
             }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
                 Button("OK", role: .cancel) {}
             } message: { msg in Text(msg) }
-            .alert("Quote Created", isPresented: Binding(get: { quoteId != nil }, set: { if !$0 { quoteId = nil } })) {
-                Button("Done") { quoteId = nil }
-            } message: {
-                Text("Quote \(quoteId.map { String($0.prefix(8)) } ?? "") was created successfully.")
+            .navigationDestination(isPresented: $navigateToQuote) {
+                if let qId = generatedQuoteId {
+                    QuoteDetailView(quoteId: qId)
+                }
             }
             .onAppear {
                 audioRecorder.requestPermissions { granted in
@@ -73,8 +79,8 @@ struct RecordingView: View {
                 .foregroundStyle(sessionId.isEmpty ? .secondary : .primary)
                 .lineLimit(1).truncationMode(.middle)
             Spacer()
-            if capturedCount > 0 {
-                Label("\(capturedCount)", systemImage: "paperclip")
+            if !uploadManager.items(for: sessionId).isEmpty {
+                Label("\(uploadManager.items(for: sessionId).count)", systemImage: "paperclip")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -110,7 +116,24 @@ struct RecordingView: View {
                         .allowsHitTesting(false)
                 }
             }
+            .focused($transcriptFocused)
         }
+    }
+
+    private var mediaThumbnailStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(uploadManager.items(for: sessionId)) { item in
+                    MediaThumb(item: item) {
+                        uploadManager.retry(id: item.id, token: KeychainStore.shared.load())
+                    } onRemove: {
+                        uploadManager.remove(id: item.id)
+                    }
+                }
+            }
+            .padding(.horizontal, 2)
+        }
+        .frame(height: 88)
     }
 
     private var captureControls: some View {
@@ -157,7 +180,7 @@ struct RecordingView: View {
                     .background(Color.orange).foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .disabled(isGeneratingQuote)
+                .disabled(isGeneratingQuote || !uploadManager.canGenerateQuote)
             }
         }
         .padding(.bottom, 8)
@@ -176,15 +199,25 @@ struct RecordingView: View {
         }
     }
 
-    private func uploadMedia(url: URL, type: String) async {
-        let tag = type == "photo" ? "general" : "general"
+    private func enqueueMedia(localURL: URL, type: String) {
+        let id = UUID()
+        let ext = localURL.pathExtension.isEmpty ? "jpg" : localURL.pathExtension
+        let destURL = UploadManager.mediaURL(for: id, sessionId: sessionId, ext: ext)
         do {
-            _ = try await api.uploadMedia(sessionId: sessionId, fileURL: url, mediaType: type, tag: tag)
-            capturedCount += 1
+            try FileManager.default.copyItem(at: localURL, to: destURL)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Failed to save file: \(error.localizedDescription)"
             showError = true
+            return
         }
+        uploadManager.enqueue(
+            id: id,
+            sessionId: sessionId,
+            localURL: destURL,
+            mediaType: type,
+            tag: "general",
+            token: KeychainStore.shared.load()
+        )
     }
 
     private func finishAndGenerate() async {
@@ -192,31 +225,114 @@ struct RecordingView: View {
         defer { isGeneratingQuote = false }
 
         if audioRecorder.isRecording, let audioURL = audioRecorder.stopRecording() {
-            do {
-                _ = try await api.uploadMedia(sessionId: sessionId, fileURL: audioURL, mediaType: "audio", tag: "general")
-            } catch {
-                errorMessage = error.localizedDescription; showError = true; return
-            }
+            enqueueMedia(localURL: audioURL, type: "audio")
         }
 
         if videoCapture.isRecordingVideo, let videoURL = await videoCapture.stopVideoRecording() {
-            do {
-                _ = try await api.uploadMedia(sessionId: sessionId, fileURL: videoURL, mediaType: "video", tag: "general")
-            } catch {
-                errorMessage = error.localizedDescription; showError = true; return
-            }
+            enqueueMedia(localURL: videoURL, type: "video")
+        }
+
+        // Wait for all pending/uploading items to finish
+        while !uploadManager.items(for: sessionId).isEmpty &&
+              uploadManager.items(for: sessionId).allSatisfy({ item in
+                  if case .done = item.status { return true }
+                  if case .failed = item.status { return true }
+                  return false
+              }) == false {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
+
+        let hasFailures = uploadManager.items(for: sessionId).contains { item in
+            if case .failed = item.status { return true }
+            return false
+        }
+        if hasFailures {
+            errorMessage = "Some files failed to upload. Retry or remove them before generating a quote."
+            showError = true
+            return
         }
 
         do {
-            let id = try await api.generateQuote(sessionId: sessionId)
-            quoteId = id
-            isSessionActive = false
-            sessionId = ""
-            capturedCount = 0
+            let id = try await api.generateQuote(sessionId: sessionId, transcript: audioRecorder.transcript)
+            generatedQuoteId = id
+            navigateToQuote = true
         } catch {
             errorMessage = error.localizedDescription
             showError = true
         }
+    }
+}
+
+// MARK: - Media Thumbnail
+
+struct MediaThumb: View {
+    let item: UploadItem
+    let onRetry: () -> Void
+    let onRemove: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            if item.mediaType == "photo", let img = UIImage(contentsOfFile: item.localURL.path) {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 72, height: 72)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(UIColor.secondarySystemBackground))
+                    .frame(width: 72, height: 72)
+                    .overlay {
+                        Image(systemName: item.mediaType == "video" ? "video.fill" : "waveform")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
+            }
+            statusBadge
+        }
+        .frame(width: 72, height: 72)
+        .contextMenu {
+            Button("Remove", role: .destructive, action: onRemove)
+        }
+    }
+
+    @ViewBuilder
+    private var statusBadge: some View {
+        switch item.status {
+        case .pending:
+            badge(color: .gray, label: "…")
+        case .uploading(let p):
+            ZStack {
+                Circle()
+                    .stroke(Color.yellow.opacity(0.3), lineWidth: 2)
+                    .frame(width: 20, height: 20)
+                Circle()
+                    .trim(from: 0, to: p)
+                    .stroke(Color.yellow, lineWidth: 2)
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 20, height: 20)
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(.yellow)
+            }
+            .offset(x: 4, y: 4)
+        case .done:
+            badge(color: .green, label: "✓")
+        case .failed:
+            Button(action: onRetry) {
+                badge(color: .red, label: "↺")
+            }
+        }
+    }
+
+    private func badge(color: Color, label: String) -> some View {
+        Text(label)
+            .font(.system(size: 9, weight: .bold))
+            .frame(width: 18, height: 18)
+            .background(color)
+            .foregroundStyle(.white)
+            .clipShape(Circle())
+            .offset(x: 4, y: 4)
     }
 }
 

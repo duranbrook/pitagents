@@ -113,14 +113,19 @@ struct SessionAPI {
 
     // MARK: - Generate Quote
 
-    func generateQuote(sessionId: String) async throws -> String {
+    func generateQuote(sessionId: String, transcript: String? = nil) async throws -> String {
         guard let url = URL(string: "\(SessionAPI.baseURL)/quotes") else {
             throw SessionAPIError.invalidURL
         }
 
+        var body: [String: Any] = ["session_id": sessionId]
+        if let transcript = transcript, !transcript.isEmpty {
+            body["transcript"] = transcript
+        }
+
         var request = authedRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["session_id": sessionId])
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         try validateResponse(data: data, response: response)
@@ -130,6 +135,41 @@ struct SessionAPI {
             throw SessionAPIError.missingField("quote_id")
         }
         return quoteId
+    }
+
+    // MARK: - Get Quote
+
+    func getQuote(quoteId: String) async throws -> QuoteResponse {
+        guard let url = URL(string: "\(SessionAPI.baseURL)/quotes/\(quoteId)") else {
+            throw SessionAPIError.invalidURL
+        }
+        let request = authedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(data: data, response: response)
+        let decoder = JSONDecoder()
+        do {
+            return try decoder.decode(QuoteResponse.self, from: data)
+        } catch {
+            throw SessionAPIError.decodingError(error.localizedDescription)
+        }
+    }
+
+    // MARK: - Finalize Quote
+
+    func finalizeQuote(quoteId: String) async throws -> FinalizeQuoteResponse {
+        guard let url = URL(string: "\(SessionAPI.baseURL)/quotes/\(quoteId)/finalize") else {
+            throw SessionAPIError.invalidURL
+        }
+        var request = authedRequest(url: url, method: "PUT")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [:])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(data: data, response: response)
+        do {
+            return try JSONDecoder().decode(FinalizeQuoteResponse.self, from: data)
+        } catch {
+            throw SessionAPIError.decodingError(error.localizedDescription)
+        }
     }
 
     // MARK: - Poll Session

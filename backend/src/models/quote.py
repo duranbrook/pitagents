@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, Numeric, DateTime, ForeignKey, Enum as SAEnum
+from sqlalchemy import Column, Numeric, DateTime, ForeignKey, Enum as SAEnum, String
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 from src.db.base import Base
@@ -21,3 +21,4 @@ class Quote(Base):
     total = Column(Numeric(10, 2), default=0, server_default="0")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=datetime.utcnow, nullable=True)
+    pdf_url = Column(String, nullable=True)
