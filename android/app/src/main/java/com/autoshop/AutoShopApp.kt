@@ -21,9 +21,13 @@ class AutoShopApp : Application() {
     lateinit var messagesApi: MessagesApi
         private set
 
+    var shopId: String = ""
+        private set
+
     override fun onCreate() {
         super.onCreate()
         tokenStore = TokenStore(this)
+        shopId = tokenStore.getShopId()
         val retrofit = buildRetrofit(tokenStore)
         authApi = retrofit.create(AuthApi::class.java)
         customersApi = retrofit.create(CustomersApi::class.java)
