@@ -26,44 +26,42 @@ struct RecordingView: View {
     private let api = SessionAPI()
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color(UIColor.systemGroupedBackground).ignoresSafeArea()
-                VStack(spacing: 16) {
-                    if isSessionActive {
-                        sessionInfoBar
-                        transcriptSection
-                        if !uploadManager.items(for: sessionId).isEmpty {
-                            mediaThumbnailStrip
-                        }
-                        captureControls
+        ZStack {
+            Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+            VStack(spacing: 16) {
+                if isSessionActive {
+                    sessionInfoBar
+                    transcriptSection
+                    if !uploadManager.items(for: sessionId).isEmpty {
+                        mediaThumbnailStrip
                     }
-                    Spacer()
-                    bottomButton
+                    captureControls
                 }
-                .padding()
+                Spacer()
+                bottomButton
             }
-            .navigationTitle("Inspection Recorder")
-            .navigationBarTitleDisplayMode(.inline)
-            .fullScreenCover(isPresented: $showCamera, onDismiss: { transcriptFocused = false }) {
-                CameraShootView(videoCapture: videoCapture) { url, type in
-                    enqueueMedia(localURL: url, type: type)
-                }
+            .padding()
+        }
+        .navigationTitle("Inspection Recorder")
+        .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $showCamera, onDismiss: { transcriptFocused = false }) {
+            CameraShootView(videoCapture: videoCapture) { url, type in
+                enqueueMedia(localURL: url, type: type)
             }
-            .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
-                Button("OK", role: .cancel) {}
-            } message: { msg in Text(msg) }
-            .navigationDestination(isPresented: $navigateToQuote) {
-                if let qId = generatedQuoteId {
-                    QuoteDetailView(quoteId: qId)
-                }
+        }
+        .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { msg in Text(msg) }
+        .navigationDestination(isPresented: $navigateToQuote) {
+            if let qId = generatedQuoteId {
+                QuoteDetailView(quoteId: qId)
             }
-            .onAppear {
-                audioRecorder.requestPermissions { granted in
-                    if !granted {
-                        errorMessage = "Microphone or speech recognition permission denied."
-                        showError = true
-                    }
+        }
+        .onAppear {
+            audioRecorder.requestPermissions { granted in
+                if !granted {
+                    errorMessage = "Microphone or speech recognition permission denied."
+                    showError = true
                 }
             }
         }
