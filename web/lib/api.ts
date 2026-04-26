@@ -21,6 +21,7 @@ function getTokenPayload(): Record<string, string> {
 }
 
 export function getShopId(): string {
+  if (typeof window === 'undefined') return ''
   return getTokenPayload().shop_id ?? ''
 }
 
