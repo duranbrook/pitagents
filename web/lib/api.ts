@@ -37,7 +37,6 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-export const getReports = () => api.get('/reports').then(r => r.data)
 export const getReport = (id: string) => api.get(`/reports/${id}`).then(r => r.data)
 export const sendReport = (id: string, payload: { phone?: string; email?: string }) =>
   api.post(`/reports/${id}/send`, payload).then(r => r.data)

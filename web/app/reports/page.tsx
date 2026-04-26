@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { AppShell } from '@/components/AppShell'
@@ -76,9 +77,9 @@ function ReportsPageInner() {
           <div className="p-3 border-b border-gray-800 flex items-center gap-2">
             <span className="text-sm font-semibold text-white flex-1">Reports</span>
             {vehicleFilter && (
-              <a href="/reports" className="text-xs text-indigo-400 hover:underline">
+              <Link href="/reports" className="text-xs text-indigo-400 hover:underline">
                 clear filter
-              </a>
+              </Link>
             )}
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-0.5">

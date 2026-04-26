@@ -277,7 +277,7 @@ function InspectPageInner() {
 
               <button
                 onClick={handleAnalyze}
-                disabled={!audioFile || analyzing}
+                disabled={!audioFile || !selectedVehicleId || analyzing}
                 className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
               >
                 {analyzing ? '⏳ Analyzing… (~30 seconds)' : '▶ Analyze Inspection'}
