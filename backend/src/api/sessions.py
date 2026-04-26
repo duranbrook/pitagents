@@ -7,13 +7,17 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import get_current_user
+from src.db.base import get_db
+from src.models.session import InspectionSession
 from src.storage.s3 import StorageService
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
-_sessions: dict[str, dict] = {}
+# Media records remain in-memory (not yet in DB schema).
 _media: dict[str, dict] = {}
 
 
@@ -37,18 +41,26 @@ class UploadMediaResponse(BaseModel):
 async def create_session(
     body: CreateSessionRequest,
     current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> CreateSessionResponse:
-    session_id = str(uuid.uuid4())
-    _sessions[session_id] = {
-        "session_id": session_id,
-        "shop_id": body.shop_id,
-        "labor_rate": body.labor_rate,
-        "pricing_flag": body.pricing_flag,
-        "status": "recording",
-        "created_by": current_user.get("sub"),
-        "media": [],
-    }
-    return CreateSessionResponse(session_id=session_id, status="recording")
+    try:
+        shop_uuid = uuid.UUID(body.shop_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid shop_id")
+
+    technician_uuid = uuid.UUID(current_user["sub"])
+
+    session = InspectionSession(
+        shop_id=shop_uuid,
+        technician_id=technician_uuid,
+        status="recording",
+        vehicle={"labor_rate": body.labor_rate, "pricing_flag": body.pricing_flag},
+    )
+    db.add(session)
+    await db.commit()
+    await db.refresh(session)
+
+    return CreateSessionResponse(session_id=str(session.id), status=session.status)
 
 
 @router.post("/{session_id}/media", response_model=UploadMediaResponse)
@@ -58,8 +70,16 @@ async def upload_media(
     media_type: Literal["audio", "video", "photo"] = Form(...),
     tag: Literal["vin", "odometer", "tire", "damage", "general"] = Form(...),
     current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> UploadMediaResponse:
-    if session_id not in _sessions:
+    try:
+        sid = uuid.UUID(session_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid session_id")
+
+    result = await db.execute(select(InspectionSession).where(InspectionSession.id == sid))
+    session = result.scalar_one_or_none()
+    if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     data = await file.read()
@@ -71,7 +91,7 @@ async def upload_media(
     storage = StorageService()
     s3_url = await storage.upload(data, key, content_type)
 
-    media_record = {
+    _media[media_id] = {
         "media_id": media_id,
         "session_id": session_id,
         "media_type": media_type,
@@ -79,8 +99,6 @@ async def upload_media(
         "s3_url": s3_url,
         "filename": filename,
     }
-    _media[media_id] = media_record
-    _sessions[session_id]["media"].append(media_id)
 
     return UploadMediaResponse(media_id=media_id, s3_url=s3_url)
 
@@ -89,8 +107,22 @@ async def upload_media(
 async def get_session(
     session_id: str,
     current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> dict:
-    session = _sessions.get(session_id)
+    try:
+        sid = uuid.UUID(session_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid session_id")
+
+    result = await db.execute(select(InspectionSession).where(InspectionSession.id == sid))
+    session = result.scalar_one_or_none()
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-    return session
+
+    return {
+        "session_id": str(session.id),
+        "shop_id": str(session.shop_id),
+        "status": session.status,
+        "vehicle": session.vehicle or {},
+        "created_at": session.created_at.isoformat() if session.created_at else None,
+    }
