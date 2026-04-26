@@ -79,15 +79,15 @@ struct QuoteDetailView: View {
                 }
             }
 
-            // PDF actions (final state)
-            if q.status == "final", let result = finalizeResult {
+            // PDF actions (final state) — URL is deterministic, no need for in-memory result
+            if q.status == "final" {
                 Section("Documents") {
-                    if let pdfUrl = result.pdfUrl, let url = URL(string: pdfUrl) {
+                    if let url = URL(string: "\(SessionAPI.baseURL)/quotes/\(q.quoteId)/pdf") {
                         ShareLink(item: url) {
                             Label("Open Estimate PDF", systemImage: "printer.fill")
                         }
                     }
-                    if let token = result.shareToken {
+                    if let token = finalizeResult?.shareToken {
                         Button {
                             UIPasteboard.general.string = "\(SessionAPI.baseURL)/r/\(token)"
                         } label: {
