@@ -1,6 +1,8 @@
-"""Estimate generation tool with pricing flag support."""
+"""Estimate generation with Qdrant parts pricing lookup."""
 
 from __future__ import annotations
+
+from src.db.qdrant import qdrant, embed
 
 DEFAULT_LABOR_HOURS: dict[str, float] = {
     "brake pads": 2.0,
@@ -17,11 +19,6 @@ DEFAULT_LABOR_HOURS: dict[str, float] = {
 
 
 def _estimate_labor_hours(part_name: str) -> float:
-    """Return estimated labor hours for a given part name.
-
-    Checks the lowercase part name against each keyword in DEFAULT_LABOR_HOURS.
-    Returns the matching hours, or 1.0 if no keyword matches.
-    """
     lower = part_name.lower()
     for keyword, hours in DEFAULT_LABOR_HOURS.items():
         if keyword in lower:
@@ -29,12 +26,28 @@ def _estimate_labor_hours(part_name: str) -> float:
     return 1.0
 
 
-async def fetch_alldata_estimate(vehicle: dict, findings: list, api_key: str) -> dict:
-    """Fetch pricing estimate from the ALLDATA API.
+async def _lookup_parts_price(part_name: str) -> float:
+    """Search Qdrant 'parts' collection for a price estimate.
 
-    Raises:
-        NotImplementedError: ALLDATA API is not yet provisioned.
+    Returns the unit_price from the closest matching part, or 0.0 if the
+    collection is empty or the search fails.
     """
+    try:
+        vector = await embed(part_name)
+        results = await qdrant.search(
+            collection_name="parts",
+            query_vector=vector,
+            limit=1,
+            with_payload=True,
+        )
+        if results:
+            return float(results[0].payload.get("unit_price", 0.0))
+    except Exception:
+        pass
+    return 0.0
+
+
+async def fetch_alldata_estimate(vehicle: dict, findings: list, api_key: str) -> dict:
     raise NotImplementedError("ALLDATA API not yet provisioned")
 
 
@@ -47,25 +60,19 @@ async def generate_estimate(
 ) -> dict:
     """Generate a repair cost estimate.
 
-    If pricing_flag is "alldata" and alldata_api_key is provided, delegates to
-    fetch_alldata_estimate. Otherwise builds line items using shop labor pricing.
-
-    Returns:
-        dict with keys: line_items (list), total (float), currency (str "USD").
-        When using the alldata path the return value is whatever fetch_alldata_estimate
-        returns (caller-supplied in tests; real implementation would include currency).
+    Parts costs are looked up via Qdrant semantic search against the ingested
+    parts catalog. Falls back to 0.0 if the catalog is empty.
     """
     if pricing_flag == "alldata" and alldata_api_key:
         return await fetch_alldata_estimate(vehicle, findings, alldata_api_key)
 
-    # Shop pricing path
     line_items: list[dict] = []
     for finding in findings:
         part = finding.get("part", "")
         severity = finding.get("severity", "")
         labor_hrs = _estimate_labor_hours(part)
         labor_cost = round(labor_hrs * labor_rate, 2)
-        parts_cost = 0.0
+        parts_cost = await _lookup_parts_price(part)
         line_total = round(labor_cost + parts_cost, 2)
         line_items.append(
             {
