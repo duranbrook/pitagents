@@ -1,10 +1,15 @@
 package com.autoshop.ui.nav
 
+import android.content.Intent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -14,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -23,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.autoshop.RecordingActivity
 import com.autoshop.data.network.AuthApi
 import com.autoshop.data.network.CustomersApi
 import com.autoshop.data.network.MessagesApi
@@ -44,6 +52,7 @@ sealed class Screen(val route: String) {
         fun forVehicle(vehicleId: String) = "vehicles/$vehicleId"
     }
     object Assistant : Screen("assistant")
+    object Inspect : Screen("inspect")
     object Profile : Screen("profile")
 }
 
@@ -56,6 +65,7 @@ private data class TabItem(
 private val bottomTabs = listOf(
     TabItem(Screen.CustomerList, "Customers", Icons.Filled.Person),
     TabItem(Screen.Assistant,    "Assistant", Icons.Filled.Email),
+    TabItem(Screen.Inspect,      "Inspect",   Icons.Filled.CameraAlt),
     TabItem(Screen.Profile,      "Profile",   Icons.Filled.AccountCircle),
 )
 
@@ -168,6 +178,10 @@ fun AppNavigation(
                 AssistantScreen(messagesApi = messagesApi)
             }
 
+            composable(Screen.Inspect.route) {
+                InspectScreen(tokenStore = tokenStore)
+            }
+
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     tokenStore = tokenStore,
@@ -178,6 +192,25 @@ fun AppNavigation(
                     },
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun InspectScreen(tokenStore: TokenStore) {
+    val context = LocalContext.current
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Button(onClick = {
+            val shopId = tokenStore.getShopId()
+            val intent = Intent(context, RecordingActivity::class.java).apply {
+                putExtra("SHOP_ID", shopId)
+            }
+            context.startActivity(intent)
+        }) {
+            Text("Start Inspection")
         }
     }
 }

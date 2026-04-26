@@ -52,6 +52,8 @@ class RecordingActivity : ComponentActivity() {
     private val audioRecorder by lazy { AudioRecorder(this) }
     private val videoCapture by lazy { VideoCapture() }
 
+    private var shopId: String = ""
+
     // Permissions required by this screen
     private val requiredPermissions = arrayOf(
         Manifest.permission.RECORD_AUDIO,
@@ -65,6 +67,8 @@ class RecordingActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        shopId = intent.getStringExtra("SHOP_ID") ?: ""
 
         requestPermissionsIfNeeded {
             // Permissions granted – UI is already set, nothing extra needed here.
@@ -100,7 +104,7 @@ class RecordingActivity : ComponentActivity() {
                     },
                     onCreateSession = { onSession ->
                         lifecycleScope.launch {
-                            val id = createSession()
+                            val id = createSession(shopId)
                             onSession(id)
                         }
                     },
@@ -136,7 +140,7 @@ class RecordingActivity : ComponentActivity() {
     /**
      * POST /sessions – creates a new session and returns its ID.
      */
-    private suspend fun createSession(): String = withContext(Dispatchers.IO) {
+    private suspend fun createSession(shopId: String): String = withContext(Dispatchers.IO) {
         try {
             val url = URL("$BASE_URL/sessions")
             val conn = (url.openConnection() as HttpURLConnection).apply {
@@ -146,7 +150,10 @@ class RecordingActivity : ComponentActivity() {
                 connectTimeout = 10_000
                 readTimeout = 10_000
             }
-            OutputStreamWriter(conn.outputStream).use { it.write("{}") }
+            val body = JSONObject().apply {
+                if (shopId.isNotBlank()) put("shop_id", shopId)
+            }.toString()
+            OutputStreamWriter(conn.outputStream).use { it.write(body) }
             val response = conn.inputStream.bufferedReader().readText()
             conn.disconnect()
             val json = JSONObject(response)
