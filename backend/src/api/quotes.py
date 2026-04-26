@@ -8,7 +8,7 @@ import uuid
 from typing import Literal
 
 import anthropic
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -200,9 +200,70 @@ async def get_quote(
     return _quote_to_response(quote)
 
 
+@router.get("/quotes/{quote_id}/pdf")
+async def get_quote_pdf(
+    quote_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Generate and stream the estimate PDF for a finalized quote."""
+    try:
+        qid = uuid.UUID(quote_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail=f"Invalid quote_id: {quote_id}")
+
+    result = await db.execute(select(Quote).where(Quote.id == qid))
+    quote = result.scalar_one_or_none()
+    if quote is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quote not found")
+
+    session_obj: InspectionSession | None = None
+    if quote.session_id:
+        r2 = await db.execute(select(InspectionSession).where(InspectionSession.id == quote.session_id))
+        session_obj = r2.scalar_one_or_none()
+
+    shop_obj: Shop | None = None
+    shop_id_str = current_user.get("shop_id")
+    if shop_id_str:
+        try:
+            r3 = await db.execute(select(Shop).where(Shop.id == uuid.UUID(shop_id_str)))
+            shop_obj = r3.scalar_one_or_none()
+        except ValueError:
+            pass
+
+    shop = {
+        "name": shop_obj.name if shop_obj else "AutoShop",
+        "address": shop_obj.address if shop_obj else "",
+        "phone": "",
+    }
+    vehicle_snapshot = (session_obj.vehicle or {}) if session_obj else {}
+    session_dict = {
+        "vehicle": vehicle_snapshot,
+        "transcript": (session_obj.transcript or "") if session_obj else "",
+    }
+    quote_dict = {
+        "line_items": list(quote.line_items or []),
+        "total": float(quote.total or 0),
+    }
+
+    try:
+        pdf_bytes = PDFService.generate_estimate(quote_dict, session_dict, shop)
+    except Exception:
+        logger.exception("PDF generation failed for quote %s", quote_id)
+        raise HTTPException(status_code=500, detail="PDF generation failed")
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="estimate-{quote_id[:8]}.pdf"'},
+    )
+
+
 @router.put("/quotes/{quote_id}/finalize", response_model=FinalizeQuoteResponse)
 async def finalize_quote(
     quote_id: str,
+    request: Request,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> FinalizeQuoteResponse:
@@ -317,37 +378,25 @@ async def finalize_quote(
             "share_token": str(report_obj.share_token),
         }
 
-    storage = StorageService()
-    estimate_pdf_url: str | None = None
+    # Use a backend-served PDF endpoint so no S3 credentials are needed.
+    # The /quotes/{id}/pdf endpoint regenerates the PDF on demand from DB state.
+    base_url = str(request.base_url).rstrip("/")
+    estimate_pdf_url: str | None = f"{base_url}/quotes/{quote_id}/pdf"
     report_pdf_url: str | None = None
 
+    # Validate PDF generation succeeds (log only — don't fail the finalize)
     try:
-        estimate_bytes = PDFService.generate_estimate(quote_dict, session_dict, shop)
-        estimate_pdf_url = await storage.upload(
-            estimate_bytes,
-            f"quotes/{quote_id}/estimate.pdf",
-            "application/pdf",
-        )
-        try:
-            quote.pdf_url = estimate_pdf_url  # type: ignore[attr-defined]
-            await db.commit()
-        except Exception:
-            pass
+        PDFService.generate_estimate(quote_dict, session_dict, shop)
     except Exception:
-        logger.exception("Failed to generate/upload estimate PDF for quote %s", quote_id)
+        logger.exception("PDF generation smoke-test failed for quote %s", quote_id)
+        estimate_pdf_url = None
 
     if report_obj and report_dict:
         try:
-            report_bytes = PDFService.generate_report(report_dict, media_urls, shop)
-            report_pdf_url = await storage.upload(
-                report_bytes,
-                f"reports/{report_obj.id}/report.pdf",
-                "application/pdf",
-            )
-            report_obj.pdf_url = report_pdf_url
-            await db.commit()
+            PDFService.generate_report(report_dict, media_urls, shop)
+            report_pdf_url = f"{base_url}/reports/{report_obj.id}/pdf"
         except Exception:
-            logger.exception("Failed to generate/upload report PDF for report %s", report_obj.id if report_obj else 'unknown')
+            logger.exception("Report PDF smoke-test failed for report %s", report_obj.id if report_obj else 'unknown')
 
     return FinalizeQuoteResponse(
         quote_id=str(quote.id),
