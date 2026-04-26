@@ -6,10 +6,16 @@ import com.autoshop.data.model.ChatSyncResponse
 import com.autoshop.data.model.CreateMessageRequest
 import com.autoshop.data.model.Message
 import com.autoshop.data.model.Report
+import com.autoshop.data.model.TranscribeResponse
+import com.autoshop.data.model.UploadResponse
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 
 interface MessagesApi {
@@ -34,4 +40,11 @@ interface MessagesApi {
         @Path("agentId") agentId: String,
         @Body request: ChatMessageRequest,
     ): Response<ChatSyncResponse>
+
+    @POST("transcribe")
+    suspend fun transcribeAudio(@Body audio: RequestBody): Response<TranscribeResponse>
+
+    @Multipart
+    @POST("upload")
+    suspend fun uploadImage(@Part file: MultipartBody.Part): Response<UploadResponse>
 }

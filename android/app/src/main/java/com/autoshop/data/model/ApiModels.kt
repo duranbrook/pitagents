@@ -104,6 +104,15 @@ data class ContentBlock(
 
 data class ChatMessageRequest(
     val message: String,
+    @SerializedName("image_url") val imageUrl: String? = null,
+)
+
+data class TranscribeResponse(
+    val transcript: String,
+)
+
+data class UploadResponse(
+    @SerializedName("image_url") val imageUrl: String,
 )
 
 // Used for optimistic UI and display
