@@ -1,17 +1,68 @@
 import SwiftUI
 
+// MARK: - Data
+
 struct Agent: Identifiable, Hashable {
     let id: String
     let displayName: String
+    let subtitle: String
+    let systemImage: String
 }
 
 let availableAgents: [Agent] = [
-    Agent(id: "assistant", displayName: "Assistant"),
-    Agent(id: "tom", displayName: "Tom"),
+    Agent(id: "assistant", displayName: "Assistant", subtitle: "General shop assistant", systemImage: "brain"),
+    Agent(id: "tom", displayName: "Tom", subtitle: "Parts & pricing specialist", systemImage: "wrench.and.screwdriver"),
 ]
 
+// MARK: - Agent List (primary view)
+
+struct AssistantView: View {
+    var body: some View {
+        List(availableAgents) { agent in
+            NavigationLink(value: agent) {
+                AgentRow(agent: agent)
+            }
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        }
+        .listStyle(.plain)
+        .navigationTitle("Agents")
+        .navigationDestination(for: Agent.self) { agent in
+            AgentChatView(agent: agent)
+        }
+    }
+}
+
+struct AgentRow: View {
+    let agent: Agent
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.15))
+                    .frame(width: 48, height: 48)
+                Image(systemName: agent.systemImage)
+                    .font(.title3)
+                    .foregroundStyle(Color.accentColor)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(agent.displayName)
+                    .font(.headline)
+                Text(agent.subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Chat ViewModel
+
 @MainActor
-final class AssistantViewModel: ObservableObject {
+final class AgentChatViewModel: ObservableObject {
     @Published var messages: [ChatHistoryItem] = []
     @Published var isLoading = false
     @Published var isSending = false
@@ -25,103 +76,229 @@ final class AssistantViewModel: ObservableObject {
     }
 
     func send(text: String, agentId: String) async {
+        let optimistic = ChatHistoryItem(role: "user", content: text)
+        messages.append(optimistic)
         isSending = true
         defer { isSending = false }
         do {
             _ = try await APIClient.shared.sendChatMessage(ChatRequest(message: text), agentId: agentId)
-            await load(agentId: agentId)
-        } catch { errorMessage = error.localizedDescription }
+            messages = try await APIClient.shared.chatHistory(agentId: agentId)
+        } catch {
+            messages.removeLast()
+            errorMessage = error.localizedDescription
+        }
     }
 }
 
-struct AssistantView: View {
-    @StateObject private var vm = AssistantViewModel()
+// MARK: - Chat View
+
+struct AgentChatView: View {
+    let agent: Agent
+    @StateObject private var vm = AgentChatViewModel()
     @State private var inputText = ""
-    @State private var selectedAgent: Agent = availableAgents[0]
+    @FocusState private var inputFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Agent", selection: $selectedAgent) {
-                ForEach(availableAgents) { agent in
-                    Text(agent.displayName).tag(agent)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
-            .padding(.top, 8)
-
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        if vm.isLoading && vm.messages.isEmpty {
-                            ProgressView().padding(.top, 40)
-                        }
-                        ForEach(vm.messages) { msg in
-                            ChatBubble(item: msg)
-                                .id(msg.id)
-                        }
-                        if vm.isSending {
-                            HStack {
-                                ProgressView().padding(.leading)
-                                Spacer()
-                            }
-                            .id("__sending__")
-                        }
-                    }
-                    .padding()
-                }
-                .onChange(of: vm.messages.count) { _ in
-                    if let last = vm.messages.last {
-                        withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
-                    }
-                }
-            }
-
+            messageList
             Divider()
-
-            HStack {
-                TextField("Ask \(selectedAgent.displayName)…", text: $inputText, axis: .vertical)
-                    .lineLimit(1...4)
-                    .padding(8)
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(8)
-                Button {
-                    let text = inputText
-                    inputText = ""
-                    Task { await vm.send(text: text, agentId: selectedAgent.id) }
-                } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(inputText.isEmpty || vm.isSending ? .gray : .blue)
-                }
-                .disabled(inputText.isEmpty || vm.isSending)
-            }
-            .padding()
+            inputBar
         }
-        .navigationTitle("Assistant")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                agentNavTitle
+            }
+        }
         .alert("Error", isPresented: Binding(
             get: { vm.errorMessage != nil },
             set: { if !$0 { vm.errorMessage = nil } }
         )) {
             Button("OK", role: .cancel) { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
-        .task(id: selectedAgent.id) { await vm.load(agentId: selectedAgent.id) }
+        .task { await vm.load(agentId: agent.id) }
+    }
+
+    private var agentNavTitle: some View {
+        HStack(spacing: 8) {
+            ZStack {
+                Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 32, height: 32)
+                Image(systemName: agent.systemImage).font(.caption).foregroundStyle(Color.accentColor)
+            }
+            VStack(alignment: .leading, spacing: 0) {
+                Text(agent.displayName).font(.headline)
+                Text("online").font(.caption2).foregroundStyle(.green)
+            }
+        }
+    }
+
+    private var messageList: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 2) {
+                    if vm.isLoading && vm.messages.isEmpty {
+                        ProgressView().padding(.top, 60)
+                    }
+                    ForEach(Array(vm.messages.enumerated()), id: \.element.id) { idx, msg in
+                        ChatBubble(item: msg, agent: agent, showAvatar: shouldShowAvatar(at: idx))
+                            .id(msg.id)
+                    }
+                    if vm.isSending {
+                        TypingIndicator(agent: agent)
+                            .id("__typing__")
+                    }
+                }
+                .padding(.vertical, 8)
+            }
+            .onChange(of: vm.messages.count) { _ in
+                withAnimation { proxy.scrollTo(vm.messages.last?.id ?? "__typing__", anchor: .bottom) }
+            }
+            .onChange(of: vm.isSending) { sending in
+                if sending { withAnimation { proxy.scrollTo("__typing__", anchor: .bottom) } }
+            }
+        }
+    }
+
+    private var inputBar: some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            TextField("Message \(agent.displayName)…", text: $inputText, axis: .vertical)
+                .lineLimit(1...5)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .focused($inputFocused)
+
+            Button {
+                guard !inputText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                let text = inputText
+                inputText = ""
+                Task { await vm.send(text: text, agentId: agent.id) }
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(inputText.isEmpty || vm.isSending ? Color(.systemGray3) : Color.accentColor)
+            }
+            .disabled(inputText.isEmpty || vm.isSending)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(UIColor.systemBackground))
+    }
+
+    private func shouldShowAvatar(at index: Int) -> Bool {
+        let msg = vm.messages[index]
+        guard msg.role != "user" else { return false }
+        let next = vm.messages[safe: index + 1]
+        return next == nil || next?.role == "user"
     }
 }
 
+// MARK: - Chat Bubble
+
 struct ChatBubble: View {
     let item: ChatHistoryItem
+    let agent: Agent
+    let showAvatar: Bool
+
     private var isUser: Bool { item.role == "user" }
 
     var body: some View {
-        HStack {
-            if isUser { Spacer(minLength: 60) }
-            Text(item.displayText.isEmpty ? "(empty)" : item.displayText)
-                .padding(12)
-                .background(isUser ? Color.blue : Color(.secondarySystemBackground))
+        HStack(alignment: .bottom, spacing: 6) {
+            if isUser {
+                Spacer(minLength: 60)
+            } else {
+                ZStack {
+                    if showAvatar {
+                        Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 28, height: 28)
+                        Image(systemName: agent.systemImage)
+                            .font(.caption2).foregroundStyle(Color.accentColor)
+                    } else {
+                        Color.clear.frame(width: 28, height: 28)
+                    }
+                }
+            }
+
+            Text(item.displayText.isEmpty ? "…" : item.displayText)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(isUser ? Color.accentColor : Color(.secondarySystemBackground))
                 .foregroundStyle(isUser ? .white : .primary)
-                .cornerRadius(14)
-            if !isUser { Spacer(minLength: 60) }
+                .clipShape(BubbleShape(isUser: isUser))
+
+            if !isUser {
+                Spacer(minLength: 60)
+            }
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 1)
+    }
+}
+
+// MARK: - Bubble Shape (WhatsApp-style tail)
+
+struct BubbleShape: Shape {
+    let isUser: Bool
+
+    func path(in rect: CGRect) -> Path {
+        let r: CGFloat = 16
+        let tail: CGFloat = 6
+        var path = Path()
+
+        if isUser {
+            path.addRoundedRect(
+                in: CGRect(x: rect.minX, y: rect.minY, width: rect.width - tail, height: rect.height),
+                cornerSize: CGSize(width: r, height: r)
+            )
+            path.move(to: CGPoint(x: rect.maxX - tail, y: rect.maxY - 10))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.maxX - tail, y: rect.maxY - 4))
+        } else {
+            path.addRoundedRect(
+                in: CGRect(x: rect.minX + tail, y: rect.minY, width: rect.width - tail, height: rect.height),
+                cornerSize: CGSize(width: r, height: r)
+            )
+            path.move(to: CGPoint(x: rect.minX + tail, y: rect.maxY - 10))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX + tail, y: rect.maxY - 4))
+        }
+
+        return path
+    }
+}
+
+// MARK: - Typing Indicator
+
+struct TypingIndicator: View {
+    let agent: Agent
+    @State private var animating = false
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 6) {
+            ZStack {
+                Circle().fill(Color.accentColor.opacity(0.15)).frame(width: 28, height: 28)
+                Image(systemName: agent.systemImage).font(.caption2).foregroundStyle(Color.accentColor)
+            }
+            HStack(spacing: 4) {
+                ForEach(0..<3) { i in
+                    Circle()
+                        .fill(Color(.systemGray3))
+                        .frame(width: 7, height: 7)
+                        .offset(y: animating ? -3 : 0)
+                        .animation(
+                            .easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15),
+                            value: animating
+                        )
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(BubbleShape(isUser: false))
+            Spacer(minLength: 60)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 1)
+        .onAppear { animating = true }
     }
 }

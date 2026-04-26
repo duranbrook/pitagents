@@ -16,7 +16,7 @@ struct MainTabView: View {
             .tabItem { Label("Assistant", systemImage: "bubble.left.and.bubble.right.fill") }
 
             NavigationStack {
-                RecordingView(shopId: appState.shopId)
+                InspectTabView()
             }
             .tabItem { Label("Inspect", systemImage: "camera.fill") }
 
