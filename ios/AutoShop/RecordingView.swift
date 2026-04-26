@@ -4,6 +4,9 @@ import AVFoundation
 #if os(iOS)
 
 struct RecordingView: View {
+    let shopId: String
+    var laborRate: Double = 120.0
+
     // MARK: - State
 
     @StateObject private var audioRecorder = AudioRecorder()
@@ -16,10 +19,6 @@ struct RecordingView: View {
     @State private var showError: Bool = false
 
     private let api = SessionAPI()
-
-    // Demo shop configuration — replace with real values or a settings screen.
-    private let shopId = "shop_001"
-    private let laborRate: Double = 120.0
 
     // MARK: - Body
 
@@ -259,7 +258,7 @@ struct RecordingIndicator: View {
 // MARK: - Preview
 
 #Preview {
-    RecordingView()
+    RecordingView(shopId: "preview")
 }
 
 #endif

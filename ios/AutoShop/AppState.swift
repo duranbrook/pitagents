@@ -5,6 +5,7 @@ final class AppState: ObservableObject {
     @Published var token: String?
     @Published var userEmail: String = ""
     @Published var userRole: String = ""
+    @Published var shopId: String = ""
 
     var isLoggedIn: Bool { token != nil }
 
@@ -27,6 +28,7 @@ final class AppState: ObservableObject {
         token = nil
         userEmail = ""
         userRole = ""
+        shopId = ""
     }
 
     private func decodeToken(_ token: String) {
@@ -37,7 +39,8 @@ final class AppState: ObservableObject {
         if remainder != 0 { base64 += String(repeating: "=", count: 4 - remainder) }
         guard let data = Data(base64Encoded: base64),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-        userEmail = json["sub"] as? String ?? ""
+        userEmail = json["email"] as? String ?? ""
         userRole = json["role"] as? String ?? ""
+        shopId = json["shop_id"] as? String ?? ""
     }
 }
