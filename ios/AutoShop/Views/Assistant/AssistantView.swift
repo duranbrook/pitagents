@@ -1,5 +1,15 @@
 import SwiftUI
 
+struct Agent: Identifiable, Hashable {
+    let id: String
+    let displayName: String
+}
+
+let availableAgents: [Agent] = [
+    Agent(id: "assistant", displayName: "Assistant"),
+    Agent(id: "tom", displayName: "Tom"),
+]
+
 @MainActor
 final class AssistantViewModel: ObservableObject {
     @Published var messages: [ChatHistoryItem] = []
@@ -7,20 +17,19 @@ final class AssistantViewModel: ObservableObject {
     @Published var isSending = false
     @Published var errorMessage: String?
 
-    func load() async {
+    func load(agentId: String) async {
         isLoading = true
         defer { isLoading = false }
-        do { messages = try await APIClient.shared.chatHistory() }
+        do { messages = try await APIClient.shared.chatHistory(agentId: agentId) }
         catch { errorMessage = error.localizedDescription }
     }
 
-    func send(text: String) async {
+    func send(text: String, agentId: String) async {
         isSending = true
         defer { isSending = false }
         do {
-            let req = ChatRequest(message: text)
-            _ = try await APIClient.shared.sendChatMessage(req)
-            await load()
+            _ = try await APIClient.shared.sendChatMessage(ChatRequest(message: text), agentId: agentId)
+            await load(agentId: agentId)
         } catch { errorMessage = error.localizedDescription }
     }
 }
@@ -28,12 +37,25 @@ final class AssistantViewModel: ObservableObject {
 struct AssistantView: View {
     @StateObject private var vm = AssistantViewModel()
     @State private var inputText = ""
+    @State private var selectedAgent: Agent = availableAgents[0]
 
     var body: some View {
         VStack(spacing: 0) {
+            Picker("Agent", selection: $selectedAgent) {
+                ForEach(availableAgents) { agent in
+                    Text(agent.displayName).tag(agent)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.top, 8)
+
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
+                        if vm.isLoading && vm.messages.isEmpty {
+                            ProgressView().padding(.top, 40)
+                        }
                         ForEach(vm.messages) { msg in
                             ChatBubble(item: msg)
                                 .id(msg.id)
@@ -58,7 +80,7 @@ struct AssistantView: View {
             Divider()
 
             HStack {
-                TextField("Ask anything…", text: $inputText, axis: .vertical)
+                TextField("Ask \(selectedAgent.displayName)…", text: $inputText, axis: .vertical)
                     .lineLimit(1...4)
                     .padding(8)
                     .background(Color(.secondarySystemBackground))
@@ -66,7 +88,7 @@ struct AssistantView: View {
                 Button {
                     let text = inputText
                     inputText = ""
-                    Task { await vm.send(text: text) }
+                    Task { await vm.send(text: text, agentId: selectedAgent.id) }
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.title2)
@@ -83,7 +105,7 @@ struct AssistantView: View {
         )) {
             Button("OK", role: .cancel) { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
-        .task { await vm.load() }
+        .task(id: selectedAgent.id) { await vm.load(agentId: selectedAgent.id) }
     }
 }
 

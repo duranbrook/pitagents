@@ -90,6 +90,13 @@ struct CustomerListView: View {
                     TextField("Email", text: $newEmail).keyboardType(.emailAddress)
                     TextField("Phone", text: $newPhone).keyboardType(.phonePad)
                 }
+                if let err = vm.errorMessage {
+                    Section {
+                        Text(err)
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                    }
+                }
             }
             .navigationTitle("New Customer")
             .navigationBarTitleDisplayMode(.inline)
@@ -97,15 +104,19 @@ struct CustomerListView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         showCreate = false
+                        vm.errorMessage = nil
                         newName = ""; newEmail = ""; newPhone = ""
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         Task {
+                            vm.errorMessage = nil
                             await vm.create(name: newName, email: newEmail, phone: newPhone)
-                            showCreate = false
-                            newName = ""; newEmail = ""; newPhone = ""
+                            if vm.errorMessage == nil {
+                                showCreate = false
+                                newName = ""; newEmail = ""; newPhone = ""
+                            }
                         }
                     }
                     .disabled(newName.isEmpty)

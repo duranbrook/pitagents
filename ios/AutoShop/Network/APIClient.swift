@@ -80,8 +80,8 @@ final class APIClient {
         try await get("/chat/\(agentId)/history")
     }
 
-    func sendChatMessage(_ body: ChatRequest) async throws -> ChatResponse {
-        try await post("/chat/assistant/message/sync", body: body)
+    func sendChatMessage(_ body: ChatRequest, agentId: String = "assistant") async throws -> ChatResponse {
+        try await post("/chat/\(agentId)/message/sync", body: body)
     }
 
     // MARK: - Helpers
