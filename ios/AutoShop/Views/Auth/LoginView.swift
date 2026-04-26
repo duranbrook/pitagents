@@ -3,7 +3,7 @@ import SwiftUI
 struct LoginView: View {
     @EnvironmentObject var appState: AppState
     @State private var email = "owner@shop.com"
-    @State private var password = "secret"
+    @State private var password = "testpass"
     @State private var isLoading = false
     @State private var errorMessage: String?
 
