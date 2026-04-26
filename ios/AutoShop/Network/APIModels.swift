@@ -149,7 +149,12 @@ struct ReportFinding: Decodable, Identifiable {
     let part: String
     let severity: String
     let notes: String
+    let photoUrl: String?
     var id: String { part + severity }
+    enum CodingKeys: String, CodingKey {
+        case part, severity, notes
+        case photoUrl = "photo_url"
+    }
 }
 
 struct ReportEstimateItem: Decodable, Identifiable {

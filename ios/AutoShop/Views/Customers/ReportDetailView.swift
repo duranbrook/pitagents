@@ -223,30 +223,52 @@ struct FindingRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: severityConfig.icon)
-                .foregroundStyle(severityConfig.color)
-                .font(.title3)
-                .frame(width: 24)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: severityConfig.icon)
+                    .foregroundStyle(severityConfig.color)
+                    .font(.title3)
+                    .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(finding.part)
-                    .font(.subheadline.bold())
-                Text(finding.notes)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(finding.part)
+                        .font(.subheadline.bold())
+                    Text(finding.notes)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                Text(severityConfig.label)
+                    .font(.caption2.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(severityConfig.color.opacity(0.12))
+                    .foregroundStyle(severityConfig.color)
+                    .clipShape(Capsule())
             }
 
-            Spacer()
-
-            Text(severityConfig.label)
-                .font(.caption2.bold())
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(severityConfig.color.opacity(0.12))
-                .foregroundStyle(severityConfig.color)
-                .clipShape(Capsule())
+            if let urlStr = finding.photoUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let img):
+                        img.resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    case .failure:
+                        EmptyView()
+                    default:
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(.systemFill))
+                            .frame(height: 160)
+                            .overlay(ProgressView())
+                    }
+                }
+            }
         }
     }
 }
