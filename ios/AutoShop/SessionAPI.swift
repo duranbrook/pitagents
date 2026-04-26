@@ -33,16 +33,19 @@ struct SessionAPI {
 
     // MARK: - Create Session
 
-    func createSession(shopId: String, laborRate: Double) async throws -> String {
+    func createSession(shopId: String, laborRate: Double, vehicleId: String? = nil) async throws -> String {
         guard let url = URL(string: "\(SessionAPI.baseURL)/sessions") else {
             throw SessionAPIError.invalidURL
         }
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "shop_id": shopId,
             "labor_rate": laborRate,
             "pricing_flag": "shop"
         ]
+        if let vehicleId = vehicleId {
+            body["vehicle_id"] = vehicleId
+        }
 
         var request = authedRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

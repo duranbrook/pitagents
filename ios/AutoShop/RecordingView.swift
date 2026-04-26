@@ -5,6 +5,7 @@ import AVFoundation
 
 struct RecordingView: View {
     let shopId: String
+    var vehicle: VehicleResponse? = nil
     var laborRate: Double = 120.0
 
     @StateObject private var audioRecorder = AudioRecorder()
@@ -190,7 +191,7 @@ struct RecordingView: View {
 
     private func startInspection() async {
         do {
-            let id = try await api.createSession(shopId: shopId, laborRate: laborRate)
+            let id = try await api.createSession(shopId: shopId, laborRate: laborRate, vehicleId: vehicle?.vehicleId)
             sessionId = id
             isSessionActive = true
         } catch {

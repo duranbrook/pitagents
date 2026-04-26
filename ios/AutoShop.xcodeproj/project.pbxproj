@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1127C8CDCD0E261C0F8EC79F /* InspectTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A65032EC26A56445EB88AB51 /* InspectTabView.swift */; };
 		18FE07258FA26EB593826ADE /* VideoCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = D453E5F49965E96AA516D4EB /* VideoCapture.swift */; };
 		1986AF0CEB792D5107059D19 /* AssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8339BE60DE3E97C45490983B /* AssistantView.swift */; };
 		1E7E637B9483A0192EA07346 /* UploadItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E24619FE991360FA1183A87C /* UploadItem.swift */; };
@@ -22,6 +23,7 @@
 		947F73F604A0024D374486B9 /* QuoteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EF55A685367438C84CFB3CF /* QuoteDetailView.swift */; };
 		97FDEA096C3AD552B6BDBB7B /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E531DA62E5BC6F5362E7CE61 /* LoginView.swift */; };
 		9B83AD155CC5401D9F63F259 /* UploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5077319854CBF51DDB00F84E /* UploadManager.swift */; };
+		ADACB7CDEAC3B291F973CB64 /* CustomerVehiclesInspectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EE3201ECBBE4BF88E2D203 /* CustomerVehiclesInspectView.swift */; };
 		B327D849EBB296BC019DA420 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE42894ADA110A37C69C9004 /* AppState.swift */; };
 		C231286E3500E81D80C15FF6 /* AutoShopApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31614BCCF590E345D813A47A /* AutoShopApp.swift */; };
 		C2E858340A4DD6B852C378B1 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A250B32A6EC06E811793050 /* APIModels.swift */; };
@@ -44,10 +46,12 @@
 		5077319854CBF51DDB00F84E /* UploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadManager.swift; sourceTree = "<group>"; };
 		74B61E71274222773A86C691 /* SessionAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionAPI.swift; sourceTree = "<group>"; };
 		8339BE60DE3E97C45490983B /* AssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantView.swift; sourceTree = "<group>"; };
+		83EE3201ECBBE4BF88E2D203 /* CustomerVehiclesInspectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerVehiclesInspectView.swift; sourceTree = "<group>"; };
 		86B1F8E2565FB626385825F5 /* ReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportDetailView.swift; sourceTree = "<group>"; };
 		98F10066F1AB884AD64ECF9D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A34C4F064D7B3BA4E28F71D8 /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
 		A47C0502791B584D09374840 /* AutoShop.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AutoShop.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A65032EC26A56445EB88AB51 /* InspectTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectTabView.swift; sourceTree = "<group>"; };
 		B376271FDB7D452D66035385 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		D453E5F49965E96AA516D4EB /* VideoCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCapture.swift; sourceTree = "<group>"; };
 		E24619FE991360FA1183A87C /* UploadItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadItem.swift; sourceTree = "<group>"; };
@@ -97,6 +101,8 @@
 		7E0A6B85656995A8845A6399 /* Inspect */ = {
 			isa = PBXGroup;
 			children = (
+				83EE3201ECBBE4BF88E2D203 /* CustomerVehiclesInspectView.swift */,
+				A65032EC26A56445EB88AB51 /* InspectTabView.swift */,
 				0EF55A685367438C84CFB3CF /* QuoteDetailView.swift */,
 			);
 			path = Inspect;
@@ -264,6 +270,8 @@
 				C231286E3500E81D80C15FF6 /* AutoShopApp.swift in Sources */,
 				C49DDD9099E9B2826996E57D /* ContentView.swift in Sources */,
 				50D7AC193A12DFB1317FFEFB /* CustomerListView.swift in Sources */,
+				ADACB7CDEAC3B291F973CB64 /* CustomerVehiclesInspectView.swift in Sources */,
+				1127C8CDCD0E261C0F8EC79F /* InspectTabView.swift in Sources */,
 				912499E24C8AC585CCCC520A /* KeychainStore.swift in Sources */,
 				97FDEA096C3AD552B6BDBB7B /* LoginView.swift in Sources */,
 				3C0106121B9D3BF86C4E76FB /* MainTabView.swift in Sources */,
