@@ -137,6 +137,24 @@ struct SessionAPI {
         return quoteId
     }
 
+    // MARK: - Finalize Quote
+
+    func finalizeQuote(quoteId: String) async throws -> FinalizeQuoteResponse {
+        guard let url = URL(string: "\(SessionAPI.baseURL)/quotes/\(quoteId)/finalize") else {
+            throw SessionAPIError.invalidURL
+        }
+        var request = authedRequest(url: url, method: "PUT")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: [:])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(data: data, response: response)
+        do {
+            return try JSONDecoder().decode(FinalizeQuoteResponse.self, from: data)
+        } catch {
+            throw SessionAPIError.decodingError(error.localizedDescription)
+        }
+    }
+
     // MARK: - Poll Session
 
     func pollSession(sessionId: String) async throws -> [String: Any] {

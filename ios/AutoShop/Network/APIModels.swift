@@ -102,6 +102,24 @@ struct QuoteResponse: Decodable, Identifiable {
     }
 }
 
+struct FinalizeQuoteResponse: Decodable {
+    let quoteId: String
+    let status: String
+    let total: Double
+    let pdfUrl: String?
+    let reportId: String?
+    let reportPdfUrl: String?
+    let shareToken: String?
+    enum CodingKeys: String, CodingKey {
+        case quoteId = "quote_id"
+        case status, total
+        case pdfUrl = "pdf_url"
+        case reportId = "report_id"
+        case reportPdfUrl = "report_pdf_url"
+        case shareToken = "share_token"
+    }
+}
+
 // MARK: - Reports
 
 struct ReportSummary: Decodable, Identifiable {
