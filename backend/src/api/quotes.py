@@ -203,10 +203,9 @@ async def get_quote(
 @router.get("/quotes/{quote_id}/pdf")
 async def get_quote_pdf(
     quote_id: str,
-    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    """Generate and stream the estimate PDF for a finalized quote."""
+    """Generate and stream the estimate PDF — public, no auth required."""
     try:
         qid = uuid.UUID(quote_id)
     except ValueError:
@@ -223,13 +222,13 @@ async def get_quote_pdf(
         r2 = await db.execute(select(InspectionSession).where(InspectionSession.id == quote.session_id))
         session_obj = r2.scalar_one_or_none()
 
+    # Load shop from session → vehicle snapshot (best-effort)
     shop_obj: Shop | None = None
-    shop_id_str = current_user.get("shop_id")
-    if shop_id_str:
+    if session_obj and session_obj.shop_id:
         try:
-            r3 = await db.execute(select(Shop).where(Shop.id == uuid.UUID(shop_id_str)))
+            r3 = await db.execute(select(Shop).where(Shop.id == session_obj.shop_id))
             shop_obj = r3.scalar_one_or_none()
-        except ValueError:
+        except Exception:
             pass
 
     shop = {

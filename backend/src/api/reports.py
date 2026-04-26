@@ -59,19 +59,21 @@ async def get_report(
 @router.get("/reports/{report_id}/pdf")
 async def get_report_pdf(
     report_id: str,
-    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
-    """Generate and stream the inspection report PDF."""
+    """Generate and stream the inspection report PDF — public, no auth required."""
     report = await _get_report_or_404(report_id, db)
 
     shop_obj: Shop | None = None
-    shop_id_str = current_user.get("shop_id")
-    if shop_id_str:
+    if report.session_id:
         try:
-            r = await db.execute(select(Shop).where(Shop.id == uuid.UUID(shop_id_str)))
-            shop_obj = r.scalar_one_or_none()
-        except ValueError:
+            from src.models.session import InspectionSession as IS
+            sr = await db.execute(select(IS).where(IS.id == report.session_id))
+            sess = sr.scalar_one_or_none()
+            if sess and sess.shop_id:
+                r = await db.execute(select(Shop).where(Shop.id == sess.shop_id))
+                shop_obj = r.scalar_one_or_none()
+        except Exception:
             pass
     shop = {
         "name": shop_obj.name if shop_obj else "AutoShop",
