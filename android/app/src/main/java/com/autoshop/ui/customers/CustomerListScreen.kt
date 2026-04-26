@@ -55,6 +55,7 @@ fun CustomerListScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    var createError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     fun loadCustomers() {
@@ -152,10 +153,13 @@ fun CustomerListScreen(
 
     if (showCreateDialog) {
         CreateCustomerDialog(
-            onDismiss = { showCreateDialog = false },
+            error = createError,
+            onDismiss = {
+                showCreateDialog = false
+                createError = null
+            },
             onCreate = { name, email, phone ->
                 scope.launch {
-                    showCreateDialog = false
                     isLoading = true
                     try {
                         customersApi.createCustomer(
@@ -165,9 +169,11 @@ fun CustomerListScreen(
                                 phone = phone.ifBlank { null },
                             )
                         )
+                        showCreateDialog = false
+                        createError = null
                         loadCustomers()
                     } catch (e: Exception) {
-                        errorMessage = "Create failed: ${e.message}"
+                        createError = "Create failed: ${e.message}"
                         isLoading = false
                     }
                 }
@@ -178,6 +184,7 @@ fun CustomerListScreen(
 
 @Composable
 private fun CreateCustomerDialog(
+    error: String?,
     onDismiss: () -> Unit,
     onCreate: (name: String, email: String, phone: String) -> Unit,
 ) {
@@ -229,6 +236,13 @@ private fun CreateCustomerDialog(
                     ),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (error != null) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
             }
         },
         confirmButton = {
