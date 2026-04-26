@@ -106,6 +106,56 @@ async def _generate_line_items(transcript: str) -> tuple[list[dict], float]:
     return items, total
 
 
+async def _analyze_media_for_findings(
+    transcript: str,
+    line_items: list[dict],
+    media_urls: list[str],
+) -> list[dict]:
+    """Call Claude multimodal to match photos to repair findings."""
+    client = anthropic.AsyncAnthropic()
+    parts_list = "\n".join(
+        f"- {item.get('description', item.get('part', ''))}" for item in line_items
+    )
+    content: list[dict] = []
+    for url in media_urls[:8]:  # cap at 8 images to stay within token limits
+        content.append({"type": "image", "source": {"type": "url", "url": url}})
+    content.append({
+        "type": "text",
+        "text": (
+            "You are an auto repair shop AI. The mechanic took the photos above during an inspection.\n\n"
+            f"Inspection transcript:\n{transcript or '(none)'}\n\n"
+            f"Repair line items identified:\n{parts_list or '(none)'}\n\n"
+            "For each photo, determine which repair item it shows and the severity of the issue.\n"
+            "Return a JSON array. Each element:\n"
+            '{\n  "part": "<repair item name from the list above>",\n'
+            '  "severity": "high" | "medium" | "low",\n'
+            '  "notes": "<one sentence describing what the photo shows>",\n'
+            '  "photo_url": "<the exact image URL you are describing>"\n}\n'
+            "Only include items that have a matching photo. Return ONLY valid JSON, no markdown."
+        ),
+    })
+    response = await client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": content}],
+    )
+    text = response.content[0].text.strip()
+    if text.startswith("```"):
+        text = "\n".join(text.split("\n")[1:]).rstrip("`").strip()
+    return json.loads(text)
+
+
+def _summarize_findings(findings: list[dict]) -> str:
+    high = sum(1 for f in findings if f.get("severity") == "high")
+    med = sum(1 for f in findings if f.get("severity") == "medium")
+    parts = []
+    if high:
+        parts.append(f"{high} urgent issue{'s' if high > 1 else ''}")
+    if med:
+        parts.append(f"{med} item{'s' if med > 1 else ''} to monitor")
+    return f"Inspection found {', '.join(parts)}." if parts else "Inspection complete."
+
+
 def _quote_to_response(quote: Quote) -> QuoteResponse:
     return QuoteResponse(
         quote_id=str(quote.id),
@@ -359,6 +409,22 @@ async def finalize_quote(
     if session_obj:
         mr = await db.execute(select(MediaFile).where(MediaFile.session_id == session_obj.id))
         media_urls = [m.s3_url for m in mr.scalars().all() if m.s3_url and m.s3_url.startswith("http")]
+
+    # ── Run Claude multimodal to associate photos with findings ──
+    if report_obj and media_urls and session_obj:
+        try:
+            findings = await _analyze_media_for_findings(
+                transcript=session_obj.transcript or "",
+                line_items=list(quote.line_items or []),
+                media_urls=media_urls,
+            )
+            if findings:
+                report_obj.findings = findings
+                report_obj.summary = _summarize_findings(findings)
+                await db.commit()
+                await db.refresh(report_obj)
+        except Exception:
+            logger.exception("Claude multimodal analysis failed for quote %s", quote_id)
 
     # ── Generate PDFs ──
     quote_dict = {

@@ -55,7 +55,10 @@ class StorageService:
                     Body=data,
                     ContentType=content_type,
                 )
-            return f"{settings.S3_BUCKET}/{key}"
+            region = settings.AWS_REGION or "us-east-1"
+            if settings.S3_ENDPOINT_URL:
+                return f"{settings.S3_ENDPOINT_URL}/{settings.S3_BUCKET}/{key}"
+            return f"https://{settings.S3_BUCKET}.s3.{region}.amazonaws.com/{key}"
         except Exception as exc:
             logger.warning("S3 upload failed (%s); falling back to local storage", exc)
             return await self._upload_local(data, key)
