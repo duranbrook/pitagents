@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.deps import get_current_user
 from src.db.base import get_db
 from src.models.session import InspectionSession
+from src.models.vehicle import Vehicle
 from src.storage.s3 import StorageService
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
@@ -25,6 +26,7 @@ class CreateSessionRequest(BaseModel):
     shop_id: str
     labor_rate: float
     pricing_flag: Literal["shop", "alldata"]
+    vehicle_id: str | None = None
 
 
 class CreateSessionResponse(BaseModel):
@@ -50,11 +52,30 @@ async def create_session(
 
     technician_uuid = uuid.UUID(current_user["sub"])
 
+    vehicle_snapshot: dict = {"labor_rate": body.labor_rate, "pricing_flag": body.pricing_flag}
+    if body.vehicle_id:
+        try:
+            vid = uuid.UUID(body.vehicle_id)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid vehicle_id")
+        result = await db.execute(select(Vehicle).where(Vehicle.id == vid))
+        v = result.scalar_one_or_none()
+        if v:
+            vehicle_snapshot.update({
+                "vehicle_id": str(v.id),
+                "year": v.year,
+                "make": v.make,
+                "model": v.model,
+                "trim": v.trim,
+                "vin": v.vin,
+                "color": v.color,
+            })
+
     session = InspectionSession(
         shop_id=shop_uuid,
         technician_id=technician_uuid,
         status="recording",
-        vehicle={"labor_rate": body.labor_rate, "pricing_flag": body.pricing_flag},
+        vehicle=vehicle_snapshot,
     )
     db.add(session)
     await db.commit()
