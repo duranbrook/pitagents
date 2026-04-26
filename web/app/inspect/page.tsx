@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, Suspense } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { AppShell } from '@/components/AppShell'
@@ -31,6 +31,12 @@ function InspectPageInner() {
 
   const audioInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    return () => {
+      photoPreviews.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [photoPreviews])
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ['customers'],
