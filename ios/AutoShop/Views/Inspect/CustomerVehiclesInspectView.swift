@@ -22,6 +22,11 @@ struct CustomerVehiclesInspectView: View {
         }
         .navigationTitle(customer.name)
         .navigationBarTitleDisplayMode(.large)
+        .navigationDestination(for: NavigationTarget.self) { target in
+            if case .inspection(_, let v) = target {
+                RecordingView(shopId: appState.shopId, vehicle: v)
+            }
+        }
         .alert("Error", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -64,11 +69,6 @@ struct CustomerVehiclesInspectView: View {
                 }
             }
             .padding(.vertical)
-        }
-        .navigationDestination(for: NavigationTarget.self) { target in
-            if case .inspection(let c, let v) = target {
-                RecordingView(shopId: appState.shopId, vehicle: v)
-            }
         }
     }
 
