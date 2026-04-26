@@ -160,4 +160,143 @@ class PDFService:
     @staticmethod
     def generate_report(report: dict, media_urls: list[str], shop: dict) -> bytes:
         """Return PDF bytes for the Inspection Report document."""
-        raise NotImplementedError
+        buf = BytesIO()
+        doc = SimpleDocTemplate(
+            buf, pagesize=letter,
+            leftMargin=0.6*inch, rightMargin=0.6*inch,
+            topMargin=0.4*inch, bottomMargin=0.5*inch,
+        )
+        styles = getSampleStyleSheet()
+        bold = ParagraphStyle("bold2", parent=styles["Normal"], fontName="Helvetica-Bold")
+        small_grey = ParagraphStyle("smgrey", parent=styles["Normal"], fontSize=8, textColor=colors.grey)
+        vehicle = report.get("vehicle", {})
+        findings = report.get("findings", [])
+        estimate_data = report.get("estimate", {})
+        line_items = estimate_data.get("line_items", [])
+        summary = report.get("summary", "")
+        share_token = report.get("share_token", "")
+
+        _sev_color = {"high": _RED, "medium": _ORANGE, "moderate": _ORANGE, "low": _GREEN}
+        _sev_label = {"high": "Service Now", "medium": "Monitor", "moderate": "Monitor", "low": "Good"}
+
+        story = []
+
+        # ── Header ──
+        veh_str = (f"{vehicle.get('year','')} {vehicle.get('make','')} "
+                   f"{vehicle.get('model','')} {vehicle.get('trim','')}").strip()
+        header_data = [[
+            Paragraph(f"<b>{shop.get('name','AutoShop')}</b><br/>"
+                      f"<font size=8>{shop.get('address','')}</font>", styles["Normal"]),
+            Paragraph("<b>INSPECTION REPORT</b>", bold),
+        ]]
+        ht = Table(header_data, colWidths=[4*inch, 3*inch])
+        ht.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,-1), _DARK),
+            ("TEXTCOLOR",  (0,0), (-1,-1), colors.white),
+            ("ALIGN",      (1,0), (1,0),   "RIGHT"),
+            ("VALIGN",     (0,0), (-1,-1), "MIDDLE"),
+            ("TOPPADDING", (0,0), (-1,-1), 10),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+            ("LEFTPADDING", (0,0), (-1,-1), 12),
+            ("RIGHTPADDING",(0,0), (-1,-1), 12),
+        ]))
+        story.append(ht)
+        story.append(Spacer(1, 0.1*inch))
+
+        # ── Vehicle banner ──
+        vin = vehicle.get("vin", "")
+        story.append(Paragraph(
+            f"<b>{veh_str}</b> &nbsp;·&nbsp; VIN: {vin}",
+            ParagraphStyle("banner", parent=styles["Normal"],
+                           backColor=colors.HexColor("#f5f5f5"), borderPadding=6,
+                           leftIndent=0, rightIndent=0, fontSize=10)
+        ))
+        story.append(Spacer(1, 0.1*inch))
+
+        # ── Summary callout ──
+        if summary:
+            story.append(Table(
+                [[Paragraph(f"<b>Summary:</b> {summary}", styles["Normal"])]],
+                colWidths=[7*inch],
+                style=[
+                    ("LEFTPADDING",  (0,0), (-1,-1), 10),
+                    ("RIGHTPADDING", (0,0), (-1,-1), 10),
+                    ("TOPPADDING",   (0,0), (-1,-1), 6),
+                    ("BOTTOMPADDING",(0,0), (-1,-1), 6),
+                    ("LINEBEFORE",   (0,0), (0,-1),  3, _AMBER),
+                    ("BACKGROUND",   (0,0), (-1,-1), colors.HexColor("#fff3cd")),
+                ]
+            ))
+            story.append(Spacer(1, 0.15*inch))
+
+        # ── Findings table ──
+        if findings:
+            story.append(Paragraph("Inspection Findings", bold))
+            story.append(Spacer(1, 0.05*inch))
+            hdr = [Paragraph(h, bold) for h in ["Component", "Condition", "Notes"]]
+            rows = [hdr]
+            for f in findings:
+                sev = (f.get("severity") or "low").lower()
+                badge_color = _sev_color.get(sev, _GREEN)
+                label = _sev_label.get(sev, "Good")
+                badge = Table(
+                    [[Paragraph(f"<font color='white'><b>{label}</b></font>",
+                                ParagraphStyle("badge", parent=styles["Normal"], fontSize=8))]],
+                    style=[("BACKGROUND",(0,0),(-1,-1),badge_color),
+                           ("TOPPADDING",(0,0),(-1,-1),2),("BOTTOMPADDING",(0,0),(-1,-1),2),
+                           ("LEFTPADDING",(0,0),(-1,-1),5),("RIGHTPADDING",(0,0),(-1,-1),5),]
+                )
+                rows.append([
+                    Paragraph(f.get("part",""), styles["Normal"]),
+                    badge,
+                    Paragraph(f.get("notes",""), styles["Normal"]),
+                ])
+            ft = Table(rows, colWidths=[2*inch, 1.3*inch, 3.6*inch])
+            ft.setStyle(TableStyle([
+                ("BACKGROUND",  (0,0), (-1,0),  colors.HexColor("#f5f5f5")),
+                ("LINEBELOW",   (0,0), (-1,0),  1.5, colors.grey),
+                ("LINEBELOW",   (0,1), (-1,-1), 0.5, colors.HexColor("#f0f0f0")),
+                ("TOPPADDING",  (0,0), (-1,-1), 5),
+                ("BOTTOMPADDING",(0,0),(-1,-1), 5),
+                ("LEFTPADDING", (0,0), (0,-1),  6),
+                ("VALIGN",      (0,0), (-1,-1), "MIDDLE"),
+            ]))
+            story.append(ft)
+            story.append(Spacer(1, 0.15*inch))
+
+        # ── Estimate summary ──
+        if line_items:
+            story.append(Paragraph("Repair Estimate", bold))
+            story.append(Spacer(1, 0.05*inch))
+            est_rows = [[Paragraph("<b>Service</b>", bold), Paragraph("<b>Total</b>", bold)]]
+            grand = 0.0
+            for item in line_items:
+                itotal = float(item.get("total", 0))
+                grand += itotal
+                est_rows.append([
+                    Paragraph(item.get("description",""), styles["Normal"]),
+                    f"${itotal:,.2f}",
+                ])
+            est_rows.append([Paragraph("<b>Grand Total</b>", bold), Paragraph(f"<b>${grand:,.2f}</b>", bold)])
+            et = Table(est_rows, colWidths=[5.5*inch, 1.4*inch])
+            et.setStyle(TableStyle([
+                ("LINEBELOW",   (0,-2), (-1,-2), 1.5, colors.black),
+                ("LINEBELOW",   (0,0),  (-1,-3), 0.5, colors.HexColor("#f0f0f0")),
+                ("ALIGN",       (1,0),  (1,-1),  "RIGHT"),
+                ("TOPPADDING",  (0,0),  (-1,-1), 4),
+                ("BOTTOMPADDING",(0,0), (-1,-1), 4),
+            ]))
+            story.append(et)
+            story.append(Spacer(1, 0.15*inch))
+
+        # ── Footer ──
+        story.append(HRFlowable(width="100%", thickness=0.5, color=colors.lightgrey))
+        story.append(Spacer(1, 0.05*inch))
+        if share_token:
+            story.append(Paragraph(
+                f"View online: {shop.get('name','AutoShop')}.app/r/{share_token}",
+                small_grey
+            ))
+
+        doc.build(story)
+        return buf.getvalue()
