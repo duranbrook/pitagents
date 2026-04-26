@@ -2,16 +2,32 @@ import AVFoundation
 import Combine
 
 class VideoCapture: NSObject, ObservableObject {
-    @Published var isCapturing: Bool = false
+    @Published var isRecordingVideo: Bool = false
+    @Published var isSessionReady: Bool = false
 
     let captureSession = AVCaptureSession()
     private var movieOutput = AVCaptureMovieFileOutput()
-    private var outputURL: URL?
-    private var captureCompletionHandler: ((URL?) -> Void)?
+    private var photoOutput = AVCapturePhotoOutput()
+    private var videoOutputURL: URL?
+    private var videoCompletionHandler: ((URL?) -> Void)?
+    private var photoCompletionHandler: ((URL?) -> Void)?
 
     override init() {
         super.init()
-        configureSession()
+        requestCameraAccessAndConfigure()
+    }
+
+    private func requestCameraAccessAndConfigure() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            configureSession()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                if granted { self?.configureSession() }
+            }
+        default:
+            break
+        }
     }
 
     // MARK: - Session Configuration
@@ -20,7 +36,6 @@ class VideoCapture: NSObject, ObservableObject {
         captureSession.beginConfiguration()
         captureSession.sessionPreset = .high
 
-        // Video input (back camera)
         guard
             let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
             let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
@@ -32,93 +47,101 @@ class VideoCapture: NSObject, ObservableObject {
         }
         captureSession.addInput(videoInput)
 
-        // Audio input (microphone) — Bluetooth handled by AVAudioSession
         if let audioDevice = AVCaptureDevice.default(for: .audio),
            let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
            captureSession.canAddInput(audioInput) {
             captureSession.addInput(audioInput)
         }
 
-        // Movie file output
         if captureSession.canAddOutput(movieOutput) {
             captureSession.addOutput(movieOutput)
         }
+        if captureSession.canAddOutput(photoOutput) {
+            captureSession.addOutput(photoOutput)
+        }
 
         captureSession.commitConfiguration()
-    }
-
-    // MARK: - Capture Control
-
-    func startCapture() {
-        guard !captureSession.isRunning else { return }
-
-        let tempDir = FileManager.default.temporaryDirectory
-        let filename = "video_\(UUID().uuidString).mov"
-        let fileURL = tempDir.appendingPathComponent(filename)
-        outputURL = fileURL
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            self.captureSession.startRunning()
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                if self.captureSession.isRunning {
-                    self.movieOutput.startRecording(to: fileURL, recordingDelegate: self)
-                    DispatchQueue.main.async {
-                        self.isCapturing = true
-                    }
-                }
-            }
+            self?.captureSession.startRunning()
+            DispatchQueue.main.async { self?.isSessionReady = true }
         }
     }
 
-    func stopCapture() -> URL? {
-        guard isCapturing else { return nil }
+    // MARK: - Video
 
-        movieOutput.stopRecording()
-        // Actual URL returned after delegate callback; return expected path immediately
-        return outputURL
+    func startVideoRecording() {
+        guard captureSession.isRunning, !isRecordingVideo else { return }
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("video_\(UUID().uuidString).mov")
+        videoOutputURL = fileURL
+        movieOutput.startRecording(to: fileURL, recordingDelegate: self)
     }
 
-    func stopCaptureAsync() async -> URL? {
-        guard isCapturing else { return nil }
-
+    func stopVideoRecording() async -> URL? {
+        guard isRecordingVideo else { return nil }
         return await withCheckedContinuation { continuation in
-            captureCompletionHandler = { url in
-                continuation.resume(returning: url)
-            }
+            videoCompletionHandler = { url in continuation.resume(returning: url) }
             movieOutput.stopRecording()
+        }
+    }
+
+    // MARK: - Photo
+
+    func capturePhoto() async -> URL? {
+        guard captureSession.isRunning else { return nil }
+        return await withCheckedContinuation { continuation in
+            photoCompletionHandler = { url in continuation.resume(returning: url) }
+            let settings = AVCapturePhotoSettings()
+            photoOutput.capturePhoto(with: settings, delegate: self)
+        }
+    }
+
+    func stopPreview() {
+        if captureSession.isRunning {
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.captureSession.stopRunning()
+            }
         }
     }
 }
 
+// MARK: - Video delegate
+
 extension VideoCapture: AVCaptureFileOutputRecordingDelegate {
-    func fileOutput(
-        _ output: AVCaptureFileOutput,
-        didStartRecordingTo fileURL: URL,
-        from connections: [AVCaptureConnection]
-    ) {
-        print("VideoCapture: Recording started to \(fileURL.lastPathComponent)")
+    func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
+        DispatchQueue.main.async { self.isRecordingVideo = true }
     }
 
-    func fileOutput(
-        _ output: AVCaptureFileOutput,
-        didFinishRecordingTo outputFileURL: URL,
-        from connections: [AVCaptureConnection],
-        error: Error?
-    ) {
-        DispatchQueue.main.async {
-            self.isCapturing = false
-        }
-
+    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+        DispatchQueue.main.async { self.isRecordingVideo = false }
         if let error = error {
-            print("VideoCapture: Recording finished with error: \(error)")
-            captureSession.stopRunning()
-            captureCompletionHandler?(nil)
+            print("VideoCapture: Video error: \(error)")
+            videoCompletionHandler?(nil)
         } else {
-            captureSession.stopRunning()
-            captureCompletionHandler?(outputFileURL)
+            videoCompletionHandler?(outputFileURL)
         }
-        captureCompletionHandler = nil
+        videoCompletionHandler = nil
+    }
+}
+
+// MARK: - Photo delegate
+
+extension VideoCapture: AVCapturePhotoCaptureDelegate {
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+        guard error == nil, let data = photo.fileDataRepresentation() else {
+            photoCompletionHandler?(nil)
+            photoCompletionHandler = nil
+            return
+        }
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("photo_\(UUID().uuidString).jpg")
+        do {
+            try data.write(to: fileURL)
+            photoCompletionHandler?(fileURL)
+        } catch {
+            photoCompletionHandler?(nil)
+        }
+        photoCompletionHandler = nil
     }
 }

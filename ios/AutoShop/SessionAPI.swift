@@ -40,11 +40,11 @@ struct SessionAPI {
 
         let body: [String: Any] = [
             "shop_id": shopId,
-            "labor_rate": laborRate
+            "labor_rate": laborRate,
+            "pricing_flag": "shop"
         ]
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        var request = authedRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -71,8 +71,7 @@ struct SessionAPI {
         }
 
         let boundary = UUID().uuidString
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        var request = authedRequest(url: url, method: "POST")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
         let fileData = try Data(contentsOf: fileURL)
@@ -114,17 +113,23 @@ struct SessionAPI {
 
     // MARK: - Generate Quote
 
-    func generateQuote(sessionId: String) async throws {
-        guard let url = URL(string: "\(SessionAPI.baseURL)/sessions/\(sessionId)/generate") else {
+    func generateQuote(sessionId: String) async throws -> String {
+        guard let url = URL(string: "\(SessionAPI.baseURL)/quotes") else {
             throw SessionAPIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        var request = authedRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["session_id": sessionId])
 
         let (data, response) = try await URLSession.shared.data(for: request)
         try validateResponse(data: data, response: response)
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let quoteId = json["quote_id"] as? String else {
+            throw SessionAPIError.missingField("quote_id")
+        }
+        return quoteId
     }
 
     // MARK: - Poll Session
@@ -134,7 +139,8 @@ struct SessionAPI {
             throw SessionAPIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let request = authedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
         try validateResponse(data: data, response: response)
 
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -144,6 +150,15 @@ struct SessionAPI {
     }
 
     // MARK: - Helpers
+
+    private func authedRequest(url: URL, method: String = "GET") -> URLRequest {
+        var req = URLRequest(url: url)
+        req.httpMethod = method
+        if let token = KeychainStore.shared.load() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        return req
+    }
 
     private func validateResponse(data: Data, response: URLResponse) throws {
         guard let http = response as? HTTPURLResponse else { return }
