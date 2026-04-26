@@ -12,7 +12,7 @@ struct ProfileView: View {
 
             Section {
                 NavigationLink("Inspection Recorder") {
-                    RecordingView()
+                    RecordingView(shopId: appState.shopId)
                 }
             }
 

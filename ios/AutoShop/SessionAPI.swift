@@ -113,14 +113,19 @@ struct SessionAPI {
 
     // MARK: - Generate Quote
 
-    func generateQuote(sessionId: String) async throws -> String {
+    func generateQuote(sessionId: String, transcript: String? = nil) async throws -> String {
         guard let url = URL(string: "\(SessionAPI.baseURL)/quotes") else {
             throw SessionAPIError.invalidURL
         }
 
+        var body: [String: Any] = ["session_id": sessionId]
+        if let transcript = transcript, !transcript.isEmpty {
+            body["transcript"] = transcript
+        }
+
         var request = authedRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["session_id": sessionId])
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         try validateResponse(data: data, response: response)

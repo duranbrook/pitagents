@@ -169,8 +169,9 @@ extension UploadManager: URLSessionTaskDelegate {
         let progress = totalBytesExpectedToSend > 0
             ? Double(totalBytesSent) / Double(totalBytesExpectedToSend)
             : 0.0
-        guard let itemId = taskMap[task.taskIdentifier] else { return }
+        let taskId = task.taskIdentifier
         Task { @MainActor in
+            guard let itemId = self.taskMap[taskId] else { return }
             if let idx = self.items.firstIndex(where: { $0.id == itemId }) {
                 self.items[idx].status = .uploading(progress)
             }
@@ -178,12 +179,13 @@ extension UploadManager: URLSessionTaskDelegate {
     }
 
     nonisolated func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard let itemId = taskMap[task.taskIdentifier] else { return }
+        let taskId = task.taskIdentifier
         let httpStatus = (task.response as? HTTPURLResponse)?.statusCode ?? 0
         let succeeded = error == nil && (200..<300).contains(httpStatus)
 
         Task { @MainActor in
-            self.taskMap.removeValue(forKey: task.taskIdentifier)
+            guard let itemId = self.taskMap[taskId] else { return }
+            self.taskMap.removeValue(forKey: taskId)
             guard let idx = self.items.firstIndex(where: { $0.id == itemId }) else { return }
             if succeeded {
                 self.items[idx].status = .done
