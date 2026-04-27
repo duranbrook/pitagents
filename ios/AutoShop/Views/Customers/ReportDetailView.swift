@@ -131,19 +131,35 @@ struct ReportDetailView: View {
                     }
                 }
 
-                // Share button
-                if let url = shareURL {
-                    ShareLink(item: url, subject: Text("Vehicle Inspection Report"), message: Text("Your inspection report is ready.")) {
-                        Label("Share with Customer", systemImage: "square.and.arrow.up")
-                            .font(.subheadline.bold())
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(Color.blue)
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                // Action buttons
+                VStack(spacing: 10) {
+                    // Open inspection report PDF
+                    if let pdfURL = URL(string: "\(SessionAPI.baseURL)/reports/\(r.id)/pdf") {
+                        Link(destination: pdfURL) {
+                            Label("View Inspection Report PDF", systemImage: "doc.text.fill")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color.indigo)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
                     }
-                    .padding(.horizontal)
+
+                    // Share customer-facing link
+                    if let url = shareURL {
+                        ShareLink(item: url, subject: Text("Vehicle Inspection Report"), message: Text("Your inspection report is ready.")) {
+                            Label("Share with Customer", systemImage: "square.and.arrow.up")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color.blue)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
                 }
+                .padding(.horizontal)
 
                 // Footer
                 if let createdAt = r.createdAt, let date = parseDate(createdAt) {
