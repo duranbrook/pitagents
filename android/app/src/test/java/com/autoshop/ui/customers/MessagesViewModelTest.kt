@@ -23,11 +23,50 @@ import okhttp3.RequestBody
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
+
+// ---------------------------------------------------------------------------
+// Shared fake API factory
+// ---------------------------------------------------------------------------
+
+private fun makeFakeApi(
+    messages: List<Message> = emptyList(),
+    sendResult: Message? = null,
+    sendShouldFail: Boolean = false,
+): MessagesApi = object : MessagesApi {
+    override suspend fun listMessages(vehicleId: String): Response<List<Message>> =
+        Response.success(messages)
+
+    override suspend fun sendMessage(
+        vehicleId: String,
+        request: CreateMessageRequest,
+    ): Response<Message> {
+        if (sendShouldFail) {
+            val errorBody = "Internal Server Error".toResponseBody("text/plain".toMediaType())
+            return Response.error(500, errorBody)
+        }
+        return if (sendResult != null) Response.success(sendResult)
+        else Response.success(null)
+    }
+
+    override suspend fun listReports(vehicleId: String): Response<List<Report>> =
+        throw UnsupportedOperationException()
+    override suspend fun getReport(reportId: String): Response<ReportDetail> =
+        throw UnsupportedOperationException()
+    override suspend fun getChatHistory(agentId: String): Response<List<ChatHistoryItem>> =
+        throw UnsupportedOperationException()
+    override suspend fun sendChatMessage(agentId: String, request: ChatMessageRequest): Response<ChatSyncResponse> =
+        throw UnsupportedOperationException()
+    override suspend fun transcribeAudio(audio: RequestBody): Response<TranscribeResponse> =
+        throw UnsupportedOperationException()
+    override suspend fun uploadImage(file: MultipartBody.Part): Response<UploadResponse> =
+        throw UnsupportedOperationException()
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MessagesViewModelTest {
@@ -63,32 +102,10 @@ class MessagesViewModelTest {
     @Test
     fun `sendMessage inserts optimistic placeholder before API responds`() = runTest {
         // Fake API that suspends until we let it through — we check state before advancing
-        var sendMessageCalled = false
-        val fakeApi = object : MessagesApi {
-            override suspend fun listMessages(vehicleId: String): Response<List<Message>> =
-                Response.success(emptyList())
-
-            override suspend fun sendMessage(
-                vehicleId: String,
-                request: CreateMessageRequest,
-            ): Response<Message> {
-                sendMessageCalled = true
-                return Response.success(serverMessage)
-            }
-
-            override suspend fun listReports(vehicleId: String): Response<List<Report>> =
-                throw UnsupportedOperationException()
-            override suspend fun getReport(reportId: String): Response<ReportDetail> =
-                throw UnsupportedOperationException()
-            override suspend fun getChatHistory(agentId: String): Response<List<ChatHistoryItem>> =
-                throw UnsupportedOperationException()
-            override suspend fun sendChatMessage(agentId: String, request: ChatMessageRequest): Response<ChatSyncResponse> =
-                throw UnsupportedOperationException()
-            override suspend fun transcribeAudio(audio: RequestBody): Response<TranscribeResponse> =
-                throw UnsupportedOperationException()
-            override suspend fun uploadImage(file: MultipartBody.Part): Response<UploadResponse> =
-                throw UnsupportedOperationException()
-        }
+        val fakeApi = makeFakeApi(
+            messages = emptyList(),
+            sendResult = serverMessage,
+        )
 
         val vm = MessagesViewModel(vehicleId = "vehicle-abc", api = fakeApi)
         // Let loadMessages() complete so the list starts empty
@@ -116,28 +133,10 @@ class MessagesViewModelTest {
 
     @Test
     fun `sendMessage replaces placeholder with real message on API success`() = runTest {
-        val fakeApi = object : MessagesApi {
-            override suspend fun listMessages(vehicleId: String): Response<List<Message>> =
-                Response.success(emptyList())
-
-            override suspend fun sendMessage(
-                vehicleId: String,
-                request: CreateMessageRequest,
-            ): Response<Message> = Response.success(serverMessage)
-
-            override suspend fun listReports(vehicleId: String): Response<List<Report>> =
-                throw UnsupportedOperationException()
-            override suspend fun getReport(reportId: String): Response<ReportDetail> =
-                throw UnsupportedOperationException()
-            override suspend fun getChatHistory(agentId: String): Response<List<ChatHistoryItem>> =
-                throw UnsupportedOperationException()
-            override suspend fun sendChatMessage(agentId: String, request: ChatMessageRequest): Response<ChatSyncResponse> =
-                throw UnsupportedOperationException()
-            override suspend fun transcribeAudio(audio: RequestBody): Response<TranscribeResponse> =
-                throw UnsupportedOperationException()
-            override suspend fun uploadImage(file: MultipartBody.Part): Response<UploadResponse> =
-                throw UnsupportedOperationException()
-        }
+        val fakeApi = makeFakeApi(
+            messages = emptyList(),
+            sendResult = serverMessage,
+        )
 
         val vm = MessagesViewModel(vehicleId = "vehicle-abc", api = fakeApi)
         advanceUntilIdle()
@@ -152,6 +151,8 @@ class MessagesViewModelTest {
         assertEquals("msg-001", real.messageId)
         assertEquals("Hello!", real.body)
         assertNull(vm.errorMessage.value)
+        // isSending must return to false after a successful send
+        assertFalse(vm.isSending.value)
     }
 
     // ---------------------------------------------------------------------------
@@ -160,31 +161,10 @@ class MessagesViewModelTest {
 
     @Test
     fun `sendMessage removes placeholder and sets errorMessage on API failure`() = runTest {
-        val fakeApi = object : MessagesApi {
-            override suspend fun listMessages(vehicleId: String): Response<List<Message>> =
-                Response.success(emptyList())
-
-            override suspend fun sendMessage(
-                vehicleId: String,
-                request: CreateMessageRequest,
-            ): Response<Message> {
-                val errorBody = "Internal Server Error".toResponseBody("text/plain".toMediaType())
-                return Response.error(500, errorBody)
-            }
-
-            override suspend fun listReports(vehicleId: String): Response<List<Report>> =
-                throw UnsupportedOperationException()
-            override suspend fun getReport(reportId: String): Response<ReportDetail> =
-                throw UnsupportedOperationException()
-            override suspend fun getChatHistory(agentId: String): Response<List<ChatHistoryItem>> =
-                throw UnsupportedOperationException()
-            override suspend fun sendChatMessage(agentId: String, request: ChatMessageRequest): Response<ChatSyncResponse> =
-                throw UnsupportedOperationException()
-            override suspend fun transcribeAudio(audio: RequestBody): Response<TranscribeResponse> =
-                throw UnsupportedOperationException()
-            override suspend fun uploadImage(file: MultipartBody.Part): Response<UploadResponse> =
-                throw UnsupportedOperationException()
-        }
+        val fakeApi = makeFakeApi(
+            messages = emptyList(),
+            sendShouldFail = true,
+        )
 
         val vm = MessagesViewModel(vehicleId = "vehicle-abc", api = fakeApi)
         advanceUntilIdle()
@@ -207,31 +187,10 @@ class MessagesViewModelTest {
     @Test
     fun `sendMessage with blank body does nothing`() = runTest {
         var sendMessageCalled = false
-        val fakeApi = object : MessagesApi {
-            override suspend fun listMessages(vehicleId: String): Response<List<Message>> =
-                Response.success(emptyList())
-
-            override suspend fun sendMessage(
-                vehicleId: String,
-                request: CreateMessageRequest,
-            ): Response<Message> {
-                sendMessageCalled = true
-                return Response.success(serverMessage)
-            }
-
-            override suspend fun listReports(vehicleId: String): Response<List<Report>> =
-                throw UnsupportedOperationException()
-            override suspend fun getReport(reportId: String): Response<ReportDetail> =
-                throw UnsupportedOperationException()
-            override suspend fun getChatHistory(agentId: String): Response<List<ChatHistoryItem>> =
-                throw UnsupportedOperationException()
-            override suspend fun sendChatMessage(agentId: String, request: ChatMessageRequest): Response<ChatSyncResponse> =
-                throw UnsupportedOperationException()
-            override suspend fun transcribeAudio(audio: RequestBody): Response<TranscribeResponse> =
-                throw UnsupportedOperationException()
-            override suspend fun uploadImage(file: MultipartBody.Part): Response<UploadResponse> =
-                throw UnsupportedOperationException()
-        }
+        val fakeApi = makeFakeApi(
+            messages = emptyList(),
+            sendResult = serverMessage,
+        )
 
         val vm = MessagesViewModel(vehicleId = "vehicle-abc", api = fakeApi)
         advanceUntilIdle()
@@ -246,5 +205,6 @@ class MessagesViewModelTest {
         assertEquals(0, vm.messages.value.size)
         assertNull(vm.errorMessage.value)
         assertEquals(false, sendMessageCalled)
+        assertFalse(vm.isSending.value)
     }
 }
