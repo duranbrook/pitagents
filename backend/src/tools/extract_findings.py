@@ -105,12 +105,13 @@ async def extract_repair_findings(
     response = await asyncio.to_thread(
         _client.messages.create,
         model="claude-sonnet-4-6",
-        max_tokens=2048,
+        max_tokens=4096,
         messages=[{"role": "user", "content": content}],
     )
 
     try:
         raw = response.content[0].text
+        logger.info("extract_findings raw response (first 600): %s", raw[:600])
         # Extract JSON from <json>...</json> tags (preferred path)
         tag_match = re.search(r"<json>\s*([\s\S]*?)\s*</json>", raw)
         if tag_match:
