@@ -308,7 +308,7 @@ function QuotePageInner() {
                       Grand Total
                     </td>
                     <td className="px-3 py-2.5 text-right text-indigo-400 font-bold text-base">
-                      ${quote.total.toFixed(2)}
+                      ${readTotal.toFixed(2)}
                     </td>
                   </tr>
                 </tfoot>
