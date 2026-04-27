@@ -256,11 +256,10 @@ class PDFService:
             story.append(Spacer(1, 0.15*inch))
 
         # ── Findings — one card per finding, Firestone-style left-border + photo ──
+        assigned_photo_urls: set[str] = set()
         if findings:
             story.append(Paragraph("Inspection Findings", bold))
             story.append(Spacer(1, 0.08*inch))
-
-            assigned_photo_urls: set[str] = set()
 
             for f in findings:
                 sev = (f.get("severity") or "low").lower()
