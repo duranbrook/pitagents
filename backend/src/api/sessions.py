@@ -13,12 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.deps import get_current_user
 from src.db.base import get_db
 from src.models.media import MediaFile
-from src.models.report import Report
 from src.models.session import InspectionSession
 from src.models.vehicle import Vehicle
 from src.storage.s3 import StorageService
-from src.tools.extract_findings import extract_repair_findings
-from src.tools.estimate import generate_estimate
+from src.services.report_builder import build_report
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -164,75 +162,10 @@ async def generate_report(
     except ValueError:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid session_id")
 
-    # Load session
-    sess_result = await db.execute(select(InspectionSession).where(InspectionSession.id == sid))
-    session = sess_result.scalar_one_or_none()
-    if session is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-
-    # Load media files
-    media_result = await db.execute(select(MediaFile).where(MediaFile.session_id == sid))
-    media_files = media_result.scalars().all()
-
-    # Collect photo URLs for multimodal analysis.
-    # Claude needs presigned URLs to download the images from the private S3 bucket.
-    # We keep a mapping back to the original S3 URLs so we can store those as the
-    # stable photo_url identifier in findings (presigned URLs change every request).
-    from urllib.parse import urlparse as _urlparse
-    _storage = StorageService()
-    photo_s3_urls: list[str] = []   # original stable S3 URLs
-    photo_presigned: list[str] = [] # presigned URLs for Claude to download
-    for m in media_files:
-        if m.media_type != "photo" or not m.s3_url or m.s3_url.startswith("local://"):
-            continue
-        if not m.s3_url.startswith("http"):
-            continue
-        try:
-            key = _urlparse(m.s3_url).path.lstrip("/")
-            presigned = await _storage.presigned_url(key, expires=3600)
-            photo_s3_urls.append(m.s3_url)
-            photo_presigned.append(presigned)
-        except Exception:
-            photo_s3_urls.append(m.s3_url)
-            photo_presigned.append(m.s3_url)
-
-    transcript = session.transcript or ""
-
-    # Extract findings via Claude (multimodal if photos available)
-    findings_data = await extract_repair_findings(
-        transcript,
-        image_urls=photo_presigned or None,
-        image_s3_urls=photo_s3_urls or None,
-    )
-
-    # Generate estimate with Qdrant parts pricing
-    vehicle = session.vehicle or {}
-    labor_rate = float(vehicle.get("labor_rate", 120.0))
-    pricing_flag = vehicle.get("pricing_flag", "shop")
-    estimate_data = await generate_estimate(vehicle, findings_data.get("findings", []), labor_rate, pricing_flag)
-
-    # Persist report
-    vehicle_id_str = vehicle.get("vehicle_id")
-    vehicle_uuid = uuid.UUID(vehicle_id_str) if vehicle_id_str else None
-
-    report = Report(
-        session_id=sid,
-        vehicle_id=vehicle_uuid,
-        summary=findings_data.get("summary", ""),
-        title=_build_title(vehicle),
-        status="final",
-        findings=findings_data.get("findings", []),
-        estimate=estimate_data,
-        estimate_total=estimate_data.get("total", 0),
-        vehicle=vehicle,
-    )
-    db.add(report)
-
-    # Mark session complete
-    session.status = "complete"
-
-    await db.commit()
-    await db.refresh(report)
+    try:
+        report = await build_report(sid, db)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     return {
         "report_id": str(report.id),
@@ -241,7 +174,3 @@ async def generate_report(
     }
 
 
-def _build_title(vehicle: dict) -> str:
-    parts = [vehicle.get("year"), vehicle.get("make"), vehicle.get("model")]
-    label = " ".join(str(p) for p in parts if p)
-    return f"Inspection Report — {label}" if label else "Inspection Report"

@@ -7,7 +7,6 @@ import logging
 import uuid
 from typing import Literal
 
-import anthropic
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -19,9 +18,7 @@ from src.models.quote import Quote
 from src.models.report import Report
 from src.models.session import InspectionSession
 from src.models.shop import Shop
-from src.models.media import MediaFile
 from src.services.pdf import PDFService
-from src.storage.s3 import StorageService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["quotes"])
@@ -106,49 +103,7 @@ async def _generate_line_items(transcript: str) -> tuple[list[dict], float]:
     return items, total
 
 
-async def _analyze_media_for_findings(
-    transcript: str,
-    media_files: list,
-) -> list[dict]:
-    """Use extract_repair_findings with presigned URLs so Claude can see the photos."""
-    from urllib.parse import urlparse
-    from src.tools.extract_findings import extract_repair_findings
 
-    _storage = StorageService()
-    photo_s3_urls: list[str] = []
-    photo_presigned: list[str] = []
-    for m in media_files:
-        if m.media_type != "photo" or not m.s3_url or not m.s3_url.startswith("http"):
-            continue
-        try:
-            key = urlparse(m.s3_url).path.lstrip("/")
-            presigned = await _storage.presigned_url(key, expires=3600)
-            photo_s3_urls.append(m.s3_url)
-            photo_presigned.append(presigned)
-        except Exception:
-            photo_s3_urls.append(m.s3_url)
-            photo_presigned.append(m.s3_url)
-
-    if not photo_presigned:
-        return []
-
-    result = await extract_repair_findings(
-        transcript,
-        image_urls=photo_presigned,
-        image_s3_urls=photo_s3_urls,
-    )
-    return result.get("findings", [])
-
-
-def _summarize_findings(findings: list[dict]) -> str:
-    high = sum(1 for f in findings if f.get("severity") == "high")
-    med = sum(1 for f in findings if f.get("severity") == "medium")
-    parts = []
-    if high:
-        parts.append(f"{high} urgent issue{'s' if high > 1 else ''}")
-    if med:
-        parts.append(f"{med} item{'s' if med > 1 else ''} to monitor")
-    return f"Inspection found {', '.join(parts)}." if parts else "Inspection complete."
 
 
 def _quote_to_response(quote: Quote) -> QuoteResponse:
@@ -354,108 +309,32 @@ async def finalize_quote(
         vehicle_snapshot = session_obj.vehicle or {}
         session_dict = {"vehicle": vehicle_snapshot, "transcript": session_obj.transcript or ""}
 
-    # ── Upsert Report row ──
+    # ── Build inspection report (findings + Qdrant estimate) via shared service ──
     report_obj: Report | None = None
     if session_obj:
-        rr = await db.execute(select(Report).where(Report.session_id == session_obj.id))
-        report_obj = rr.scalar_one_or_none()
-
-    vehicle_id_val: uuid.UUID | None = None
-    vid_str = vehicle_snapshot.get("vehicle_id")
-    if vid_str:
         try:
-            vehicle_id_val = uuid.UUID(vid_str)
-        except ValueError:
-            pass
-
-    year  = vehicle_snapshot.get("year", "")
-    make  = vehicle_snapshot.get("make", "")
-    model_name = vehicle_snapshot.get("model", "")
-    title = f"{year} {make} {model_name} — Inspection".strip(" —")
-
-    if session_obj:
-        if report_obj is None:
-            report_obj = Report(
-                session_id=session_obj.id,
-                vehicle_id=vehicle_id_val,
-                title=title,
-                summary="",
-                findings=[],
-                estimate={"line_items": list(quote.line_items or [])},
-                estimate_total=quote.total,
-                vehicle=vehicle_snapshot,
-                status="final",
-            )
-            db.add(report_obj)
-            await db.commit()
-            await db.refresh(report_obj)
-        else:
-            report_obj.vehicle_id = vehicle_id_val
-            report_obj.title = title
-            report_obj.estimate = {"line_items": list(quote.line_items or [])}
-            report_obj.estimate_total = quote.total
-            report_obj.vehicle = vehicle_snapshot
-            report_obj.status = "final"
-            await db.commit()
-            await db.refresh(report_obj)
-
-    # ── Gather media files (objects, not just URLs — presigning happens inside) ──
-    media_files_list: list = []
-    if session_obj:
-        mr = await db.execute(select(MediaFile).where(MediaFile.session_id == session_obj.id))
-        media_files_list = list(mr.scalars().all())
-
-    # ── Run Claude multimodal to associate photos with findings ──
-    if report_obj and media_files_list and session_obj:
-        try:
-            findings = await _analyze_media_for_findings(
-                transcript=session_obj.transcript or "",
-                media_files=media_files_list,
-            )
-            if findings:
-                report_obj.findings = findings
-                report_obj.summary = _summarize_findings(findings)
-                await db.commit()
-                await db.refresh(report_obj)
+            from src.services.report_builder import build_report
+            report_obj = await build_report(session_obj.id, db)
         except Exception:
-            logger.exception("Claude multimodal analysis failed for quote %s", quote_id)
+            logger.exception("Report generation failed for quote %s", quote_id)
 
-    # ── Generate PDFs ──
+    # ── Generate estimate PDF (based on quote line_items for the estimate sheet) ──
     quote_dict = {
         "line_items": list(quote.line_items or []),
         "total": float(quote.total or 0),
     }
-    report_dict: dict = {}
-    if report_obj:
-        report_dict = {
-            "id": str(report_obj.id),
-            "summary": report_obj.summary or "",
-            "findings": list(report_obj.findings or []),
-            "estimate": report_obj.estimate or {},
-            "estimate_total": float(report_obj.estimate_total or 0),
-            "vehicle": report_obj.vehicle or {},
-            "share_token": str(report_obj.share_token),
-        }
-
-    # Use a backend-served PDF endpoint so no S3 credentials are needed.
-    # The /quotes/{id}/pdf endpoint regenerates the PDF on demand from DB state.
     base_url = str(request.base_url).rstrip("/")
     estimate_pdf_url: str | None = f"{base_url}/quotes/{quote_id}/pdf"
     report_pdf_url: str | None = None
 
-    # Validate PDF generation succeeds (log only — don't fail the finalize)
     try:
         PDFService.generate_estimate(quote_dict, session_dict, shop)
     except Exception:
         logger.exception("PDF generation smoke-test failed for quote %s", quote_id)
         estimate_pdf_url = None
 
-    if report_obj and report_dict:
-        try:
-            PDFService.generate_report(report_dict, media_urls, shop)
-            report_pdf_url = f"{base_url}/reports/{report_obj.id}/pdf"
-        except Exception:
-            logger.exception("Report PDF smoke-test failed for report %s", report_obj.id if report_obj else 'unknown')
+    if report_obj:
+        report_pdf_url = f"{base_url}/reports/{report_obj.id}/pdf"
 
     return FinalizeQuoteResponse(
         quote_id=str(quote.id),
