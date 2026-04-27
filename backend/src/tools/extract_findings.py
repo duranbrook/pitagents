@@ -8,22 +8,34 @@ from src.config import settings
 
 logger = logging.getLogger(__name__)
 
-PROMPT = """You are a vehicle repair expert assistant. Analyze the technician's observations below (transcript and/or inspection photos) and extract repair findings.
+PROMPT = """You are a vehicle repair expert assistant. Your task has two parts:
 
-Return a JSON object with exactly this structure:
+PART 1 — EXAMINE EACH PHOTO
+For every numbered photo image provided, look at it carefully and note:
+- Which specific vehicle part or system is shown (e.g. lower control arm, front bumper, brake rotor, headlamp)
+- What condition issue is visible (wear, damage, leak, corrosion, etc.)
+
+PART 2 — EXTRACT FINDINGS WITH PHOTO ASSIGNMENT
+Cross-reference your photo observations with the technician's transcript. Create one finding per distinct issue. For each finding, assign the single best photo that shows that issue by writing its exact URL from the list below.
+
+{photo_url_list}Rules:
+- Each photo URL may be assigned to at most ONE finding (the one it most clearly documents)
+- If a photo doesn't clearly show any specific issue, leave it unassigned (do not force it)
+- If a finding has no matching photo, set photo_url to null
+- Do not invent issues not visible in photos or mentioned in the transcript
+
+Return ONLY a JSON object with exactly this structure (no markdown fences, no extra text):
 {{
   "summary": "<one or two sentence summary of the overall vehicle condition>",
   "findings": [
     {{
-      "part": "<name of the part or system>",
+      "part": "<specific part name — e.g. 'lower control arm (right)', 'front bumper', 'left headlamp'>",
       "severity": "<high | medium | low>",
-      "notes": "<brief description of the issue>",
-      "photo_url": "<exact URL of the photo that best shows this issue, or null if no photo shows it>"
+      "notes": "<brief description of the visible issue>",
+      "photo_url": "<exact URL from the list above that best shows this issue, or null>"
     }}
   ]
 }}
-
-{photo_url_list}Return only valid JSON — no markdown fences, no extra text.
 
 Transcript:
 {transcript}"""
@@ -72,7 +84,7 @@ async def extract_repair_findings(
 
     response = await asyncio.to_thread(
         _client.messages.create,
-        model="claude-haiku-4-5-20251001",
+        model="claude-sonnet-4-6",
         max_tokens=2048,
         messages=[{"role": "user", "content": content}],
     )

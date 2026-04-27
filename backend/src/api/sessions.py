@@ -174,11 +174,21 @@ async def generate_report(
     media_result = await db.execute(select(MediaFile).where(MediaFile.session_id == sid))
     media_files = media_result.scalars().all()
 
-    # Collect photo URLs for multimodal analysis (skip local:// dev URLs)
-    photo_urls = [
-        m.s3_url for m in media_files
-        if m.media_type == "photo" and m.s3_url.startswith("http")
-    ]
+    # Collect photo URLs for multimodal analysis — generate presigned URLs so
+    # Claude can actually fetch images from the private S3 bucket.
+    from urllib.parse import urlparse as _urlparse
+    _storage = StorageService()
+    photo_urls: list[str] = []
+    for m in media_files:
+        if m.media_type != "photo" or not m.s3_url or m.s3_url.startswith("local://"):
+            continue
+        if not m.s3_url.startswith("http"):
+            continue
+        try:
+            key = _urlparse(m.s3_url).path.lstrip("/")
+            photo_urls.append(await _storage.presigned_url(key, expires=3600))
+        except Exception:
+            photo_urls.append(m.s3_url)
 
     transcript = session.transcript or ""
 
