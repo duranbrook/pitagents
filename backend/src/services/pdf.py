@@ -63,16 +63,19 @@ class PDFService:
         story = []
 
         # ── Header band ──
+        addr_parts = [p for p in [shop.get('address',''), shop.get('phone','')] if p]
+        addr_line = " · ".join(addr_parts) if addr_parts else ""
         header_data = [[
-            Paragraph(f"<b>{shop.get('name', 'AutoShop')}</b><br/>"
-                      f"<font size=8>{shop.get('address','')}<br/>"
-                      f"{shop.get('phone','')}</font>", styles["Normal"]),
-            Paragraph("<b>ESTIMATE</b>", bold),
+            Paragraph(
+                f"<font color='white'><b>{shop.get('name', 'AutoShop')}</b></font>"
+                + (f"<br/><font color='#aaaacc' size='8'>{addr_line}</font>" if addr_line else ""),
+                styles["Normal"],
+            ),
+            Paragraph("<font color='white'><b>ESTIMATE</b></font>", styles["Normal"]),
         ]]
         header_table = Table(header_data, colWidths=[4*inch, 3*inch])
         header_table.setStyle(TableStyle([
             ("BACKGROUND", (0,0), (-1,-1), _DARK),
-            ("TEXTCOLOR",  (0,0), (-1,-1), colors.white),
             ("ALIGN",      (1,0), (1,0),   "RIGHT"),
             ("VALIGN",     (0,0), (-1,-1), "MIDDLE"),
             ("TOPPADDING", (0,0), (-1,-1), 10),
@@ -204,15 +207,18 @@ class PDFService:
         # ── Header ──
         veh_str = (f"{vehicle.get('year','')} {vehicle.get('make','')} "
                    f"{vehicle.get('model','')} {vehicle.get('trim','')}").strip()
+        rpt_addr = shop.get('address', '')
         header_data = [[
-            Paragraph(f"<b>{shop.get('name','AutoShop')}</b><br/>"
-                      f"<font size=8>{shop.get('address','')}</font>", styles["Normal"]),
-            Paragraph("<b>INSPECTION REPORT</b>", bold),
+            Paragraph(
+                f"<font color='white'><b>{shop.get('name','AutoShop')}</b></font>"
+                + (f"<br/><font color='#aaaacc' size='8'>{rpt_addr}</font>" if rpt_addr else ""),
+                styles["Normal"],
+            ),
+            Paragraph("<font color='white'><b>INSPECTION REPORT</b></font>", styles["Normal"]),
         ]]
         ht = Table(header_data, colWidths=[4*inch, 3*inch])
         ht.setStyle(TableStyle([
             ("BACKGROUND", (0,0), (-1,-1), _DARK),
-            ("TEXTCOLOR",  (0,0), (-1,-1), colors.white),
             ("ALIGN",      (1,0), (1,0),   "RIGHT"),
             ("VALIGN",     (0,0), (-1,-1), "MIDDLE"),
             ("TOPPADDING", (0,0), (-1,-1), 10),
