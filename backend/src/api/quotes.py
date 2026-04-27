@@ -160,6 +160,13 @@ async def create_quote(
     await db.refresh(quote)
 
     if body.transcript and body.transcript.strip():
+        # Save transcript on the session so build_report can read it at finalize time.
+        if sid:
+            sess_r = await db.execute(select(InspectionSession).where(InspectionSession.id == sid))
+            sess_obj = sess_r.scalar_one_or_none()
+            if sess_obj:
+                sess_obj.transcript = body.transcript
+                await db.commit()
         try:
             items, total = await _generate_line_items(body.transcript)
             quote.line_items = items
