@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import uuid
-
 import logging
+import uuid
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-
-logger = logging.getLogger(__name__)
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +18,10 @@ from src.models.report import Report
 from src.models.session import InspectionSession
 from src.models.shop import Shop
 from src.services.pdf import PDFService
+from src.storage.s3 import StorageService
+
+logger = logging.getLogger(__name__)
+_storage = StorageService()
 
 router = APIRouter(tags=["reports"])
 
@@ -81,8 +83,23 @@ async def get_report_pdf(
         "phone": "",
     }
 
-    media_result = await db.execute(select(MediaFile).where(MediaFile.session_id == report.session_id))
-    media_urls = [m.s3_url for m in media_result.scalars().all() if m.s3_url and m.s3_url.startswith("http")]
+    # Fetch photo media files and generate 1-hour presigned URLs so the PDF
+    # renderer can download them even though the S3 bucket is private.
+    media_result = await db.execute(
+        select(MediaFile)
+        .where(MediaFile.session_id == report.session_id)
+        .where(MediaFile.media_type == "photo")
+    )
+    media_urls: list[str] = []
+    for mf in media_result.scalars().all():
+        if not mf.s3_url or mf.s3_url.startswith("local://"):
+            continue
+        try:
+            key = urlparse(mf.s3_url).path.lstrip("/")
+            media_urls.append(await _storage.presigned_url(key, expires=3600))
+        except Exception:
+            logger.warning("Could not generate presigned URL for %s", mf.s3_url)
+            media_urls.append(mf.s3_url)
 
     report_dict = {
         "id": str(report.id),
