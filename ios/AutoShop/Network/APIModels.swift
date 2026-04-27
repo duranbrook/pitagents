@@ -252,7 +252,7 @@ struct ChatHistoryItem: Decodable, Identifiable {
     let id: String
     let role: String
     let content: [ContentBlock]
-    let createdAt: String
+    let createdAt: String?
     var displayText: String {
         content.filter { $0.type == "text" }.compactMap(\.text).joined(separator: " ")
     }
@@ -266,7 +266,7 @@ struct ChatHistoryItem: Decodable, Identifiable {
         self.id = UUID().uuidString
         self.role = role
         self.content = [ContentBlock(type: "text", text: content)]
-        self.createdAt = ""
+        self.createdAt = nil
     }
 }
 
