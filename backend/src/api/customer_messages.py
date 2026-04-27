@@ -129,8 +129,12 @@ async def send_message(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Customer has no phone number for WhatsApp",
             )
-        external_id = _send_whatsapp(customer.phone, body.body)
-        sent_at = datetime.now(timezone.utc)
+        try:
+            external_id = _send_whatsapp(customer.phone, body.body)
+            sent_at = datetime.now(timezone.utc)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("WhatsApp send failed (message still saved): %s", e)
 
     elif body.channel == "email":
         if not customer.email:
@@ -138,9 +142,13 @@ async def send_message(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Customer has no email address",
             )
-        subject = body.subject or "Message from your mechanic"
-        external_id = _send_email(customer.email, subject, body.body)
-        sent_at = datetime.now(timezone.utc)
+        try:
+            subject = body.subject or "Message from your mechanic"
+            external_id = _send_email(customer.email, subject, body.body)
+            sent_at = datetime.now(timezone.utc)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("Email send failed (message still saved): %s", e)
 
     else:
         raise HTTPException(
