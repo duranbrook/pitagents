@@ -1,4 +1,4 @@
-import type { Customer, Vehicle, ReportSummary, ReportDetail } from './types'
+import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -193,10 +193,12 @@ export async function uploadSessionMedia(
   sessionId: string,
   file: File,
   mediaType: 'audio' | 'video' | 'photo',
+  tag: 'vin' | 'odometer' | 'tire' | 'damage' | 'general' = 'general',
 ): Promise<{ media_id: string; s3_url: string }> {
   const form = new FormData()
   form.append('file', file)
   form.append('media_type', mediaType)
+  form.append('tag', tag)
   const res = await api.post(`/sessions/${sessionId}/media`, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
@@ -207,3 +209,23 @@ export const generateReport = (
   sessionId: string,
 ): Promise<{ report_id: string; share_token: string; report_url: string }> =>
   api.post(`/sessions/${sessionId}/generate-report`).then(r => r.data)
+
+// ── Quotes ────────────────────────────────────────────────────────────────
+
+export const createQuote = (
+  sessionId: string,
+  transcript: string,
+): Promise<Quote> =>
+  api.post('/quotes', { session_id: sessionId, transcript }).then(r => r.data)
+
+export const getQuote = (quoteId: string): Promise<Quote> =>
+  api.get(`/quotes/${quoteId}`).then(r => r.data)
+
+export const updateLineItems = (
+  quoteId: string,
+  lineItems: QuoteLineItem[],
+): Promise<Quote> =>
+  api.patch(`/quotes/${quoteId}/line-items`, { line_items: lineItems }).then(r => r.data)
+
+export const finalizeQuoteApi = (quoteId: string): Promise<FinalizeQuoteResponse> =>
+  api.put(`/quotes/${quoteId}/finalize`, {}).then(r => r.data)
