@@ -83,28 +83,44 @@ async def get_report_pdf(
         "phone": "",
     }
 
-    # Fetch photo media files and generate 1-hour presigned URLs so the PDF
-    # renderer can download them even though the S3 bucket is private.
+    # Build s3_url → presigned_url mapping for all photo media files.
+    # Findings store stable original S3 URLs; presigned URLs are generated fresh
+    # here each render so the PDF renderer can actually download them.
     media_result = await db.execute(
         select(MediaFile)
         .where(MediaFile.session_id == report.session_id)
         .where(MediaFile.media_type == "photo")
     )
-    media_urls: list[str] = []
+    s3_to_presigned: dict[str, str] = {}
     for mf in media_result.scalars().all():
         if not mf.s3_url or mf.s3_url.startswith("local://"):
             continue
         try:
             key = urlparse(mf.s3_url).path.lstrip("/")
-            media_urls.append(await _storage.presigned_url(key, expires=3600))
+            s3_to_presigned[mf.s3_url] = await _storage.presigned_url(key, expires=3600)
         except Exception:
             logger.warning("Could not generate presigned URL for %s", mf.s3_url)
-            media_urls.append(mf.s3_url)
+            s3_to_presigned[mf.s3_url] = mf.s3_url
+
+    # Convert each finding's photo_url from stable S3 URL → presigned for the PDF renderer.
+    # Track which S3 URLs are assigned so the unassigned gallery excludes them.
+    assigned_s3_urls: set[str] = set()
+    findings_for_pdf: list[dict] = []
+    for f in (report.findings or []):
+        f_copy = dict(f)
+        s3_url = f_copy.get("photo_url")
+        if s3_url and s3_url in s3_to_presigned:
+            f_copy["photo_url"] = s3_to_presigned[s3_url]
+            assigned_s3_urls.add(s3_url)
+        findings_for_pdf.append(f_copy)
+
+    # Unassigned photos go into the gallery section of the PDF.
+    media_urls = [p for s3, p in s3_to_presigned.items() if s3 not in assigned_s3_urls]
 
     report_dict = {
         "id": str(report.id),
         "summary": report.summary or "",
-        "findings": list(report.findings or []),
+        "findings": findings_for_pdf,
         "estimate": report.estimate or {},
         "estimate_total": float(report.estimate_total or 0),
         "vehicle": report.vehicle or {},

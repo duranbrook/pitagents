@@ -174,11 +174,14 @@ async def generate_report(
     media_result = await db.execute(select(MediaFile).where(MediaFile.session_id == sid))
     media_files = media_result.scalars().all()
 
-    # Collect photo URLs for multimodal analysis — generate presigned URLs so
-    # Claude can actually fetch images from the private S3 bucket.
+    # Collect photo URLs for multimodal analysis.
+    # Claude needs presigned URLs to download the images from the private S3 bucket.
+    # We keep a mapping back to the original S3 URLs so we can store those as the
+    # stable photo_url identifier in findings (presigned URLs change every request).
     from urllib.parse import urlparse as _urlparse
     _storage = StorageService()
-    photo_urls: list[str] = []
+    photo_s3_urls: list[str] = []   # original stable S3 URLs
+    photo_presigned: list[str] = [] # presigned URLs for Claude to download
     for m in media_files:
         if m.media_type != "photo" or not m.s3_url or m.s3_url.startswith("local://"):
             continue
@@ -186,14 +189,21 @@ async def generate_report(
             continue
         try:
             key = _urlparse(m.s3_url).path.lstrip("/")
-            photo_urls.append(await _storage.presigned_url(key, expires=3600))
+            presigned = await _storage.presigned_url(key, expires=3600)
+            photo_s3_urls.append(m.s3_url)
+            photo_presigned.append(presigned)
         except Exception:
-            photo_urls.append(m.s3_url)
+            photo_s3_urls.append(m.s3_url)
+            photo_presigned.append(m.s3_url)
 
     transcript = session.transcript or ""
 
     # Extract findings via Claude (multimodal if photos available)
-    findings_data = await extract_repair_findings(transcript, photo_urls or None)
+    findings_data = await extract_repair_findings(
+        transcript,
+        image_urls=photo_presigned or None,
+        image_s3_urls=photo_s3_urls or None,
+    )
 
     # Generate estimate with Qdrant parts pricing
     vehicle = session.vehicle or {}
