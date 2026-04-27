@@ -69,7 +69,7 @@ export interface ReportDetail {
 }
 
 export interface QuoteLineItem {
-  type: string        // "labor" | "part"
+  type: 'labor' | 'part'
   description: string
   qty: number
   unit_price: number
@@ -78,7 +78,7 @@ export interface QuoteLineItem {
 
 export interface Quote {
   quote_id: string
-  status: string      // "draft" | "final"
+  status: 'draft' | 'final'
   total: number
   line_items: QuoteLineItem[]
   session_id: string | null
@@ -87,7 +87,7 @@ export interface Quote {
 
 export interface FinalizeQuoteResponse {
   quote_id: string
-  status: string
+  status: 'draft' | 'final'
   total: number
   pdf_url: string | null
   report_id: string | null
