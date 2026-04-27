@@ -8,31 +8,38 @@ from src.config import settings
 
 logger = logging.getLogger(__name__)
 
-PROMPT = """You are a vehicle repair expert assistant. Your task has two parts:
+PROMPT = """You are a vehicle repair expert assistant. Follow these steps exactly.
 
-PART 1 — EXAMINE EACH PHOTO
-For every numbered photo image provided, look at it carefully and note:
-- Which specific vehicle part or system is shown (e.g. lower control arm, front bumper, brake rotor, headlamp)
-- What condition issue is visible (wear, damage, leak, corrosion, etc.)
+STEP 1 — DESCRIBE EACH PHOTO INDIVIDUALLY
+Look at each numbered photo. For each one, write one line:
+  "Photo N: [part shown] — [what the issue is]"
+Example:
+  "Photo 1: lower control arm (right) — visible crack in the bushing"
+  "Photo 2: front bumper — deep gouge and paint missing"
+  "Photo 3: left headlamp — lens cracked, moisture inside"
 
-PART 2 — EXTRACT FINDINGS WITH PHOTO ASSIGNMENT
-Cross-reference your photo observations with the technician's transcript. Create one finding per distinct issue. For each finding, assign the single best photo that shows that issue by writing its exact URL from the list below.
+STEP 2 — CREATE ONE FINDING PER DISTINCT PART/ISSUE
+CRITICAL RULE: Every photo that shows a different part must become its own separate finding.
+Do NOT merge "lower control arm" and "front bumper" into one finding — they are two separate findings.
+Do NOT merge issues just because they are on the same vehicle.
+If you have 3 photos showing 3 different problems, you must produce at least 3 findings.
 
-{photo_url_list}Rules:
-- Each photo URL may be assigned to at most ONE finding (the one it most clearly documents)
-- If a photo doesn't clearly show any specific issue, leave it unassigned (do not force it)
-- If a finding has no matching photo, set photo_url to null
-- Do not invent issues not visible in photos or mentioned in the transcript
+Also include any additional issues mentioned in the transcript that have no photo.
 
-Return ONLY a JSON object with exactly this structure (no markdown fences, no extra text):
+STEP 3 — ASSIGN THE PHOTO URL
+For each finding, set photo_url to the exact URL of the photo that documents it.
+Each URL may be assigned to at most one finding. If no photo matches, set photo_url to null.
+
+{photo_url_list}STEP 4 — OUTPUT
+Return ONLY the JSON below (no markdown fences, no extra text, no STEP 1 output):
 {{
   "summary": "<one or two sentence summary of the overall vehicle condition>",
   "findings": [
     {{
-      "part": "<specific part name — e.g. 'lower control arm (right)', 'front bumper', 'left headlamp'>",
+      "part": "<specific part — e.g. 'lower control arm (right)', 'front bumper', 'left headlamp'>",
       "severity": "<high | medium | low>",
-      "notes": "<brief description of the visible issue>",
-      "photo_url": "<exact URL from the list above that best shows this issue, or null>"
+      "notes": "<one sentence describing the exact issue visible>",
+      "photo_url": "<exact URL from the list above, or null>"
     }}
   ]
 }}
