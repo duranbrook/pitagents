@@ -130,7 +130,7 @@ private fun MessagesTab(
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(messages.size) {
+    LaunchedEffect(messages.lastOrNull()?.messageId) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 

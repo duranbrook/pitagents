@@ -186,7 +186,6 @@ class MessagesViewModelTest {
 
     @Test
     fun `sendMessage with blank body does nothing`() = runTest {
-        var sendMessageCalled = false
         val fakeApi = makeFakeApi(
             messages = emptyList(),
             sendResult = serverMessage,
@@ -204,7 +203,6 @@ class MessagesViewModelTest {
         // No placeholder, no API call, no error
         assertEquals(0, vm.messages.value.size)
         assertNull(vm.errorMessage.value)
-        assertEquals(false, sendMessageCalled)
         assertFalse(vm.isSending.value)
     }
 }
