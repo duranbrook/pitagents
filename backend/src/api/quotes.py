@@ -317,12 +317,21 @@ async def finalize_quote(
         vehicle_snapshot = session_obj.vehicle or {}
         session_dict = {"vehicle": vehicle_snapshot, "transcript": session_obj.transcript or ""}
 
-    # ── Build inspection report (findings + Qdrant estimate) via shared service ──
+    # ── Build inspection report (findings + estimate) via shared service ──
     report_obj: Report | None = None
     if session_obj:
         try:
             from src.services.report_builder import build_report
             report_obj = await build_report(session_obj.id, db)
+
+            # The quote already has a Claude-generated estimate with realistic parts
+            # pricing. Prefer it over the Qdrant lookup so the report total matches
+            # what the customer was quoted.
+            if report_obj and quote.line_items:
+                report_obj.estimate = {"line_items": list(quote.line_items)}
+                report_obj.estimate_total = quote.total or 0
+                await db.commit()
+                await db.refresh(report_obj)
         except Exception:
             logger.exception("Report generation failed for quote %s", quote_id)
 
