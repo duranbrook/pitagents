@@ -108,41 +108,36 @@ async def _generate_line_items(transcript: str) -> tuple[list[dict], float]:
 
 async def _analyze_media_for_findings(
     transcript: str,
-    line_items: list[dict],
-    media_urls: list[str],
+    media_files: list,
 ) -> list[dict]:
-    """Call Claude multimodal to match photos to repair findings."""
-    client = anthropic.AsyncAnthropic()
-    parts_list = "\n".join(
-        f"- {item.get('description', item.get('part', ''))}" for item in line_items
+    """Use extract_repair_findings with presigned URLs so Claude can see the photos."""
+    from urllib.parse import urlparse
+    from src.tools.extract_findings import extract_repair_findings
+
+    _storage = StorageService()
+    photo_s3_urls: list[str] = []
+    photo_presigned: list[str] = []
+    for m in media_files:
+        if m.media_type != "photo" or not m.s3_url or not m.s3_url.startswith("http"):
+            continue
+        try:
+            key = urlparse(m.s3_url).path.lstrip("/")
+            presigned = await _storage.presigned_url(key, expires=3600)
+            photo_s3_urls.append(m.s3_url)
+            photo_presigned.append(presigned)
+        except Exception:
+            photo_s3_urls.append(m.s3_url)
+            photo_presigned.append(m.s3_url)
+
+    if not photo_presigned:
+        return []
+
+    result = await extract_repair_findings(
+        transcript,
+        image_urls=photo_presigned,
+        image_s3_urls=photo_s3_urls,
     )
-    content: list[dict] = []
-    for url in media_urls[:8]:  # cap at 8 images to stay within token limits
-        content.append({"type": "image", "source": {"type": "url", "url": url}})
-    content.append({
-        "type": "text",
-        "text": (
-            "You are an auto repair shop AI. The mechanic took the photos above during an inspection.\n\n"
-            f"Inspection transcript:\n{transcript or '(none)'}\n\n"
-            f"Repair line items identified:\n{parts_list or '(none)'}\n\n"
-            "For each photo, determine which repair item it shows and the severity of the issue.\n"
-            "Return a JSON array. Each element:\n"
-            '{\n  "part": "<repair item name from the list above>",\n'
-            '  "severity": "high" | "medium" | "low",\n'
-            '  "notes": "<one sentence describing what the photo shows>",\n'
-            '  "photo_url": "<the exact image URL you are describing>"\n}\n'
-            "Only include items that have a matching photo. Return ONLY valid JSON, no markdown."
-        ),
-    })
-    response = await client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=1024,
-        messages=[{"role": "user", "content": content}],
-    )
-    text = response.content[0].text.strip()
-    if text.startswith("```"):
-        text = "\n".join(text.split("\n")[1:]).rstrip("`").strip()
-    return json.loads(text)
+    return result.get("findings", [])
 
 
 def _summarize_findings(findings: list[dict]) -> str:
@@ -404,19 +399,18 @@ async def finalize_quote(
             await db.commit()
             await db.refresh(report_obj)
 
-    # ── Gather media URLs ──
-    media_urls: list[str] = []
+    # ── Gather media files (objects, not just URLs — presigning happens inside) ──
+    media_files_list: list = []
     if session_obj:
         mr = await db.execute(select(MediaFile).where(MediaFile.session_id == session_obj.id))
-        media_urls = [m.s3_url for m in mr.scalars().all() if m.s3_url and m.s3_url.startswith("http")]
+        media_files_list = list(mr.scalars().all())
 
     # ── Run Claude multimodal to associate photos with findings ──
-    if report_obj and media_urls and session_obj:
+    if report_obj and media_files_list and session_obj:
         try:
             findings = await _analyze_media_for_findings(
                 transcript=session_obj.transcript or "",
-                line_items=list(quote.line_items or []),
-                media_urls=media_urls,
+                media_files=media_files_list,
             )
             if findings:
                 report_obj.findings = findings
