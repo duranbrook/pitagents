@@ -7,6 +7,7 @@ import logging
 import uuid
 from typing import Literal
 
+import anthropic
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy import select
