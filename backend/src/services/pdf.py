@@ -255,50 +255,91 @@ class PDFService:
             ))
             story.append(Spacer(1, 0.15*inch))
 
-        # ── Findings (one card per finding, with photo if available) ──
+        # ── Findings — one card per finding, Firestone-style left-border + photo ──
         if findings:
             story.append(Paragraph("Inspection Findings", bold))
-            story.append(Spacer(1, 0.05*inch))
-            for idx, f in enumerate(findings):
+            story.append(Spacer(1, 0.08*inch))
+
+            assigned_photo_urls: set[str] = set()
+
+            for f in findings:
                 sev = (f.get("severity") or "low").lower()
-                badge_color = _sev_color.get(sev, _GREEN)
+                border_color = _sev_color.get(sev, _GREEN)
                 label = _sev_label.get(sev, "Good")
+
+                # Build inner content: part name + badge row, then notes, then photo
+                inner: list = []
                 badge = Table(
                     [[Paragraph(f"<font color='white'><b>{label}</b></font>",
-                                ParagraphStyle("badge", parent=styles["Normal"], fontSize=8))]],
+                                ParagraphStyle("bdg", parent=styles["Normal"], fontSize=8))]],
                     style=[
-                        ("BACKGROUND",     (0,0), (-1,-1), badge_color),
-                        ("TOPPADDING",     (0,0), (-1,-1), 2),
-                        ("BOTTOMPADDING",  (0,0), (-1,-1), 2),
-                        ("LEFTPADDING",    (0,0), (-1,-1), 6),
-                        ("RIGHTPADDING",   (0,0), (-1,-1), 6),
+                        ("BACKGROUND",    (0,0), (-1,-1), border_color),
+                        ("TOPPADDING",    (0,0), (-1,-1), 2),
+                        ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+                        ("LEFTPADDING",   (0,0), (-1,-1), 6),
+                        ("RIGHTPADDING",  (0,0), (-1,-1), 6),
                     ],
                 )
-                header_row = Table(
-                    [[Paragraph(f"<b>{f.get('part', '')}</b>", styles["Normal"]), badge]],
-                    colWidths=[5.6*inch, 1.3*inch],
+                inner.append(Table(
+                    [[Paragraph(f"<b>{f.get('part','')}</b>", styles["Normal"]), badge]],
+                    colWidths=[5.2*inch, 1.3*inch],
                     style=[
                         ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
-                        ("TOPPADDING",    (0,0), (-1,-1), 4),
+                        ("TOPPADDING",    (0,0), (-1,-1), 0),
                         ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                        ("LEFTPADDING",   (0,0), (-1,-1), 0),
                     ],
-                )
-                story.append(header_row)
-                story.append(Paragraph(f.get("notes", ""), styles["Normal"]))
+                ))
+                inner.append(Paragraph(f.get("notes", ""),
+                                       ParagraphStyle("fn", parent=styles["Normal"],
+                                                      fontSize=9, textColor=colors.HexColor("#444444"))))
 
                 photo_url = f.get("photo_url")
                 if photo_url and photo_url.startswith("http"):
-                    img = _fetch_image(photo_url, max_width=6.8 * inch, max_height=3 * inch)
+                    img = _fetch_image(photo_url, max_width=3 * inch, max_height=2.5 * inch)
                     if img:
-                        story.append(Spacer(1, 0.06 * inch))
-                        story.append(img)
+                        inner.append(Spacer(1, 0.06*inch))
+                        inner.append(img)
+                        assigned_photo_urls.add(photo_url)
 
-                if idx < len(findings) - 1:
-                    story.append(Spacer(1, 0.06 * inch))
-                    story.append(HRFlowable(width="100%", thickness=0.5,
-                                            color=colors.HexColor("#e0e0e0")))
-                    story.append(Spacer(1, 0.06 * inch))
+                # Wrap inner content in a left-border card
+                card = Table(
+                    [[inner]],
+                    colWidths=[6.8*inch],
+                    style=[
+                        ("LINEBEFORE",    (0,0), (0,-1), 4, border_color),
+                        ("LEFTPADDING",   (0,0), (-1,-1), 10),
+                        ("RIGHTPADDING",  (0,0), (-1,-1), 6),
+                        ("TOPPADDING",    (0,0), (-1,-1), 6),
+                        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+                        ("BACKGROUND",    (0,0), (-1,-1), colors.HexColor("#fafafa")),
+                    ],
+                )
+                story.append(card)
+                story.append(Spacer(1, 0.08*inch))
 
+            story.append(Spacer(1, 0.08*inch))
+
+        # ── Inspection Photos (session photos not assigned to a specific finding) ──
+        unassigned = [u for u in media_urls if u not in assigned_photo_urls]
+        if unassigned:
+            story.append(Paragraph("Inspection Photos", bold))
+            story.append(Spacer(1, 0.06*inch))
+            # Lay out photos in rows of 2
+            photos_per_row = 2
+            photo_w = 3.2 * inch
+            photo_h = 2.4 * inch
+            row: list = []
+            for url in unassigned:
+                img = _fetch_image(url, max_width=photo_w, max_height=photo_h)
+                if img:
+                    row.append(img)
+                if len(row) == photos_per_row:
+                    story.append(Table([row], colWidths=[photo_w + 0.2*inch] * photos_per_row))
+                    story.append(Spacer(1, 0.06*inch))
+                    row = []
+            if row:  # leftover photo in a partial row
+                story.append(Table([row], colWidths=[photo_w + 0.2*inch] * len(row)))
             story.append(Spacer(1, 0.15*inch))
 
         # ── Estimate summary ──
