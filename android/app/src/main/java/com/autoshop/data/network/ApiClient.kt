@@ -26,8 +26,10 @@ fun buildRetrofit(tokenStore: TokenStore): Retrofit {
             chain.request()
         }
         val response = chain.proceed(request)
-        if (response.code == 401) {
-            tokenStore.clearToken()
+        if (response.code == 401 && token != null) {
+            // Mid-session 401 — token expired or revoked. Mark expired so LoginScreen
+            // can show "Session expired" instead of dropping the user on a blank login form.
+            tokenStore.expireSession()
         }
         response
     }

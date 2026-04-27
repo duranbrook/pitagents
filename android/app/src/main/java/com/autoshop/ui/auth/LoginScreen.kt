@@ -21,6 +21,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +52,13 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val sessionExpired by tokenStore.sessionExpired.collectAsState()
+    LaunchedEffect(sessionExpired) {
+        if (sessionExpired) {
+            errorMessage = "Your session has expired. Please sign in again."
+            tokenStore.consumeSessionExpired()
+        }
+    }
 
     val fieldShape = RoundedCornerShape(10.dp)
     val fieldColors = TextFieldDefaults.colors(
@@ -136,6 +145,9 @@ fun LoginScreen(
                     scope.launch {
                         isLoading = true
                         errorMessage = null
+                        // Once the user attempts a fresh login, drop any stale session-expired flag
+                        // so a real auth failure shows "Invalid email or password" rather than re-firing it.
+                        tokenStore.consumeSessionExpired()
                         try {
                             val response = authApi.login(LoginRequest(email.trim(), password))
                             if (response.isSuccessful) {

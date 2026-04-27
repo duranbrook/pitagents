@@ -23,8 +23,14 @@ class TokenStore(context: Context) {
     private val _isLoggedIn = MutableStateFlow(prefs.getString(KEY_TOKEN, null) != null)
     val isLoggedIn: StateFlow<Boolean> get() = _isLoggedIn
 
+    // Set when the auth interceptor clears the token because of a 401 mid-session.
+    // LoginScreen reads + clears this so the user sees "Session expired" instead of a blank screen.
+    private val _sessionExpired = MutableStateFlow(false)
+    val sessionExpired: StateFlow<Boolean> get() = _sessionExpired
+
     fun saveToken(token: String) {
         prefs.edit().putString(KEY_TOKEN, token).apply()
+        _sessionExpired.value = false
         _isLoggedIn.value = true
     }
 
@@ -33,6 +39,19 @@ class TokenStore(context: Context) {
     fun clearToken() {
         prefs.edit().remove(KEY_TOKEN).apply()
         _isLoggedIn.value = false
+    }
+
+    /** Called by the auth interceptor on a mid-session 401 (token expired/revoked). */
+    fun expireSession() {
+        if (prefs.getString(KEY_TOKEN, null) != null) {
+            prefs.edit().remove(KEY_TOKEN).apply()
+            _sessionExpired.value = true
+            _isLoggedIn.value = false
+        }
+    }
+
+    fun consumeSessionExpired() {
+        _sessionExpired.value = false
     }
 
     /** Decode the JWT payload and return the `email` claim, or empty string on failure. */
