@@ -1,6 +1,8 @@
 """PDF generation service using reportlab."""
 from __future__ import annotations
 
+import logging
+import urllib.request
 from io import BytesIO
 
 from reportlab.lib import colors
@@ -9,12 +11,30 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     HRFlowable,
+    Image,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _fetch_image(url: str, max_width: float, max_height: float) -> Image | None:
+    """Download a photo from S3 and return a scaled ReportLab Image, or None on failure."""
+    try:
+        with urllib.request.urlopen(url, timeout=8) as resp:  # noqa: S310
+            data = resp.read()
+        img = Image(BytesIO(data))
+        scale = min(max_width / img.imageWidth, max_height / img.imageHeight, 1.0)
+        img.drawWidth = img.imageWidth * scale
+        img.drawHeight = img.imageHeight * scale
+        return img
+    except Exception:
+        logger.warning("pdf: could not fetch photo %s", url)
+        return None
 
 _W, _H = letter  # 8.5 × 11 inches
 _DARK = colors.HexColor("#1a1a2e")
@@ -229,39 +249,50 @@ class PDFService:
             ))
             story.append(Spacer(1, 0.15*inch))
 
-        # ── Findings table ──
+        # ── Findings (one card per finding, with photo if available) ──
         if findings:
             story.append(Paragraph("Inspection Findings", bold))
             story.append(Spacer(1, 0.05*inch))
-            hdr = [Paragraph(h, bold) for h in ["Component", "Condition", "Notes"]]
-            rows = [hdr]
-            for f in findings:
+            for idx, f in enumerate(findings):
                 sev = (f.get("severity") or "low").lower()
                 badge_color = _sev_color.get(sev, _GREEN)
                 label = _sev_label.get(sev, "Good")
                 badge = Table(
                     [[Paragraph(f"<font color='white'><b>{label}</b></font>",
                                 ParagraphStyle("badge", parent=styles["Normal"], fontSize=8))]],
-                    style=[("BACKGROUND",(0,0),(-1,-1),badge_color),
-                           ("TOPPADDING",(0,0),(-1,-1),2),("BOTTOMPADDING",(0,0),(-1,-1),2),
-                           ("LEFTPADDING",(0,0),(-1,-1),5),("RIGHTPADDING",(0,0),(-1,-1),5),]
+                    style=[
+                        ("BACKGROUND",     (0,0), (-1,-1), badge_color),
+                        ("TOPPADDING",     (0,0), (-1,-1), 2),
+                        ("BOTTOMPADDING",  (0,0), (-1,-1), 2),
+                        ("LEFTPADDING",    (0,0), (-1,-1), 6),
+                        ("RIGHTPADDING",   (0,0), (-1,-1), 6),
+                    ],
                 )
-                rows.append([
-                    Paragraph(f.get("part",""), styles["Normal"]),
-                    badge,
-                    Paragraph(f.get("notes",""), styles["Normal"]),
-                ])
-            ft = Table(rows, colWidths=[2*inch, 1.3*inch, 3.6*inch])
-            ft.setStyle(TableStyle([
-                ("BACKGROUND",  (0,0), (-1,0),  colors.HexColor("#f5f5f5")),
-                ("LINEBELOW",   (0,0), (-1,0),  1.5, colors.grey),
-                ("LINEBELOW",   (0,1), (-1,-1), 0.5, colors.HexColor("#f0f0f0")),
-                ("TOPPADDING",  (0,0), (-1,-1), 5),
-                ("BOTTOMPADDING",(0,0),(-1,-1), 5),
-                ("LEFTPADDING", (0,0), (0,-1),  6),
-                ("VALIGN",      (0,0), (-1,-1), "MIDDLE"),
-            ]))
-            story.append(ft)
+                header_row = Table(
+                    [[Paragraph(f"<b>{f.get('part', '')}</b>", styles["Normal"]), badge]],
+                    colWidths=[5.6*inch, 1.3*inch],
+                    style=[
+                        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+                        ("TOPPADDING",    (0,0), (-1,-1), 4),
+                        ("BOTTOMPADDING", (0,0), (-1,-1), 4),
+                    ],
+                )
+                story.append(header_row)
+                story.append(Paragraph(f.get("notes", ""), styles["Normal"]))
+
+                photo_url = f.get("photo_url")
+                if photo_url and photo_url.startswith("http"):
+                    img = _fetch_image(photo_url, max_width=6.8 * inch, max_height=3 * inch)
+                    if img:
+                        story.append(Spacer(1, 0.06 * inch))
+                        story.append(img)
+
+                if idx < len(findings) - 1:
+                    story.append(Spacer(1, 0.06 * inch))
+                    story.append(HRFlowable(width="100%", thickness=0.5,
+                                            color=colors.HexColor("#e0e0e0")))
+                    story.append(Spacer(1, 0.06 * inch))
+
             story.append(Spacer(1, 0.15*inch))
 
         # ── Estimate summary ──
