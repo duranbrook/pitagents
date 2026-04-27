@@ -68,6 +68,10 @@ class FinalizeQuoteResponse(BaseModel):
     share_token: str | None = None
 
 
+class UpdateLineItemsRequest(BaseModel):
+    line_items: list[LineItem]
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -362,6 +366,36 @@ async def finalize_quote(
         report_pdf_url=report_pdf_url,
         share_token=str(report_obj.share_token) if report_obj else None,
     )
+
+
+@router.patch("/quotes/{quote_id}/line-items", response_model=QuoteResponse)
+async def update_line_items(
+    quote_id: str,
+    body: UpdateLineItemsRequest,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> QuoteResponse:
+    """Replace the line items on a draft quote and recalculate the total."""
+    try:
+        qid = uuid.UUID(quote_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail=f"Invalid quote_id: {quote_id}")
+
+    result = await db.execute(select(Quote).where(Quote.id == qid))
+    quote = result.scalar_one_or_none()
+    if quote is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quote not found")
+    if quote.status != "draft":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Cannot edit a finalized quote")
+
+    items = [item.model_dump() for item in body.line_items]
+    quote.line_items = items
+    quote.total = sum(item.get("total", 0.0) for item in items)
+    await db.commit()
+    await db.refresh(quote)
+    return _quote_to_response(quote)
 
 
 @router.get("/sessions/{session_id}/quote", response_model=QuoteResponse)

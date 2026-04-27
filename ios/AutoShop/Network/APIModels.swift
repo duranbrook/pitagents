@@ -72,7 +72,7 @@ struct VehicleCreate: Encodable {
 
 // MARK: - Quotes
 
-struct QuoteLineItem: Decodable, Identifiable {
+struct QuoteLineItem: Codable, Identifiable {
     let type: String
     let description: String
     let qty: Double
@@ -82,6 +82,34 @@ struct QuoteLineItem: Decodable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case type, description, qty, total
         case unitPrice = "unit_price"
+    }
+}
+
+struct EditableLineItem: Identifiable {
+    var id = UUID()
+    var type: String        // "labor" | "part"
+    var description: String
+    var qty: Double
+    var unitPrice: Double
+    var total: Double { qty * unitPrice }
+
+    init(from item: QuoteLineItem) {
+        self.type = item.type
+        self.description = item.description
+        self.qty = item.qty
+        self.unitPrice = item.unitPrice
+    }
+
+    init(type: String) {
+        self.type = type
+        self.description = ""
+        self.qty = 1
+        self.unitPrice = 0
+    }
+
+    func toLineItem() -> QuoteLineItem {
+        QuoteLineItem(type: type, description: description, qty: qty,
+                      unitPrice: unitPrice, total: qty * unitPrice)
     }
 }
 

@@ -175,6 +175,28 @@ struct SessionAPI {
         }
     }
 
+    // MARK: - Update Line Items
+
+    func updateLineItems(quoteId: String, lineItems: [QuoteLineItem]) async throws -> QuoteResponse {
+        guard let url = URL(string: "\(SessionAPI.baseURL)/quotes/\(quoteId)/line-items") else {
+            throw SessionAPIError.invalidURL
+        }
+        let payload = lineItems.map { item -> [String: Any] in
+            ["type": item.type, "description": item.description,
+             "qty": item.qty, "unit_price": item.unitPrice, "total": item.total]
+        }
+        var request = authedRequest(url: url, method: "PATCH")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["line_items": payload])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(data: data, response: response)
+        do {
+            return try JSONDecoder().decode(QuoteResponse.self, from: data)
+        } catch {
+            throw SessionAPIError.decodingError(error.localizedDescription)
+        }
+    }
+
     // MARK: - Poll Session
 
     func pollSession(sessionId: String) async throws -> [String: Any] {
