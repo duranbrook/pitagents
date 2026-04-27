@@ -6,6 +6,8 @@ import { AppShell } from '@/components/AppShell'
 import { getQuote, updateQuoteLineItems, finalizeQuote } from '@/lib/api'
 import type { Quote, QuoteLineItem } from '@/lib/types'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
 // ── Editable row ──────────────────────────────────────────────────────────
 
 function EditRow({
@@ -109,6 +111,7 @@ function QuotePageInner() {
 
   function startEditing() {
     if (!quote) return
+    setError(null)
     setEditItems(quote.line_items.map(item => ({ ...item, _id: crypto.randomUUID() })))
     setIsEditing(true)
   }
@@ -149,6 +152,7 @@ function QuotePageInner() {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Finalize failed')
+    } finally {
       setFinalizing(false)
     }
   }
@@ -183,7 +187,8 @@ function QuotePageInner() {
   }
 
   const isDraft = quote.status === 'draft'
-  const displayTotal = isEditing ? editTotal : quote.total
+  const readTotal = quote.line_items.reduce((s, item) => s + item.qty * item.unit_price, 0)
+  const displayTotal = isEditing ? editTotal : readTotal
 
   return (
     <AppShell>
@@ -262,14 +267,14 @@ function QuotePageInner() {
               </thead>
               <tbody>
                 {isEditing ? (
-                  editItems.map((item, i) => (
+                  editItems.map((item) => (
                     <EditRow
                       key={item._id}
                       item={item}
                       onChange={updated =>
-                        setEditItems(prev => prev.map((x, j) => (j === i ? updated : x)))
+                        setEditItems(prev => prev.map(x => (x._id === updated._id ? updated : x)))
                       }
-                      onDelete={() => setEditItems(prev => prev.filter((_, j) => j !== i))}
+                      onDelete={() => setEditItems(prev => prev.filter(x => x._id !== item._id))}
                     />
                   ))
                 ) : quote.line_items.length === 0 ? (
@@ -344,7 +349,7 @@ function QuotePageInner() {
           {!isDraft && (
             <div className="flex gap-3">
               <a
-                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/quotes/${quote.quote_id}/pdf`}
+                href={`${API_URL}/quotes/${quote.quote_id}/pdf`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-500 transition-colors"
