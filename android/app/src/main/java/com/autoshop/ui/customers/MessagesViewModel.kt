@@ -63,15 +63,20 @@ class MessagesViewModel(
             createdAt = "",
         )
         _messages.value = _messages.value + placeholder
+        _isSending.value = true
 
         viewModelScope.launch {
-            _isSending.value = true
             try {
                 val response = api.sendMessage(vehicleId, CreateMessageRequest(body = trimmed, channel = channel))
                 if (response.isSuccessful) {
-                    val real = response.body()!!
-                    _messages.value = _messages.value.map {
-                        if (it.messageId == placeholder.messageId) real else it
+                    val real = response.body()
+                    if (real != null) {
+                        _messages.value = _messages.value.map {
+                            if (it.messageId == placeholder.messageId) real else it
+                        }
+                    } else {
+                        _messages.value = _messages.value.filter { it.messageId != placeholder.messageId }
+                        _errorMessage.value = "Send failed: server returned no message."
                     }
                 } else {
                     _messages.value = _messages.value.filter { it.messageId != placeholder.messageId }
