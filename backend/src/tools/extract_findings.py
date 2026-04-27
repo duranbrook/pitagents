@@ -1,3 +1,4 @@
+import re
 import asyncio
 import json
 import logging
@@ -8,41 +9,40 @@ from src.config import settings
 
 logger = logging.getLogger(__name__)
 
-PROMPT = """You are a vehicle repair expert assistant. Follow these steps exactly.
+PROMPT = """You are a vehicle repair expert assistant. Work through the following steps, writing your reasoning for each step before producing the final answer.
 
-STEP 1 — DESCRIBE EACH PHOTO INDIVIDUALLY
-Look at each numbered photo. For each one, write one line:
-  "Photo N: [part shown] — [what the issue is]"
+STEP 1 — COUNT THE ISSUES
+Read the transcript and look at every photo. Write a numbered list of every distinct issue you find. Each entry on the list is one specific problem on one specific part.
 Example:
-  "Photo 1: lower control arm (right) — visible crack in the bushing"
-  "Photo 2: front bumper — deep gouge and paint missing"
-  "Photo 3: left headlamp — lens cracked, moisture inside"
+  1. Lower control arm (right) — cracked bushing
+  2. Front bumper — paint missing, deep gouge
+  3. Left headlamp — cracked lens with moisture
 
-STEP 2 — CREATE ONE FINDING PER DISTINCT PART/ISSUE
-CRITICAL RULE: Every photo that shows a different part must become its own separate finding.
-Do NOT merge "lower control arm" and "front bumper" into one finding — they are two separate findings.
-Do NOT merge issues just because they are on the same vehicle.
-If you have 3 photos showing 3 different problems, you must produce at least 3 findings.
+STEP 2 — MAP PHOTOS TO ISSUES
+{photo_url_list}For each issue from Step 1, decide which photo (if any) best shows it. Write the mapping:
+  Issue 1 → Photo N (URL: ...)
+  Issue 2 → Photo N (URL: ...)
+  Issue 3 → no photo
+Each photo may be assigned to only ONE issue.
 
-Also include any additional issues mentioned in the transcript that have no photo.
+STEP 3 — OUTPUT JSON
+Using your Step 1 issue list and Step 2 photo mapping, output a JSON object.
+Each issue from Step 1 becomes one entry in "findings". Do NOT merge separate issues.
 
-STEP 3 — ASSIGN THE PHOTO URL
-For each finding, set photo_url to the exact URL of the photo that documents it.
-Each URL may be assigned to at most one finding. If no photo matches, set photo_url to null.
-
-{photo_url_list}STEP 4 — OUTPUT
-Return ONLY the JSON below (no markdown fences, no extra text, no STEP 1 output):
+Output the JSON inside <json> tags:
+<json>
 {{
-  "summary": "<one or two sentence summary of the overall vehicle condition>",
+  "summary": "<one or two sentence overall summary>",
   "findings": [
     {{
-      "part": "<specific part — e.g. 'lower control arm (right)', 'front bumper', 'left headlamp'>",
+      "part": "<specific part name from Step 1>",
       "severity": "<high | medium | low>",
-      "notes": "<one sentence describing the exact issue visible>",
-      "photo_url": "<exact URL from the list above, or null>"
+      "notes": "<one sentence describing the exact visible issue>",
+      "photo_url": "<exact URL from Step 2 mapping, or null>"
     }}
   ]
 }}
+</json>
 
 Transcript:
 {transcript}"""
@@ -97,14 +97,24 @@ async def extract_repair_findings(
     )
 
     try:
-        raw = response.content[0].text.strip()
-        # Strip markdown code fences if present
-        if raw.startswith("```"):
-            raw = raw.split("```", 2)[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-            raw = raw.strip()
-        return json.loads(raw)
-    except (json.JSONDecodeError, IndexError, KeyError):
+        raw = response.content[0].text
+        # Extract JSON from <json>...</json> tags (preferred path)
+        tag_match = re.search(r"<json>\s*([\s\S]*?)\s*</json>", raw)
+        if tag_match:
+            return json.loads(tag_match.group(1))
+        # Fallback: strip markdown fences
+        stripped = raw.strip()
+        if stripped.startswith("```"):
+            stripped = stripped.split("```", 2)[1]
+            if stripped.startswith("json"):
+                stripped = stripped[4:]
+            stripped = stripped.strip()
+            return json.loads(stripped)
+        # Last resort: find first {...} block
+        brace_match = re.search(r"\{[\s\S]*\}", stripped)
+        if brace_match:
+            return json.loads(brace_match.group())
+        raise ValueError("no JSON found")
+    except Exception:
         logger.warning("extract_findings: failed to parse JSON. raw=%s", response.content[0].text[:300] if response.content else "empty")
         return {"summary": transcript[:500], "findings": []}
