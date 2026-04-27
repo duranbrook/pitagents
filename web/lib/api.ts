@@ -221,11 +221,11 @@ export const createQuote = (
 export const getQuote = (quoteId: string): Promise<Quote> =>
   api.get(`/quotes/${quoteId}`).then(r => r.data)
 
-export const updateLineItems = (
+export const updateQuoteLineItems = (
   quoteId: string,
   lineItems: QuoteLineItem[],
 ): Promise<Quote> =>
   api.patch(`/quotes/${quoteId}/line-items`, { line_items: lineItems }).then(r => r.data)
 
-export const finalizeQuoteApi = (quoteId: string): Promise<FinalizeQuoteResponse> =>
+export const finalizeQuote = (quoteId: string): Promise<FinalizeQuoteResponse> =>
   api.put(`/quotes/${quoteId}/finalize`, {}).then(r => r.data)
