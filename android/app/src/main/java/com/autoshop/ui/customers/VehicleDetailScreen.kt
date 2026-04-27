@@ -1,6 +1,7 @@
 package com.autoshop.ui.customers
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -46,12 +49,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.autoshop.data.model.CreateMessageRequest
 import com.autoshop.data.model.Message
 import com.autoshop.data.model.Report
 import com.autoshop.data.network.MessagesApi
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
 private val tabs = listOf("Messages", "Reports")
@@ -62,6 +66,7 @@ fun VehicleDetailScreen(
     vehicleId: String,
     messagesApi: MessagesApi,
     onBack: () -> Unit,
+    onReportClick: (reportId: String, vehicleLabel: String) -> Unit = { _, _ -> },
 ) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
@@ -94,7 +99,11 @@ fun VehicleDetailScreen(
 
             when (selectedTabIndex) {
                 0 -> MessagesTab(vehicleId = vehicleId, messagesApi = messagesApi)
-                1 -> ReportsTab(vehicleId = vehicleId, messagesApi = messagesApi)
+                1 -> ReportsTab(
+                    vehicleId = vehicleId,
+                    messagesApi = messagesApi,
+                    onReportClick = onReportClick,
+                )
             }
         }
     }
@@ -106,38 +115,31 @@ private fun MessagesTab(
     vehicleId: String,
     messagesApi: MessagesApi,
 ) {
-    var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var newBody by remember { mutableStateOf("") }
+    val vm: MessagesViewModel = viewModel(
+        key = "messages-$vehicleId",
+        factory = MessagesViewModel.factory(vehicleId, messagesApi),
+    )
+    val messages by vm.messages.collectAsState()
+    val isLoading by vm.isLoading.collectAsState()
+    val isSending by vm.isSending.collectAsState()
+    val errorMessage by vm.errorMessage.collectAsState()
+
+    var inputBody by remember { mutableStateOf("") }
     var selectedChannel by remember { mutableStateOf("wa") }
     var channelDropdownExpanded by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    val focusManager = LocalFocusManager.current
 
-    fun loadMessages() {
-        scope.launch {
-            isLoading = true
-            errorMessage = null
-            try {
-                val response = messagesApi.listMessages(vehicleId)
-                if (response.isSuccessful) {
-                    messages = response.body() ?: emptyList()
-                    if (messages.isNotEmpty()) {
-                        listState.animateScrollToItem(messages.size - 1)
-                    }
-                } else {
-                    errorMessage = "Failed to load messages (HTTP ${response.code()})."
-                }
-            } catch (e: Exception) {
-                errorMessage = "Network error: ${e.message}"
-            } finally {
-                isLoading = false
-            }
-        }
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
-    LaunchedEffect(vehicleId) { loadMessages() }
+    fun doSend() {
+        if (inputBody.isBlank() || isSending) return
+        vm.sendMessage(selectedChannel, inputBody)
+        inputBody = ""
+        focusManager.clearFocus()
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f)) {
@@ -146,7 +148,10 @@ private fun MessagesTab(
                 errorMessage != null -> Text(
                     text = errorMessage!!,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(16.dp)
+                        .clickable { vm.clearError() },
                 )
                 messages.isEmpty() -> Text(
                     text = "No messages yet.",
@@ -155,7 +160,9 @@ private fun MessagesTab(
                 )
                 else -> LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(messages, key = { it.messageId }) { message ->
@@ -201,31 +208,15 @@ private fun MessagesTab(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 OutlinedTextField(
-                    value = newBody,
-                    onValueChange = { newBody = it },
+                    value = inputBody,
+                    onValueChange = { inputBody = it },
                     label = { Text("Message") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(onSend = { doSend() }),
                     maxLines = 4,
                 )
-                IconButton(
-                    onClick = {
-                        if (newBody.isBlank()) return@IconButton
-                        val body = newBody.trim()
-                        newBody = ""
-                        scope.launch {
-                            try {
-                                messagesApi.sendMessage(
-                                    vehicleId,
-                                    CreateMessageRequest(body = body, channel = selectedChannel),
-                                )
-                                loadMessages()
-                            } catch (e: Exception) {
-                                errorMessage = "Send failed: ${e.message}"
-                            }
-                        }
-                    },
-                ) {
+                IconButton(onClick = { doSend() }) {
                     Icon(Icons.Filled.Send, contentDescription = "Send message")
                 }
             }
@@ -277,6 +268,7 @@ private fun MessageBubble(message: Message) {
 private fun ReportsTab(
     vehicleId: String,
     messagesApi: MessagesApi,
+    onReportClick: (reportId: String, vehicleLabel: String) -> Unit,
 ) {
     var reports by remember { mutableStateOf<List<Report>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -320,7 +312,12 @@ private fun ReportsTab(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(reports, key = { it.reportId }) { report ->
-                    ReportCard(report = report)
+                    ReportCard(
+                        report = report,
+                        onClick = {
+                            onReportClick(report.reportId, report.title ?: "Report")
+                        },
+                    )
                 }
             }
         }
@@ -328,9 +325,11 @@ private fun ReportsTab(
 }
 
 @Composable
-private fun ReportCard(report: Report) {
+private fun ReportCard(report: Report, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
