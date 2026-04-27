@@ -9,7 +9,7 @@ import {
   getVehicles,
   createSession,
   uploadSessionMedia,
-  generateReport,
+  createQuote,
   transcribeAudio,
 } from '@/lib/api'
 import type { Customer, Vehicle } from '@/lib/types'
@@ -96,8 +96,8 @@ function InspectPageInner() {
         await uploadSessionMedia(session_id, photo, 'photo')
       }
 
-      const result = await generateReport(session_id)
-      router.push(`/reports?id=${result.report_id}`)
+      const quote = await createQuote(session_id, transcript)
+      router.push(`/quotes/${quote.quote_id}`)
     } catch (err) {
       setAnalyzeError(err instanceof Error ? err.message : 'Analysis failed. Please try again.')
       setAnalyzing(false)
