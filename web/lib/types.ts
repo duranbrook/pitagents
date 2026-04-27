@@ -67,3 +67,30 @@ export interface ReportDetail {
   share_token: string
   created_at: string | null
 }
+
+export interface QuoteLineItem {
+  type: string        // "labor" | "part"
+  description: string
+  qty: number
+  unit_price: number
+  total: number
+}
+
+export interface Quote {
+  quote_id: string
+  status: string      // "draft" | "final"
+  total: number
+  line_items: QuoteLineItem[]
+  session_id: string | null
+  created_at: string | null
+}
+
+export interface FinalizeQuoteResponse {
+  quote_id: string
+  status: string
+  total: number
+  pdf_url: string | null
+  report_id: string | null
+  report_pdf_url: string | null
+  share_token: string | null
+}
