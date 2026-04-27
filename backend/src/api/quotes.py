@@ -142,12 +142,12 @@ async def list_quotes(
     return [_quote_to_response(q) for q in quotes]
 
 
-@router.post("/quotes", response_model=CreateQuoteResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/quotes", response_model=QuoteResponse, status_code=status.HTTP_201_CREATED)
 async def create_quote(
     body: CreateQuoteRequest,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> CreateQuoteResponse:
+) -> QuoteResponse:
     """Create a new draft quote, optionally linked to a session."""
     sid = None
     if body.session_id:
@@ -181,12 +181,7 @@ async def create_quote(
         except Exception:
             logger.exception("Failed to generate line items for quote %s", quote.id)
 
-    return CreateQuoteResponse(
-        quote_id=str(quote.id),
-        status=quote.status,
-        total=float(quote.total) if quote.total is not None else 0.0,
-        line_items=list(quote.line_items or []),
-    )
+    return _quote_to_response(quote)
 
 
 @router.get("/quotes/{quote_id}", response_model=QuoteResponse)
