@@ -225,12 +225,16 @@ struct MessageResponse: Decodable, Identifiable {
     let direction: String   // "out" | "in"
     let channel: String     // "wa" | "email"
     let body: String
+    let externalId: String?
+    let sentAt: String?
     let createdAt: String
     var id: String { messageId }
     enum CodingKeys: String, CodingKey {
         case messageId = "message_id"
         case vehicleId = "vehicle_id"
         case direction, channel, body
+        case externalId = "external_id"
+        case sentAt = "sent_at"
         case createdAt = "created_at"
     }
 }
