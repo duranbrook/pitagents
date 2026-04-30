@@ -4,6 +4,7 @@ import com.autoshop.data.model.ChatHistoryItem
 import com.autoshop.data.model.ChatMessageRequest
 import com.autoshop.data.model.ChatSyncResponse
 import com.autoshop.data.model.CreateMessageRequest
+import com.autoshop.data.model.EstimateUpdateRequest
 import com.autoshop.data.model.Message
 import com.autoshop.data.model.Report
 import com.autoshop.data.model.ReportDetail
@@ -15,6 +16,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
@@ -35,6 +37,12 @@ interface MessagesApi {
 
     @GET("reports/{id}")
     suspend fun getReport(@Path("id") reportId: String): Response<ReportDetail>
+
+    @PATCH("reports/{id}/estimate")
+    suspend fun patchEstimate(
+        @Path("id") reportId: String,
+        @Body request: EstimateUpdateRequest,
+    ): Response<ReportDetail>
 
     @GET("chat/{agentId}/history")
     suspend fun getChatHistory(@Path("agentId") agentId: String): Response<List<ChatHistoryItem>>
