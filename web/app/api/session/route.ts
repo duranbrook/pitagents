@@ -1,23 +1,21 @@
-import { NextResponse } from 'next/server'
+export async function POST(request: Request) {
+  const contentType = request.headers.get('content-type') ?? ''
+  const body = await request.arrayBuffer()
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const model = searchParams.get('model') ?? 'gpt-4o-mini-realtime-preview'
-
-  const res = await fetch('https://api.openai.com/v1/realtime/client_secret', {
+  const upstream = await fetch('https://api.openai.com/v1/realtime/calls', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
+      'Content-Type': contentType,
     },
-    body: JSON.stringify({ model, voice: 'alloy' }),
+    body,
   })
 
-  if (!res.ok) {
-    const text = await res.text()
-    return NextResponse.json({ error: text }, { status: res.status })
-  }
-
-  const data = await res.json()
-  return NextResponse.json(data)
+  const sdp = await upstream.text()
+  return new Response(sdp, {
+    status: upstream.status,
+    headers: {
+      'Content-Type': upstream.headers.get('content-type') ?? 'application/sdp',
+    },
+  })
 }

@@ -24,7 +24,7 @@ export function VoiceControlWidget() {
   }), [context, router])
 
   const controller = useVoiceControl({
-    auth: { tokenEndpoint: '/api/session' },
+    auth: { sessionEndpoint: '/api/session' },
     tools,
     instructions: INSTRUCTIONS,
     model: 'gpt-4o-mini-realtime-preview',
