@@ -14,7 +14,8 @@ function getTokenPayload(): Record<string, string> {
   const token = getToken()
   if (!token) return {}
   try {
-    return JSON.parse(atob(token.split('.')[1]))
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(b64))
   } catch {
     return {}
   }

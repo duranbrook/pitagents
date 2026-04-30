@@ -7,7 +7,7 @@ import uuid
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,9 +33,9 @@ class SendRequest(BaseModel):
 
 class EstimateItemPatch(BaseModel):
     part: str
-    labor_hours: float
-    labor_rate: float
-    parts_cost: float
+    labor_hours: float = Field(ge=0)
+    labor_rate: float = Field(ge=0)
+    parts_cost: float = Field(ge=0)
 
 
 class EstimateUpdateRequest(BaseModel):
@@ -199,6 +199,7 @@ async def patch_report_estimate(
         )
     )
     await db.commit()
+    db.expire(report)
     await db.refresh(report)
 
     return _to_staff_detail(report)
@@ -271,11 +272,15 @@ def _to_staff_detail(r: Report) -> dict:
         if "description" in item:
             # Quote format: {type, description, qty, unit_price, total}
             is_labor = item.get("type", "").lower() == "labor"
+            qty = float(item.get("qty", 0)) if is_labor else 0.0
             total = float(item.get("total", 0))
+            labor_cost = total if is_labor else 0.0
+            labor_rate = round(labor_cost / qty, 2) if qty > 0 else 0.0
             estimate_rows.append({
                 "part": item.get("description", ""),
-                "labor_hours": float(item.get("qty", 0)) if is_labor else 0.0,
-                "labor_cost": total if is_labor else 0.0,
+                "labor_hours": qty,
+                "labor_rate": labor_rate,
+                "labor_cost": labor_cost,
                 "parts_cost": 0.0 if is_labor else total,
                 "total": total,
             })

@@ -316,17 +316,15 @@ function ReportsPageInner() {
     const val = isNaN(rawVal) ? 0 : rawVal
     setEditingCell(null)
     pendingValueRef.current = ''
-    setItems(prev => {
-      const updated = [...prev]
-      const item = { ...updated[row] }
-      if (field === 'hours') item.labor_hours = val
-      else if (field === 'rate') item.labor_rate = val
-      else item.parts_cost = val
-      updated[row] = item
-      patchAndSync(updated)
-      return updated
+    const updated = items.map((item, i) => {
+      if (i !== row) return item
+      if (field === 'hours') return { ...item, labor_hours: val }
+      if (field === 'rate') return { ...item, labor_rate: val }
+      return { ...item, parts_cost: val }
     })
-  }, [editingCell, patchAndSync])
+    setItems(updated)
+    patchAndSync(updated)
+  }, [editingCell, items, patchAndSync])
 
   const handleAddLine = useCallback(() => {
     const newItem: EstimateItem = {
@@ -337,12 +335,10 @@ function ReportsPageInner() {
       labor_cost: 0,
       total: 0,
     }
-    setItems(prev => {
-      const updated = [...prev, newItem]
-      patchAndSync(updated)
-      return updated
-    })
-  }, [patchAndSync])
+    const updated = [...items, newItem]
+    setItems(updated)
+    patchAndSync(updated)
+  }, [items, patchAndSync])
 
   const handleOpenPdf = useCallback(async () => {
     if (!detail) return
@@ -357,6 +353,7 @@ function ReportsPageInner() {
       const blob = await resp.blob()
       const url = URL.createObjectURL(blob)
       window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 100)
     } catch {
       setPdfError('Could not load PDF. Please try again.')
     } finally {
@@ -370,36 +367,33 @@ function ReportsPageInner() {
     if (!detail) return
 
     voice.registerEditLine((service: string, field: EditField, value: number) => {
-      setItems(prev => {
-        const idx = prev.findIndex(it =>
-          it.part.toLowerCase().includes(service.toLowerCase())
-        )
-        if (idx === -1) return prev
-        const updated = [...prev]
-        const item = { ...updated[idx] }
-        if (field === 'hours') item.labor_hours = value
-        else if (field === 'rate') item.labor_rate = value
-        else item.parts_cost = value
-        updated[idx] = item
-        patchAndSync(updated)
-        return updated
+      const current = itemsRef.current
+      const idx = current.findIndex(it =>
+        it.part.toLowerCase().includes(service.toLowerCase())
+      )
+      if (idx === -1) return
+      const updated = current.map((it, i) => {
+        if (i !== idx) return it
+        if (field === 'hours') return { ...it, labor_hours: value }
+        if (field === 'rate') return { ...it, labor_rate: value }
+        return { ...it, parts_cost: value }
       })
+      setItems(updated)
+      patchAndSync(updated)
     })
 
     voice.registerAddLine((service: string, hours: number, rate: number, parts: number) => {
-      setItems(prev => {
-        const newItem: EstimateItem = {
-          part: service,
-          labor_hours: hours,
-          labor_rate: rate,
-          parts_cost: parts,
-          labor_cost: 0,
-          total: 0,
-        }
-        const updated = [...prev, newItem]
-        patchAndSync(updated)
-        return updated
-      })
+      const newItem: EstimateItem = {
+        part: service,
+        labor_hours: hours,
+        labor_rate: rate,
+        parts_cost: parts,
+        labor_cost: 0,
+        total: 0,
+      }
+      const updated = [...itemsRef.current, newItem]
+      setItems(updated)
+      patchAndSync(updated)
     })
 
     return () => {

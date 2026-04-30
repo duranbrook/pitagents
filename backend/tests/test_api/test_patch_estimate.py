@@ -74,7 +74,7 @@ def test_patch_estimate_unauthenticated(client):
     assert resp.status_code == 401
 
 
-def test_patch_estimate_non_owner_forbidden(client, mock_settings):
+def test_patch_estimate_non_owner_forbidden(client, mock_settings):  # noqa: F811
     """Non-owner role returns 403 — only owners may edit estimates."""
     import jwt
     from src.config import settings
