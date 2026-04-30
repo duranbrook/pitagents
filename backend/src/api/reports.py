@@ -229,10 +229,11 @@ def _to_staff_detail(r: Report) -> dict:
                 "total": total,
             })
         else:
-            # Report format: {part, labor_hrs, labor_cost, parts_cost, line_total}
+            # Report format: {part, labor_hours/labor_hrs, labor_rate, labor_cost, parts_cost, total/line_total}
             estimate_rows.append({
                 "part": item.get("part", ""),
-                "labor_hours": float(item.get("labor_hrs", 0)),
+                "labor_hours": float(item.get("labor_hours", item.get("labor_hrs", 0))),
+                "labor_rate": float(item.get("labor_rate", 0)),
                 "labor_cost": float(item.get("labor_cost", 0)),
                 "parts_cost": float(item.get("parts_cost", 0)),
                 "total": float(item.get("line_total", item.get("total", 0))),
