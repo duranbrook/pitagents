@@ -2,6 +2,7 @@ package com.autoshop.ui.customers
 
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,10 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -28,8 +31,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,7 +47,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.autoshop.data.model.EstimateItemPatch
+import com.autoshop.data.model.EstimateUpdateRequest
 import com.autoshop.data.model.ReportDetail
 import com.autoshop.data.model.ReportEstimateItem
 import com.autoshop.data.model.ReportFinding
@@ -50,6 +59,8 @@ import com.autoshop.data.network.MessagesApi
 import kotlinx.coroutines.launch
 
 private const val BACKEND_BASE_URL = "https://backend-production-5320.up.railway.app"
+
+private fun formatCurrency(value: Double): String = "${"$%.2f".format(value)}"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +76,14 @@ fun ReportDetailScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
+    var editingItem by remember { mutableStateOf<ReportEstimateItem?>(null) }
+    var editHours by remember { mutableStateOf("") }
+    var editRate by remember { mutableStateOf("") }
+    var editParts by remember { mutableStateOf("") }
+    var isSaving by remember { mutableStateOf(false) }
+    var saveError by remember { mutableStateOf<String?>(null) }
+    var estimateItems by remember { mutableStateOf<List<ReportEstimateItem>>(emptyList()) }
+
     LaunchedEffect(reportId) {
         scope.launch {
             isLoading = true
@@ -73,6 +92,7 @@ fun ReportDetailScreen(
                 val response = messagesApi.getReport(reportId)
                 if (response.isSuccessful) {
                     report = response.body()
+                    estimateItems = response.body()!!.estimate
                 } else {
                     errorMessage = "Failed to load report (HTTP ${response.code()})."
                 }
@@ -112,6 +132,14 @@ fun ReportDetailScreen(
                 )
                 report != null -> ReportDetailContent(
                     report = report!!,
+                    estimateItems = estimateItems,
+                    onEstimateItemClick = { item ->
+                        editingItem = item
+                        editHours = "%.1f".format(item.laborHours)
+                        editRate = "%.2f".format(item.laborRate ?: 0.0)
+                        editParts = "%.2f".format(item.partsCost)
+                        saveError = null
+                    },
                     onShare = {
                         val shareUrl = "$BACKEND_BASE_URL/r/${report!!.shareToken}"
                         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -123,6 +151,85 @@ fun ReportDetailScreen(
                     },
                 )
             }
+
+            if (editingItem != null) {
+                AlertDialog(
+                    onDismissRequest = { editingItem = null },
+                    title = { Text(editingItem!!.part) },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedTextField(
+                                value = editHours,
+                                onValueChange = { editHours = it },
+                                label = { Text("Labor Hours") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            OutlinedTextField(
+                                value = editRate,
+                                onValueChange = { editRate = it },
+                                label = { Text("$/hr") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            OutlinedTextField(
+                                value = editParts,
+                                onValueChange = { editParts = it },
+                                label = { Text("Parts Cost ($)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            if (saveError != null) {
+                                Text(
+                                    saveError!!,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                scope.launch {
+                                    val item = editingItem ?: return@launch
+                                    val hours = editHours.toDoubleOrNull() ?: item.laborHours
+                                    val rate = editRate.toDoubleOrNull() ?: (item.laborRate ?: 0.0)
+                                    val parts = editParts.toDoubleOrNull() ?: item.partsCost
+                                    val patches = estimateItems.map { i ->
+                                        if (i.part == item.part)
+                                            EstimateItemPatch(i.part, hours, rate, parts)
+                                        else
+                                            EstimateItemPatch(i.part, i.laborHours, i.laborRate ?: 0.0, i.partsCost)
+                                    }
+                                    isSaving = true
+                                    saveError = null
+                                    try {
+                                        val resp = messagesApi.patchEstimate(reportId, EstimateUpdateRequest(patches))
+                                        if (resp.isSuccessful) {
+                                            estimateItems = resp.body()!!.estimate
+                                            editingItem = null
+                                        } else {
+                                            saveError = "Save failed (HTTP ${resp.code()})"
+                                        }
+                                    } catch (e: Exception) {
+                                        saveError = "Network error: ${e.message}"
+                                    } finally {
+                                        isSaving = false
+                                    }
+                                }
+                            },
+                            enabled = !isSaving,
+                        ) { Text(if (isSaving) "Saving…" else "Save") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { editingItem = null }) { Text("Cancel") }
+                    },
+                )
+            }
         }
     }
 }
@@ -130,6 +237,8 @@ fun ReportDetailScreen(
 @Composable
 private fun ReportDetailContent(
     report: ReportDetail,
+    estimateItems: List<ReportEstimateItem>,
+    onEstimateItemClick: (ReportEstimateItem) -> Unit,
     onShare: () -> Unit,
 ) {
     Column(
@@ -170,7 +279,7 @@ private fun ReportDetailContent(
         }
 
         // Estimate table
-        if (report.estimate.isNotEmpty()) {
+        if (estimateItems.isNotEmpty()) {
             SectionCard(title = "Estimate") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     // Header row
@@ -185,26 +294,65 @@ private fun ReportDetailContent(
                             text = "Labor",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.width(64.dp),
+                            modifier = Modifier.width(54.dp),
+                            textAlign = TextAlign.End,
                         )
                         Text(
                             text = "Parts",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.width(64.dp),
+                            modifier = Modifier.width(54.dp),
+                            textAlign = TextAlign.End,
                         )
                         Text(
                             text = "Total",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.width(64.dp),
+                            modifier = Modifier.width(60.dp),
+                            textAlign = TextAlign.End,
                         )
                     }
 
                     Divider(color = MaterialTheme.colorScheme.outline)
 
-                    report.estimate.forEach { item ->
-                        EstimateRow(item = item)
+                    estimateItems.forEach { item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onEstimateItemClick(item) }
+                                .padding(vertical = 6.dp),
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    item.part,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                val rate = item.laborRate ?: 0.0
+                                Text(
+                                    "${item.laborHours} hrs @ ${"$%.2f".format(rate)}/hr",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Text(
+                                formatCurrency(item.laborCost),
+                                modifier = Modifier.width(54.dp),
+                                textAlign = TextAlign.End,
+                            )
+                            Text(
+                                formatCurrency(item.partsCost),
+                                modifier = Modifier.width(54.dp),
+                                textAlign = TextAlign.End,
+                            )
+                            Text(
+                                formatCurrency(item.total),
+                                modifier = Modifier.width(60.dp),
+                                textAlign = TextAlign.End,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                        Divider()
                     }
 
                     Divider(color = MaterialTheme.colorScheme.outline)
@@ -240,7 +388,7 @@ private fun ReportDetailContent(
         ) {
             Icon(Icons.Filled.Share, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Share Report")
+            Text("Regenerate Report PDF")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -378,35 +526,5 @@ private fun FindingRow(finding: ReportFinding) {
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun EstimateRow(item: ReportEstimateItem) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Text(
-            text = item.part,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = "${"$%.0f".format(item.laborCost)}",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.width(64.dp),
-        )
-        Text(
-            text = "${"$%.0f".format(item.partsCost)}",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.width(64.dp),
-        )
-        Text(
-            text = "${"$%.0f".format(item.total)}",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.width(64.dp),
-        )
     }
 }
