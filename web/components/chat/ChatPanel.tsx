@@ -15,9 +15,7 @@ interface StreamingMessage {
 }
 
 const AGENT_NAMES: Record<string, string> = { assistant: 'Assistant', tom: 'Tom' }
-const AGENT_HEADER_COLORS: Record<string, string> = { assistant: 'bg-indigo-600', tom: 'bg-emerald-700' }
 
-// Capability cards shown in the empty state for the assistant
 const ASSISTANT_CAPABILITIES = [
   {
     icon: '🔍',
@@ -48,10 +46,7 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState('')
   const [optimisticUserMsg, setOptimisticUserMsg] = useState<string | null>(null)
-
   const [ratings, setRatings] = useState<Record<string, 1 | -1>>({})
-
-  // Track quote_id from tool results (assistant can now create quotes)
   const [quoteId, setQuoteId] = useState<string | null>(null)
 
   const [voiceMode] = useState<'hold' | 'toggle'>(() => {
@@ -68,7 +63,6 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [history, streaming, optimisticUserMsg])
 
-  // Restore quoteId from history so the sidebar persists across reloads
   useEffect(() => {
     if (agentId !== 'assistant' || quoteId) return
     for (let i = history.length - 1; i >= 0; i--) {
@@ -90,7 +84,7 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
     try {
       await rateFeedback(agentId, messageId, rating)
     } catch {
-      // silent — don't block the user on a failed rating
+      // silent
     }
   }
 
@@ -120,7 +114,7 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
         } else if (event.type === 'done') {
           onNewMessage(accumulated.slice(0, 60))
         } else if (event.type === 'error') {
-          const errMsg = (event as { type: 'error'; message?: string }).message ?? 'Something went wrong. Please try again.'
+          const errMsg = (event as { type: 'error'; message?: string }).message ?? 'Something went wrong.'
           setSendError(errMsg)
           if (!overrideText) setInput(text)
         }
@@ -149,72 +143,89 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
     }
   }
 
-  const headerColor = AGENT_HEADER_COLORS[agentId] ?? 'bg-indigo-600'
   const isEmpty = history.length === 0 && !streaming && !optimisticUserMsg
+
+  // Collapse header for consecutive same-role messages
+  type MsgWithHeader = ChatHistoryItem & { showHeader: boolean }
+  const historyWithHeaders: MsgWithHeader[] = history.map((msg, i) => ({
+    ...msg,
+    showHeader: i === 0 || history[i - 1].role !== msg.role,
+  }))
 
   return (
     <div className="flex h-full">
-      <div className="flex flex-col flex-1 min-w-0 bg-gray-950">
+      <div className="flex flex-col flex-1 min-w-0" style={{ background: '#030712' }}>
         {/* Header */}
-        <div className="border-b border-gray-800 px-5 py-3 flex items-center gap-3">
-          <div className={`w-7 h-7 rounded-full ${headerColor} flex items-center justify-center text-white text-xs font-semibold`}>
-            {AGENT_NAMES[agentId]?.[0] ?? '?'}
-          </div>
-          <span className="font-medium text-white text-sm">{AGENT_NAMES[agentId] ?? agentId}</span>
+        <div
+          className="flex-shrink-0 px-5 py-3 flex items-center gap-2"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <span className="font-semibold text-sm text-white">{AGENT_NAMES[agentId] ?? agentId}</span>
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded-full"
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)' }}
+          >
+            AI
+          </span>
         </div>
 
-        {/* Messages / Empty state */}
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
           {isEmpty && agentId === 'assistant' ? (
             <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
-              <p className="text-gray-500 text-sm">What would you like to do?</p>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>What would you like to do?</p>
               <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
                 {ASSISTANT_CAPABILITIES.map(cap => (
                   <button
                     key={cap.title}
                     onClick={() => handleSend(cap.prompt)}
-                    className="flex flex-col items-start gap-1.5 p-4 rounded-xl bg-gray-900 border border-gray-800 hover:border-indigo-500 hover:bg-gray-800 transition-colors text-left"
+                    className="flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.borderColor = 'var(--accent)'
+                      el.style.background = 'rgba(255,255,255,0.05)'
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.borderColor = 'rgba(255,255,255,0.08)'
+                      el.style.background = 'rgba(255,255,255,0.03)'
+                    }}
                   >
                     <span className="text-xl">{cap.icon}</span>
                     <span className="text-sm font-medium text-white">{cap.title}</span>
-                    <span className="text-xs text-gray-400 leading-relaxed">{cap.description}</span>
+                    <span className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>{cap.description}</span>
                   </button>
                 ))}
               </div>
             </div>
           ) : (
             <>
-              {history.map(msg => (
+              {historyWithHeaders.map(msg => (
                 <div key={msg.id}>
                   <MessageBubble
                     role={msg.role}
                     content={msg.content}
                     toolCalls={msg.tool_calls}
+                    showHeader={msg.showHeader}
+                    timestamp={msg.created_at}
                   />
                   {msg.role === 'assistant' && (
-                    <div className="flex gap-2 pl-2 pb-1 mt-0.5">
+                    <div className="flex gap-2 pl-9 pb-0.5">
                       <button
                         onClick={() => handleRate(msg.id, 1)}
                         title="Good response"
-                        className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
-                          ratings[msg.id] === 1
-                            ? 'text-green-400'
-                            : 'text-gray-600 hover:text-green-400'
+                        className={`text-xs px-1 py-0.5 rounded transition-colors ${
+                          ratings[msg.id] === 1 ? 'text-green-400' : 'text-gray-700 hover:text-green-400'
                         }`}
-                      >
-                        👍
-                      </button>
+                      >👍</button>
                       <button
                         onClick={() => handleRate(msg.id, -1)}
                         title="Bad response"
-                        className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
-                          ratings[msg.id] === -1
-                            ? 'text-red-400'
-                            : 'text-gray-600 hover:text-red-400'
+                        className={`text-xs px-1 py-0.5 rounded transition-colors ${
+                          ratings[msg.id] === -1 ? 'text-red-400' : 'text-gray-700 hover:text-red-400'
                         }`}
-                      >
-                        👎
-                      </button>
+                      >👎</button>
                     </div>
                   )}
                 </div>
@@ -224,6 +235,7 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
                   role="user"
                   content={[{ type: 'text', text: optimisticUserMsg }]}
                   toolCalls={null}
+                  showHeader
                 />
               )}
               {streaming !== null && (
@@ -232,6 +244,7 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
                   content={[{ type: 'text', text: streaming.text }]}
                   toolCalls={streaming.toolCalls.length > 0 ? streaming.toolCalls : null}
                   streaming
+                  showHeader
                 />
               )}
             </>
@@ -247,41 +260,50 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
 
         {pendingImageUrl && (
           <div className="px-5 pb-1 flex items-center gap-2">
-            <span className="text-xs text-indigo-400">📎 Photo attached</span>
+            <span className="text-xs" style={{ color: 'var(--accent)' }}>📎 Photo attached</span>
             <button onClick={() => setPendingImageUrl(undefined)} className="text-xs text-gray-500 hover:text-red-400">✕</button>
           </div>
         )}
 
-        {/* Input bar */}
-        <div className="border-t border-gray-800 px-4 py-3 flex items-end gap-2">
-          <ImageAttach onImageUrl={setPendingImageUrl} disabled={sending} />
-          <VoiceButton
-            mode={voiceMode}
-            onTranscript={text => setInput(prev => prev ? `${prev} ${text}` : text)}
-            disabled={sending}
-          />
-          <textarea
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={`Message ${AGENT_NAMES[agentId] ?? agentId}…`}
-            rows={1}
-            className="flex-1 bg-gray-800 text-gray-100 placeholder-gray-500 rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            style={{ maxHeight: '120px' }}
-          />
-          <button
-            onClick={() => handleSend()}
-            disabled={!input.trim() || sending}
-            className="p-2.5 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors flex-shrink-0"
+        {/* Glass input bar */}
+        <div className="px-4 pb-4 pt-2">
+          <div
+            className="flex items-end gap-2 rounded-2xl px-3 py-2"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
           >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-            </svg>
-          </button>
+            <ImageAttach onImageUrl={setPendingImageUrl} disabled={sending} />
+            <VoiceButton
+              mode={voiceMode}
+              onTranscript={text => setInput(prev => prev ? `${prev} ${text}` : text)}
+              disabled={sending}
+            />
+            <textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask anything…"
+              rows={1}
+              className="flex-1 bg-transparent text-sm resize-none focus:outline-none"
+              style={{
+                color: 'rgba(255,255,255,0.85)',
+                caretColor: 'var(--accent)',
+                maxHeight: '120px',
+              }}
+            />
+            <button
+              onClick={() => handleSend()}
+              disabled={!input.trim() || sending}
+              className="rounded-lg p-1.5 transition-opacity flex-shrink-0 disabled:opacity-25"
+              style={{ background: 'var(--accent)' }}
+            >
+              <svg className="w-3.5 h-3.5" fill="white" viewBox="0 0 20 20">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Quote sidebar — shown for assistant when a quote has been started */}
       {agentId === 'assistant' && <QuoteSummary quoteId={quoteId} />}
     </div>
   )
