@@ -168,7 +168,7 @@ async def send_report(
 async def patch_report_estimate(
     report_id: str,
     body: EstimateUpdateRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_owner),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Update estimate line items, deriving labor_cost and total from hours × rate."""

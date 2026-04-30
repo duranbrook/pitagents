@@ -72,3 +72,28 @@ def test_patch_estimate_unauthenticated(client):
         json={"items": []},
     )
     assert resp.status_code == 401
+
+
+def test_patch_estimate_non_owner_forbidden(client, mock_settings):
+    """Non-owner role returns 403 — only owners may edit estimates."""
+    import jwt
+    from src.config import settings
+    from datetime import datetime, timedelta, timezone
+    token = jwt.encode(
+        {
+            "sub": "00000000-0000-0000-0000-000000000002",
+            "shop_id": "00000000-0000-0000-0000-000000000099",
+            "role": "staff",
+            "email": "staff@shop.com",
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+        },
+        settings.JWT_SECRET.get_secret_value(),
+        algorithm=settings.JWT_ALGORITHM,
+    )
+    staff_headers = {"Authorization": f"Bearer {token}"}
+    resp = client.patch(
+        "/reports/00000000-0000-0000-0000-000000000000/estimate",
+        json={"items": []},
+        headers=staff_headers,
+    )
+    assert resp.status_code == 403
