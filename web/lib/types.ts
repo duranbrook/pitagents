@@ -44,6 +44,7 @@ export interface Finding {
 export interface EstimateItem {
   part: string
   labor_hours: number
+  labor_rate: number
   labor_cost: number
   parts_cost: number
   total: number
