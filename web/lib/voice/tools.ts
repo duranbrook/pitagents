@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { defineVoiceTool } from './defineVoiceTool'
 import type { VoiceTool } from './types'
+import type { EditField } from '@/contexts/VoiceContext'
 
 const TAB_VALUES = ['customers', 'reports', 'inspect', 'chat'] as const
 
@@ -17,6 +18,8 @@ export function createVoiceTools(dispatchers: {
   sendMessage: (text: string) => void
   selectCustomer: (name: string) => void
   selectReport: (query: string) => void
+  editLine: (service: string, field: EditField, value: number) => void
+  addLine: (service: string, hours: number, rate: number, parts: number) => void
 }): VoiceTool<any>[] {
   return [
     defineVoiceTool({
@@ -72,6 +75,33 @@ export function createVoiceTools(dispatchers: {
       execute: ({ query }) => {
         dispatchers.selectReport(query)
         return { ok: true, searching: query }
+      },
+    }),
+    defineVoiceTool({
+      name: 'edit_estimate_line',
+      description: 'Edit hours, hourly rate, or parts cost on an existing estimate line. Use when the user says something like "change the brake line hours to 3" or "set oil change rate to 90".',
+      parameters: z.object({
+        service: z.string().describe('Partial service name to match, e.g. "brake" or "oil change"'),
+        field: z.enum(['hours', 'rate', 'parts']).describe('"hours" for labor hours, "rate" for $/hr, "parts" for parts cost'),
+        value: z.number().describe('New numeric value'),
+      }),
+      execute: ({ service, field, value }) => {
+        dispatchers.editLine(service, field as EditField, value)
+        return { ok: true, service, field, value }
+      },
+    }),
+    defineVoiceTool({
+      name: 'add_estimate_line',
+      description: 'Add a new service line to the estimate. Use when the user says "add a service" or "add tire rotation".',
+      parameters: z.object({
+        service: z.string().describe('Service name, e.g. "Tire rotation"'),
+        hours: z.number().describe('Labor hours'),
+        rate: z.number().describe('Hourly labor rate in dollars'),
+        parts: z.number().describe('Parts cost in dollars'),
+      }),
+      execute: ({ service, hours, rate, parts }) => {
+        dispatchers.addLine(service, hours, rate, parts)
+        return { ok: true, service }
       },
     }),
   ]

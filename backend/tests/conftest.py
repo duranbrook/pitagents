@@ -35,10 +35,29 @@ def mock_settings(monkeypatch):
 
 
 @pytest.fixture
-def client(mock_settings):
+def mock_db(mock_settings):
+    """AsyncSession mock that returns no rows from any execute() call."""
+    from unittest.mock import AsyncMock, MagicMock
+    session = AsyncMock()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = None
+    result.scalars.return_value.all.return_value = []
+    session.execute.return_value = result
+    return session
+
+
+@pytest.fixture
+def client(mock_settings, mock_db):
     from fastapi.testclient import TestClient
     from src.api.main import app
-    return TestClient(app)
+    from src.db.base import get_db
+
+    async def _override():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = _override
+    yield TestClient(app)
+    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture

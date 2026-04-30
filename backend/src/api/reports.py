@@ -7,7 +7,7 @@ import uuid
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,6 +29,17 @@ router = APIRouter(tags=["reports"])
 class SendRequest(BaseModel):
     phone: str | None = None
     email: str | None = None
+
+
+class EstimateItemPatch(BaseModel):
+    part: str
+    labor_hours: float = Field(ge=0)
+    labor_rate: float = Field(ge=0)
+    parts_cost: float = Field(ge=0)
+
+
+class EstimateUpdateRequest(BaseModel):
+    items: list[EstimateItemPatch]
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +164,47 @@ async def send_report(
     return {"sent_to": report.sent_to}
 
 
+@router.patch("/reports/{report_id}/estimate")
+async def patch_report_estimate(
+    report_id: str,
+    body: EstimateUpdateRequest,
+    current_user: dict = Depends(require_owner),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Update estimate line items, deriving labor_cost and total from hours × rate."""
+    report = await _get_report_or_404(report_id, db)
+
+    derived_items = []
+    for item in body.items:
+        labor_cost = round(item.labor_hours * item.labor_rate, 2)
+        total = round(labor_cost + item.parts_cost, 2)
+        derived_items.append({
+            "part": item.part,
+            "labor_hours": item.labor_hours,
+            "labor_rate": item.labor_rate,
+            "labor_cost": labor_cost,
+            "parts_cost": item.parts_cost,
+            "total": total,
+        })
+
+    estimate_total = round(sum(i["total"] for i in derived_items), 2)
+
+    from sqlalchemy import update as sa_update
+    await db.execute(
+        sa_update(Report)
+        .where(Report.id == report.id)
+        .values(
+            estimate={"line_items": derived_items},
+            estimate_total=estimate_total,
+        )
+    )
+    await db.commit()
+    db.expire(report)
+    await db.refresh(report)
+
+    return _to_staff_detail(report)
+
+
 # ---------------------------------------------------------------------------
 # Consumer view (no auth)
 # ---------------------------------------------------------------------------
@@ -220,19 +272,24 @@ def _to_staff_detail(r: Report) -> dict:
         if "description" in item:
             # Quote format: {type, description, qty, unit_price, total}
             is_labor = item.get("type", "").lower() == "labor"
+            qty = float(item.get("qty", 0)) if is_labor else 0.0
             total = float(item.get("total", 0))
+            labor_cost = total if is_labor else 0.0
+            labor_rate = round(labor_cost / qty, 2) if qty > 0 else 0.0
             estimate_rows.append({
                 "part": item.get("description", ""),
-                "labor_hours": float(item.get("qty", 0)) if is_labor else 0.0,
-                "labor_cost": total if is_labor else 0.0,
+                "labor_hours": qty,
+                "labor_rate": labor_rate,
+                "labor_cost": labor_cost,
                 "parts_cost": 0.0 if is_labor else total,
                 "total": total,
             })
         else:
-            # Report format: {part, labor_hrs, labor_cost, parts_cost, line_total}
+            # Report format: {part, labor_hours/labor_hrs, labor_rate, labor_cost, parts_cost, total/line_total}
             estimate_rows.append({
                 "part": item.get("part", ""),
-                "labor_hours": float(item.get("labor_hrs", 0)),
+                "labor_hours": float(item.get("labor_hours", item.get("labor_hrs", 0))),
+                "labor_rate": float(item.get("labor_rate", 0)),
                 "labor_cost": float(item.get("labor_cost", 0)),
                 "parts_cost": float(item.get("parts_cost", 0)),
                 "total": float(item.get("line_total", item.get("total", 0))),

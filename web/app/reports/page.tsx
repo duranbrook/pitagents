@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { AppShell } from '@/components/AppShell'
-import { getAllReports, getReport } from '@/lib/api'
-import type { ReportSummary, ReportDetail, Finding } from '@/lib/types'
+import { getAllReports, getReport, patchReportEstimate } from '@/lib/api'
+import { useVoiceContext } from '@/contexts/VoiceContext'
+import type { ReportSummary, ReportDetail, Finding, EstimateItem } from '@/lib/types'
+import type { EditField } from '@/contexts/VoiceContext'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -79,8 +81,164 @@ function vehicleLabel(r: ReportSummary): string {
   return [v.year, v.make, v.model].filter(Boolean).join(' ')
 }
 
-function formatCurrency(n: number): string {
-  return n === 0 ? '—' : `$${n.toFixed(2)}`
+function EstimateTable({
+  items,
+  editingCell,
+  patchError,
+  onCellFocus,
+  onCellChange,
+  onCellBlur,
+  onAddLine,
+}: {
+  items: EstimateItem[]
+  editingCell: { row: number; field: 'hours' | 'rate' | 'parts' } | null
+  patchError: string
+  onCellFocus: (row: number, field: 'hours' | 'rate' | 'parts') => void
+  onCellChange: (row: number, field: 'hours' | 'rate' | 'parts', value: string) => void
+  onCellBlur: () => void
+  onAddLine: () => void
+}) {
+  const colStyle = 'text-[10px] font-medium text-right'
+  const cellStyle: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.15)',
+    borderRadius: '4px',
+    color: 'white',
+    fontSize: '12px',
+    textAlign: 'right',
+    padding: '2px 4px',
+    width: '100%',
+    outline: 'none',
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div
+        className="grid gap-2 pb-2 mb-2"
+        style={{
+          gridTemplateColumns: '1fr 64px 64px 72px 72px',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+        }}
+      >
+        {['Service', 'Hours', '$/hr', 'Parts', 'Total'].map(h => (
+          <p
+            key={h}
+            className={`text-[10px] font-medium ${h !== 'Service' ? 'text-right' : ''}`}
+            style={{ color: 'rgba(255,255,255,0.3)' }}
+          >
+            {h}
+          </p>
+        ))}
+      </div>
+
+      {/* Rows */}
+      {items.map((item, i) => {
+        const liveTotal = ((item.labor_hours * item.labor_rate) + item.parts_cost).toFixed(2)
+        const isEditing = (field: 'hours' | 'rate' | 'parts') =>
+          editingCell?.row === i && editingCell.field === field
+
+        return (
+          <div
+            key={i}
+            className="grid gap-2 py-2.5"
+            style={{
+              gridTemplateColumns: '1fr 64px 64px 72px 72px',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+            }}
+          >
+            <div>
+              <p className="text-sm font-medium text-white">{item.part}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                {item.labor_hours > 0 ? `${item.labor_hours.toFixed(1)} hrs @ $${item.labor_rate.toFixed(0)}/hr` : ''}
+              </p>
+            </div>
+
+            <div className="self-center">
+              {isEditing('hours') ? (
+                <input
+                  type="number" min="0" step="0.5"
+                  defaultValue={item.labor_hours}
+                  style={cellStyle}
+                  autoFocus
+                  onChange={e => onCellChange(i, 'hours', e.target.value)}
+                  onBlur={onCellBlur}
+                />
+              ) : (
+                <p
+                  className={`${colStyle} cursor-pointer hover:text-white`}
+                  style={{ color: 'rgba(255,255,255,0.5)' }}
+                  onClick={() => onCellFocus(i, 'hours')}
+                >
+                  {item.labor_hours.toFixed(1)}
+                </p>
+              )}
+            </div>
+
+            <div className="self-center">
+              {isEditing('rate') ? (
+                <input
+                  type="number" min="0" step="5"
+                  defaultValue={item.labor_rate}
+                  style={cellStyle}
+                  autoFocus
+                  onChange={e => onCellChange(i, 'rate', e.target.value)}
+                  onBlur={onCellBlur}
+                />
+              ) : (
+                <p
+                  className={`${colStyle} cursor-pointer hover:text-white`}
+                  style={{ color: 'rgba(255,255,255,0.5)' }}
+                  onClick={() => onCellFocus(i, 'rate')}
+                >
+                  ${item.labor_rate.toFixed(0)}
+                </p>
+              )}
+            </div>
+
+            <div className="self-center">
+              {isEditing('parts') ? (
+                <input
+                  type="number" min="0" step="1"
+                  defaultValue={item.parts_cost}
+                  style={cellStyle}
+                  autoFocus
+                  onChange={e => onCellChange(i, 'parts', e.target.value)}
+                  onBlur={onCellBlur}
+                />
+              ) : (
+                <p
+                  className={`${colStyle} cursor-pointer hover:text-white`}
+                  style={{ color: 'rgba(255,255,255,0.5)' }}
+                  onClick={() => onCellFocus(i, 'parts')}
+                >
+                  {item.parts_cost === 0 ? '—' : `$${item.parts_cost.toFixed(2)}`}
+                </p>
+              )}
+            </div>
+
+            <p className="text-sm font-semibold text-right self-center text-white">
+              ${liveTotal}
+            </p>
+          </div>
+        )
+      })}
+
+      {patchError && (
+        <p className="text-xs mt-2" style={{ color: '#f87171' }}>{patchError}</p>
+      )}
+
+      <button
+        onClick={onAddLine}
+        className="mt-3 text-xs px-3 py-1.5 rounded-lg transition-colors"
+        style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', background: 'transparent' }}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}
+      >
+        + Add line
+      </button>
+    </div>
+  )
 }
 
 function ReportsPageInner() {
@@ -89,6 +247,14 @@ function ReportsPageInner() {
   const preselectedId = searchParams.get('id')
   const voiceSelect = searchParams.get('voice_select')
   const [selectedId, setSelectedId] = useState<string | null>(preselectedId)
+
+  const [items, setItems] = useState<EstimateItem[]>([])
+  const [editingCell, setEditingCell] = useState<{ row: number; field: 'hours' | 'rate' | 'parts' } | null>(null)
+  const [patchError, setPatchError] = useState('')
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfError, setPdfError] = useState('')
+  const itemsRef = useRef<EstimateItem[]>([])
+  const pendingValueRef = useRef<string>('')
 
   const { data: reports = [], isLoading } = useQuery<ReportSummary[]>({
     queryKey: ['reports'],
@@ -107,6 +273,134 @@ function ReportsPageInner() {
     const match = reports.find(r => vehicleLabel(r).toLowerCase().includes(q))
     if (match) setSelectedId(match.id)
   }, [voiceSelect, reports])
+
+  // Sync local items when report detail loads
+  useEffect(() => {
+    if (detail) {
+      setItems(detail.estimate)
+      itemsRef.current = detail.estimate
+    }
+  }, [detail])
+
+  const patchAndSync = useCallback(async (nextItems: EstimateItem[]) => {
+    if (!detail) return
+    setPatchError('')
+    try {
+      const patches = nextItems.map(it => ({
+        part: it.part,
+        labor_hours: it.labor_hours,
+        labor_rate: it.labor_rate,
+        parts_cost: it.parts_cost,
+      }))
+      const updated = await patchReportEstimate(detail.id, patches)
+      setItems(updated.estimate)
+      itemsRef.current = updated.estimate
+    } catch {
+      setPatchError('Failed to save estimate. Changes reverted.')
+      setItems(itemsRef.current)
+    }
+  }, [detail])
+
+  const handleCellFocus = useCallback((row: number, field: 'hours' | 'rate' | 'parts') => {
+    setEditingCell({ row, field })
+  }, [])
+
+  const handleCellChange = useCallback((_row: number, _field: 'hours' | 'rate' | 'parts', value: string) => {
+    pendingValueRef.current = value
+  }, [])
+
+  const handleCellBlur = useCallback(() => {
+    if (!editingCell) return
+    const { row, field } = editingCell
+    const rawVal = parseFloat(pendingValueRef.current)
+    const val = isNaN(rawVal) ? 0 : rawVal
+    setEditingCell(null)
+    pendingValueRef.current = ''
+    const updated = items.map((item, i) => {
+      if (i !== row) return item
+      if (field === 'hours') return { ...item, labor_hours: val }
+      if (field === 'rate') return { ...item, labor_rate: val }
+      return { ...item, parts_cost: val }
+    })
+    setItems(updated)
+    patchAndSync(updated)
+  }, [editingCell, items, patchAndSync])
+
+  const handleAddLine = useCallback(() => {
+    const newItem: EstimateItem = {
+      part: 'New service',
+      labor_hours: 1.0,
+      labor_rate: 90.0,
+      parts_cost: 0,
+      labor_cost: 0,
+      total: 0,
+    }
+    const updated = [...items, newItem]
+    setItems(updated)
+    patchAndSync(updated)
+  }, [items, patchAndSync])
+
+  const handleOpenPdf = useCallback(async () => {
+    if (!detail) return
+    setPdfError('')
+    setPdfLoading(true)
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''
+      const resp = await fetch(`${API_URL}/reports/${detail.id}/pdf`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!resp.ok) throw new Error(`PDF fetch failed: ${resp.status}`)
+      const blob = await resp.blob()
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 100)
+    } catch {
+      setPdfError('Could not load PDF. Please try again.')
+    } finally {
+      setPdfLoading(false)
+    }
+  }, [detail])
+
+  const voice = useVoiceContext()
+
+  useEffect(() => {
+    if (!detail) return
+
+    voice.registerEditLine((service: string, field: EditField, value: number) => {
+      const current = itemsRef.current
+      const idx = current.findIndex(it =>
+        it.part.toLowerCase().includes(service.toLowerCase())
+      )
+      if (idx === -1) return
+      const updated = current.map((it, i) => {
+        if (i !== idx) return it
+        if (field === 'hours') return { ...it, labor_hours: value }
+        if (field === 'rate') return { ...it, labor_rate: value }
+        return { ...it, parts_cost: value }
+      })
+      setItems(updated)
+      patchAndSync(updated)
+    })
+
+    voice.registerAddLine((service: string, hours: number, rate: number, parts: number) => {
+      const newItem: EstimateItem = {
+        part: service,
+        labor_hours: hours,
+        labor_rate: rate,
+        parts_cost: parts,
+        labor_cost: 0,
+        total: 0,
+      }
+      const updated = [...itemsRef.current, newItem]
+      setItems(updated)
+      patchAndSync(updated)
+    })
+
+    return () => {
+      voice.registerEditLine(() => {})
+      voice.registerAddLine(() => {})
+    }
+  }, [detail, voice, patchAndSync])
 
   const displayed = vehicleFilter
     ? reports.filter(r => r.vehicle?.vehicle_id === vehicleFilter)
@@ -218,40 +512,22 @@ function ReportsPageInner() {
               )}
 
               {/* Estimate */}
-              {detail.estimate.length > 0 && (
+              {(items.length > 0 || detail.estimate.length > 0) && (
                 <SectionCard title="Estimate">
                   <div>
-                    <div className="grid grid-cols-[1fr_60px_60px_72px] gap-2 pb-2 mb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                      {['Service', 'Labor', 'Parts', 'Total'].map(h => (
-                        <p key={h} className={`text-[10px] font-medium ${h !== 'Service' ? 'text-right' : ''}`} style={{ color: 'rgba(255,255,255,0.3)' }}>{h}</p>
-                      ))}
-                    </div>
-                    {detail.estimate.map((item, i) => {
-                      const hourlyRate = item.labor_hours > 0 ? item.labor_cost / item.labor_hours : 0
-                      return (
-                        <div
-                          key={i}
-                          className="grid grid-cols-[1fr_60px_60px_72px] gap-2 py-2.5"
-                          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-white">{item.part}</p>
-                            {item.labor_hours > 0 && (
-                              <p className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                                {item.labor_hours.toFixed(1)} hrs @ {formatCurrency(hourlyRate)}/hr
-                              </p>
-                            )}
-                          </div>
-                          <p className="text-xs text-right self-center" style={{ color: 'rgba(255,255,255,0.5)' }}>{formatCurrency(item.labor_cost)}</p>
-                          <p className="text-xs text-right self-center" style={{ color: 'rgba(255,255,255,0.5)' }}>{formatCurrency(item.parts_cost)}</p>
-                          <p className="text-sm font-semibold text-right self-center text-white">{formatCurrency(item.total)}</p>
-                        </div>
-                      )
-                    })}
+                    <EstimateTable
+                      items={items}
+                      editingCell={editingCell}
+                      patchError={patchError}
+                      onCellFocus={handleCellFocus}
+                      onCellChange={handleCellChange}
+                      onCellBlur={handleCellBlur}
+                      onAddLine={handleAddLine}
+                    />
                     <div className="flex items-center justify-between pt-3">
                       <p className="text-sm font-semibold text-white">Grand Total</p>
                       <p className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
-                        ${detail.total.toFixed(2)}
+                        ${items.reduce((sum, it) => sum + (it.labor_hours * it.labor_rate + it.parts_cost), 0).toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -269,15 +545,17 @@ function ReportsPageInner() {
                 >
                   📋 Copy Share Link
                 </button>
-                <a
-                  href={`${API_URL}/reports/${detail.id}/pdf`}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  onClick={handleOpenPdf}
+                  disabled={pdfLoading}
                   className="text-sm px-4 py-2 rounded-lg transition-opacity text-white"
-                  style={{ background: 'var(--accent)' }}
+                  style={{ background: 'var(--accent)', opacity: pdfLoading ? 0.6 : 1 }}
                 >
-                  🖨 Open Report PDF
-                </a>
+                  {pdfLoading ? 'Loading…' : '🖨 Open Report PDF'}
+                </button>
+                {pdfError && (
+                  <p className="text-xs self-center" style={{ color: '#f87171' }}>{pdfError}</p>
+                )}
               </div>
             </div>
           ) : null}
