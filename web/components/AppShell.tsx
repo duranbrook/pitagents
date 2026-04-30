@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { VoiceControlWidget } from './VoiceControlWidget'
 
 const NAV_ITEMS = [
   { href: '/customers', label: 'Customers', icon: '👥' },
@@ -73,14 +74,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           )
         })}
-        <button
-          onClick={handleLogout}
-          title="Log out"
-          className="ml-auto w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
-          style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
-        >
-          {initials}
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <VoiceControlWidget />
+          <button
+            onClick={handleLogout}
+            title="Log out"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
+            style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
+          >
+            {initials}
+          </button>
+        </div>
       </nav>
       <main className="flex-1 min-h-0 overflow-hidden">
         {children}
