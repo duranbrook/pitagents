@@ -672,6 +672,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
       this.#connectAbortController = null;
       this.#setConnected(true);
       this.#setActivity("listening");
+      console.log('[voice] connected, session active, VAD listening')
       this.#debugLog("connect.ready");
       this.#emitEvent({ type: "voice.transport.connected" });
     } catch (error) {
@@ -709,6 +710,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
   };
 
   startCapture = () => {
+    console.log('[voice] startCapture called', { destroyed: this.#destroyed, connected: this.connected, mode: this.sessionConfig.activationMode, capturing: this.#capturing })
     if (
       this.#destroyed ||
       !this.connected ||
@@ -725,6 +727,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
   };
 
   stopCapture = () => {
+    console.log('[voice] stopCapture called', { destroyed: this.#destroyed, connected: this.connected, mode: this.sessionConfig.activationMode, capturing: this.#capturing })
     if (
       this.#destroyed ||
       !this.connected ||
@@ -1297,6 +1300,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
   }
 
   #handleServerEvent = (event: RealtimeServerEvent) => {
+    console.log('[voice] server event:', event.type, event)
     this.#emitEvent(event);
 
     if (event.type === "response.created") {

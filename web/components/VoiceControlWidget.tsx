@@ -51,9 +51,9 @@ export function VoiceControlWidget() {
     if (status === 'idle' || status === 'error') { connect(); return }
     if (activationMode === 'vad') { disconnect(); return }
     if (activationMode === 'push-to-talk' && isConnected) {
-      // Suppress disconnect when the click fires after a PTT hold (> 200ms).
-      // Short tap (< 200ms) = intentional disconnect.
-      if (Date.now() - mouseDownAt.current > 200) return
+      // Suppress disconnect when the click fires after a PTT hold (> 300ms).
+      // Short tap (< 300ms) = intentional disconnect.
+      if (Date.now() - mouseDownAt.current > 300) return
       disconnect(); return
     }
   }
