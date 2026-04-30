@@ -31,6 +31,17 @@ class SendRequest(BaseModel):
     email: str | None = None
 
 
+class EstimateItemPatch(BaseModel):
+    part: str
+    labor_hours: float
+    labor_rate: float
+    parts_cost: float
+
+
+class EstimateUpdateRequest(BaseModel):
+    items: list[EstimateItemPatch]
+
+
 # ---------------------------------------------------------------------------
 # Staff views (auth required)
 # ---------------------------------------------------------------------------
@@ -151,6 +162,46 @@ async def send_report(
     report.sent_to = {"phone": body.phone, "email": body.email}
     await db.commit()
     return {"sent_to": report.sent_to}
+
+
+@router.patch("/reports/{report_id}/estimate")
+async def patch_report_estimate(
+    report_id: str,
+    body: EstimateUpdateRequest,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Update estimate line items, deriving labor_cost and total from hours × rate."""
+    report = await _get_report_or_404(report_id, db)
+
+    derived_items = []
+    for item in body.items:
+        labor_cost = round(item.labor_hours * item.labor_rate, 2)
+        total = round(labor_cost + item.parts_cost, 2)
+        derived_items.append({
+            "part": item.part,
+            "labor_hours": item.labor_hours,
+            "labor_rate": item.labor_rate,
+            "labor_cost": labor_cost,
+            "parts_cost": item.parts_cost,
+            "total": total,
+        })
+
+    estimate_total = round(sum(i["total"] for i in derived_items), 2)
+
+    from sqlalchemy import update as sa_update
+    await db.execute(
+        sa_update(Report)
+        .where(Report.id == report.id)
+        .values(
+            estimate={"line_items": derived_items},
+            estimate_total=estimate_total,
+        )
+    )
+    await db.commit()
+    await db.refresh(report)
+
+    return _to_staff_detail(report)
 
 
 # ---------------------------------------------------------------------------
