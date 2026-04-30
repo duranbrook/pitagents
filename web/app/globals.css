@@ -1,8 +1,10 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --accent: #d97706;
 }
 
 @theme inline {
