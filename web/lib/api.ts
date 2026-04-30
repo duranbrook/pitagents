@@ -40,6 +40,19 @@ api.interceptors.request.use((config) => {
 export const getReport = (id: string) => api.get(`/reports/${id}`).then(r => r.data)
 export const sendReport = (id: string, payload: { phone?: string; email?: string }) =>
   api.post(`/reports/${id}/send`, payload).then(r => r.data)
+export interface EstimateItemPatch {
+  part: string
+  labor_hours: number
+  labor_rate: number
+  parts_cost: number
+}
+
+export const patchReportEstimate = (
+  reportId: string,
+  items: EstimateItemPatch[],
+): Promise<ReportDetail> =>
+  api.patch(`/reports/${reportId}/estimate`, { items }).then(r => r.data)
+
 export const getConsumerReport = (token: string) =>
   api.get(`/r/${token}`).then(r => r.data)
 
