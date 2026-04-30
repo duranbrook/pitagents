@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useVoiceControl } from '@/lib/voice/useVoiceControl'
 import { createVoiceTools } from '@/lib/voice/tools'
@@ -13,14 +13,14 @@ Do not chat. If a required argument is unclear, ask one brief question.`
 export function VoiceControlWidget() {
   const router = useRouter()
   const context = useVoiceContext()
-  const [activationMode, setActivationMode] = useState<ActivationMode>('vad')
+  const [activationMode, setActivationMode] = useState<ActivationMode>('push-to-talk')
 
   const tools = useMemo(() => createVoiceTools({
-    navigate: path => router.push(path),
+    navigate: path => startTransition(() => router.push(path)),
     selectAgent: name => context.selectAgent(name),
     sendMessage: text => context.sendMessage(text),
-    selectCustomer: name => router.push(`/customers?voice_select=${encodeURIComponent(name)}`),
-    selectReport: query => router.push(`/reports?voice_select=${encodeURIComponent(query)}`),
+    selectCustomer: name => startTransition(() => router.push(`/customers?voice_select=${encodeURIComponent(name)}`)),
+    selectReport: query => startTransition(() => router.push(`/reports?voice_select=${encodeURIComponent(query)}`)),
     editLine: (service, field, value) => context.editLine(service, field, value),
     addLine: (service, hours, rate, parts) => context.addLine(service, hours, rate, parts),
   }), [context, router])
@@ -36,6 +36,7 @@ export function VoiceControlWidget() {
 
   const { status, connect, disconnect, startCapture, stopCapture } = controller
   const isConnected = status !== 'idle' && status !== 'error' && status !== 'connecting'
+  const mouseDownAt = useRef(0)
 
   const ringStyle = {
     idle: '0 0 0 2px rgba(255,255,255,0.12)',
@@ -49,13 +50,19 @@ export function VoiceControlWidget() {
   function handleClick() {
     if (status === 'idle' || status === 'error') { connect(); return }
     if (activationMode === 'vad') { disconnect(); return }
+    if (activationMode === 'push-to-talk' && isConnected) {
+      // Suppress disconnect when the click fires after a PTT hold (> 200ms).
+      // Short tap (< 200ms) = intentional disconnect.
+      if (Date.now() - mouseDownAt.current > 200) return
+      disconnect(); return
+    }
   }
 
   return (
     <div className="flex items-center gap-1.5">
       <button
         onClick={handleClick}
-        onMouseDown={activationMode === 'push-to-talk' && isConnected ? () => startCapture() : undefined}
+        onMouseDown={activationMode === 'push-to-talk' && isConnected ? () => { mouseDownAt.current = Date.now(); startCapture() } : undefined}
         onMouseUp={activationMode === 'push-to-talk' && isConnected ? () => stopCapture() : undefined}
         onTouchStart={activationMode === 'push-to-talk' && isConnected ? (e) => { e.preventDefault(); startCapture() } : undefined}
         onTouchEnd={activationMode === 'push-to-talk' && isConnected ? () => stopCapture() : undefined}
