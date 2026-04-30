@@ -21,6 +21,8 @@ export function VoiceControlWidget() {
     sendMessage: text => context.sendMessage(text),
     selectCustomer: name => router.push(`/customers?voice_select=${encodeURIComponent(name)}`),
     selectReport: query => router.push(`/reports?voice_select=${encodeURIComponent(query)}`),
+    editLine: (service, field, value) => context.editLine(service, field, value),
+    addLine: (service, hours, rate, parts) => context.addLine(service, hours, rate, parts),
   }), [context, router])
 
   const controller = useVoiceControl({
