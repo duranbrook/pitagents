@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 
@@ -12,7 +12,6 @@ const NAV_ITEMS = [
 ]
 
 function getInitials(): string {
-  if (typeof window === 'undefined') return '?'
   const token = localStorage.getItem('token')
   if (!token) return '?'
   try {
@@ -27,10 +26,13 @@ function getInitials(): string {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
+  const [initials, setInitials] = useState('·')
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
       router.replace('/login')
+    } else {
+      setInitials(getInitials())
     }
   }, [router])
 
@@ -77,7 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="ml-auto w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
           style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
         >
-          {getInitials()}
+          {initials}
         </button>
       </nav>
       <main className="flex-1 min-h-0 overflow-hidden">
