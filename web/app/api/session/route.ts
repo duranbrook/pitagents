@@ -4,7 +4,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const model = searchParams.get('model') ?? 'gpt-4o-mini-realtime-preview'
 
-  const res = await fetch('https://api.openai.com/v1/realtime/sessions', {
+  const res = await fetch('https://api.openai.com/v1/realtime/client_secret', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
