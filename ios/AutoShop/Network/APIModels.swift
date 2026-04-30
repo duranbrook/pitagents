@@ -188,6 +188,7 @@ struct ReportFinding: Decodable, Identifiable {
 struct ReportEstimateItem: Decodable, Identifiable {
     let part: String
     let laborHours: Double
+    let laborRate: Double
     let laborCost: Double
     let partsCost: Double
     let total: Double
@@ -195,10 +196,28 @@ struct ReportEstimateItem: Decodable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case part
         case laborHours = "labor_hours"
+        case laborRate = "labor_rate"
         case laborCost = "labor_cost"
         case partsCost = "parts_cost"
         case total
     }
+}
+
+struct EstimateItemPatch: Encodable {
+    let part: String
+    let laborHours: Double
+    let laborRate: Double
+    let partsCost: Double
+    enum CodingKeys: String, CodingKey {
+        case part
+        case laborHours = "labor_hours"
+        case laborRate = "labor_rate"
+        case partsCost = "parts_cost"
+    }
+}
+
+struct EstimateUpdateRequest: Encodable {
+    let items: [EstimateItemPatch]
 }
 
 struct ReportDetail: Decodable, Identifiable {
