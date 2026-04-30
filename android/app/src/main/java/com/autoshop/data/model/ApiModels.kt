@@ -93,6 +93,51 @@ data class Report(
     @SerializedName("created_at") val createdAt: String,
 )
 
+data class ReportVehicle(
+    val year: Int?,
+    val make: String?,
+    val model: String?,
+    val trim: String?,
+    val vin: String?,
+)
+
+data class ReportFinding(
+    val part: String,
+    val severity: String,
+    val notes: String,
+)
+
+data class ReportEstimateItem(
+    val part: String,
+    @SerializedName("labor_hours") val laborHours: Double,
+    @SerializedName("labor_rate") val laborRate: Double? = null,
+    @SerializedName("labor_cost") val laborCost: Double,
+    @SerializedName("parts_cost") val partsCost: Double,
+    val total: Double,
+)
+
+data class EstimateItemPatch(
+    val part: String,
+    @SerializedName("labor_hours") val laborHours: Double,
+    @SerializedName("labor_rate") val laborRate: Double,
+    @SerializedName("parts_cost") val partsCost: Double,
+)
+
+data class EstimateUpdateRequest(
+    val items: List<EstimateItemPatch>,
+)
+
+data class ReportDetail(
+    val id: String,
+    val vehicle: ReportVehicle?,
+    val summary: String?,
+    val findings: List<ReportFinding>,
+    val estimate: List<ReportEstimateItem>,
+    val total: Double,
+    @SerializedName("share_token") val shareToken: String,
+    @SerializedName("created_at") val createdAt: String?,
+)
+
 // ---------------------------------------------------------------------------
 // AI Chat
 // ---------------------------------------------------------------------------
