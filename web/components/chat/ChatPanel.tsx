@@ -8,6 +8,7 @@ import { MessageBubble } from './MessageBubble'
 import { VoiceButton } from './VoiceButton'
 import { ImageAttach } from './ImageAttach'
 import { QuoteSummary } from './QuoteSummary'
+import { useVoiceContext } from '@/contexts/VoiceContext'
 
 interface StreamingMessage {
   text: string
@@ -48,6 +49,8 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
   const [optimisticUserMsg, setOptimisticUserMsg] = useState<string | null>(null)
   const [ratings, setRatings] = useState<Record<string, 1 | -1>>({})
   const [quoteId, setQuoteId] = useState<string | null>(null)
+  const [reportId, setReportId] = useState<string | null>(null)
+  const voice = useVoiceContext()
 
   const [voiceMode] = useState<'hold' | 'toggle'>(() => {
     if (typeof window === 'undefined') return 'hold'
@@ -78,6 +81,26 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
       }
     }
   }, [history, agentId, quoteId])
+
+  useEffect(() => {
+    if (agentId !== 'assistant') return
+    for (let i = history.length - 1; i >= 0; i--) {
+      const msg = history[i]
+      if (msg.tool_calls) {
+        const hit = msg.tool_calls.find(tc => typeof tc.output?.report_id === 'string')
+        if (hit) {
+          setReportId(hit.output.report_id as string)
+          return
+        }
+      }
+    }
+  }, [history, agentId])
+
+  useEffect(() => {
+    voice.registerSendMessage((text) => {
+      handleSend(text)
+    })
+  }, [voice]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleRate(messageId: string, rating: 1 | -1) {
     setRatings(prev => ({ ...prev, [messageId]: rating }))
@@ -110,6 +133,9 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
             : null)
           if (te.output && typeof te.output.quote_id === 'string') {
             setQuoteId(te.output.quote_id)
+          }
+          if (te.output && typeof te.output.report_id === 'string') {
+            setReportId(te.output.report_id)
           }
         } else if (event.type === 'done') {
           onNewMessage(accumulated.slice(0, 60))
@@ -262,6 +288,18 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
           <div className="px-5 pb-1 flex items-center gap-2">
             <span className="text-xs" style={{ color: 'var(--accent)' }}>📎 Photo attached</span>
             <button onClick={() => setPendingImageUrl(undefined)} className="text-xs text-gray-500 hover:text-red-400">✕</button>
+          </div>
+        )}
+
+        {reportId && (
+          <div className="px-5 pb-3">
+            <a
+              href={`/reports?id=${reportId}`}
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors"
+              style={{ background: 'color-mix(in srgb, var(--accent) 12%, transparent)', color: 'var(--accent)', border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' }}
+            >
+              📋 View Report →
+            </a>
           </div>
         )}
 
