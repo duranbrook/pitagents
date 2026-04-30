@@ -40,11 +40,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 overflow-hidden">
-      {/* Top nav */}
-      <nav className="flex-shrink-0 h-11 bg-gray-900 border-b border-gray-800 flex items-center px-4 gap-1">
+    <div className="flex flex-col h-screen overflow-hidden" style={{ background: '#030712' }}>
+      <nav
+        className="flex-shrink-0 h-11 flex items-center px-4 gap-1"
+        style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+      >
         <div className="flex items-center gap-2 mr-6 flex-shrink-0">
-          <div className="w-6 h-6 bg-indigo-600 rounded-md flex items-center justify-center">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--accent)' }}>
             <span className="text-white text-xs font-bold">P</span>
           </div>
           <span className="text-white text-sm font-semibold">AutoShop</span>
@@ -55,11 +57,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-1.5 px-3 h-11 text-sm border-b-2 transition-colors whitespace-nowrap ${
-                active
-                  ? 'text-indigo-400 border-indigo-500'
-                  : 'text-gray-400 border-transparent hover:text-gray-200 hover:border-gray-600'
-              }`}
+              className="flex items-center gap-1.5 px-3 h-11 text-sm border-b-2 transition-colors whitespace-nowrap"
+              style={active ? {
+                color: 'var(--accent)',
+                borderBottomColor: 'var(--accent)',
+              } : {
+                color: 'rgba(255,255,255,0.4)',
+                borderBottomColor: 'transparent',
+              }}
             >
               <span className="text-base leading-none">{item.icon}</span>
               {item.label}
@@ -69,12 +74,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button
           onClick={handleLogout}
           title="Log out"
-          className="ml-auto w-7 h-7 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-gray-300 text-xs font-semibold transition-colors flex-shrink-0"
+          className="ml-auto w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
+          style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
         >
           {getInitials()}
         </button>
       </nav>
-      {/* Content fills remaining height */}
       <main className="flex-1 min-h-0 overflow-hidden">
         {children}
       </main>
