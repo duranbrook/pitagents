@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { AppShell } from '@/components/AppShell'
 import { getCustomers, createCustomer, getVehicles, createVehicle } from '@/lib/api'
 import type { Customer, Vehicle } from '@/lib/types'
@@ -20,7 +21,7 @@ function initials(name: string) {
     .toUpperCase()
 }
 
-export default function CustomersPage() {
+function CustomersPageInner() {
   const queryClient = useQueryClient()
   const router = useRouter()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -78,6 +79,17 @@ export default function CustomersPage() {
   const filtered = customers.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()),
   )
+
+  const searchParams = useSearchParams()
+  const voiceSelect = searchParams.get('voice_select')
+
+  useEffect(() => {
+    if (!voiceSelect || customers.length === 0) return
+    const q = voiceSelect.toLowerCase()
+    const match = customers.find(c => c.name.toLowerCase().includes(q))
+    if (match) setSelectedId(match.customer_id)
+  }, [voiceSelect, customers])
+
   const selected = customers.find(c => c.customer_id === selectedId)
 
   return (
@@ -304,5 +316,13 @@ export default function CustomersPage() {
         </div>
       )}
     </AppShell>
+  )
+}
+
+export default function CustomersPage() {
+  return (
+    <Suspense>
+      <CustomersPageInner />
+    </Suspense>
   )
 }
