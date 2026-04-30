@@ -7,6 +7,9 @@ final class ReportDetailViewModel: ObservableObject {
     @Published var report: ReportDetail?
     @Published var isLoading = true
     @Published var errorMessage: String?
+    @Published var estimateItems: [ReportEstimateItem] = []
+    @Published var isSaving = false
+    @Published var saveError: String?
 
     private let reportId: String
 
@@ -15,8 +18,23 @@ final class ReportDetailViewModel: ObservableObject {
     func load() async {
         isLoading = true
         defer { isLoading = false }
-        do { report = try await APIClient.shared.getReport(reportId: reportId) }
+        do {
+            report = try await APIClient.shared.getReport(reportId: reportId)
+            self.estimateItems = report?.estimate ?? []
+        }
         catch { errorMessage = error.localizedDescription }
+    }
+
+    func patchEstimate(reportId: String, items: [EstimateItemPatch]) async {
+        isSaving = true
+        defer { isSaving = false }
+        do {
+            let updated = try await APIClient.shared.patchEstimate(reportId: reportId, items: items)
+            self.report = updated
+            self.estimateItems = updated.estimate
+        } catch {
+            saveError = error.localizedDescription
+        }
     }
 }
 
@@ -27,6 +45,10 @@ struct ReportDetailView: View {
     let vehicleLabel: String
 
     @StateObject private var vm: ReportDetailViewModel
+    @State private var editingItem: ReportEstimateItem? = nil
+    @State private var editHours: String = ""
+    @State private var editRate: String = ""
+    @State private var editParts: String = ""
 
     init(reportId: String, vehicleLabel: String) {
         self.reportId = reportId
@@ -91,7 +113,7 @@ struct ReportDetailView: View {
                 }
 
                 // Estimate
-                if !r.estimate.isEmpty {
+                if !vm.estimateItems.isEmpty {
                     sectionCard(title: "Estimate") {
                         VStack(spacing: 0) {
                             // Header row
@@ -104,20 +126,29 @@ struct ReportDetailView: View {
                             .padding(.bottom, 6)
                             Divider()
 
-                            ForEach(r.estimate) { item in
-                                HStack(alignment: .top) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(item.part).font(.subheadline).fontWeight(.medium)
-                                        Text("\(String(format: "%.1f", item.laborHours)) hrs @ \(formatCurrency(item.laborCost / max(item.laborHours, 0.1)))/hr")
-                                            .font(.caption2)
-                                            .foregroundStyle(.tertiary)
+                            ForEach(vm.estimateItems) { item in
+                                Button {
+                                    editingItem = item
+                                    editHours = String(format: "%.1f", item.laborHours)
+                                    editRate = String(format: "%.2f", item.laborRate)
+                                    editParts = String(format: "%.2f", item.partsCost)
+                                } label: {
+                                    HStack(alignment: .top) {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(item.part).font(.subheadline).fontWeight(.medium)
+                                            Text("\(String(format: "%.1f", item.laborHours)) hrs @ \(String(format: "$%.2f", item.laborRate))/hr")
+                                                .font(.caption2)
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        Text(formatCurrency(item.laborCost)).font(.caption).frame(width: 54, alignment: .trailing)
+                                        Text(formatCurrency(item.partsCost)).font(.caption).frame(width: 54, alignment: .trailing)
+                                        Text(formatCurrency(item.total)).font(.subheadline.bold()).frame(width: 60, alignment: .trailing)
                                     }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    Text(formatCurrency(item.laborCost)).font(.caption).frame(width: 54, alignment: .trailing)
-                                    Text(formatCurrency(item.partsCost)).font(.caption).frame(width: 54, alignment: .trailing)
-                                    Text(formatCurrency(item.total)).font(.subheadline.bold()).frame(width: 60, alignment: .trailing)
+                                    .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
                                 }
-                                .padding(.vertical, 8)
+                                .buttonStyle(.plain)
                                 Divider()
                             }
 
@@ -129,6 +160,45 @@ struct ReportDetailView: View {
                             .padding(.top, 8)
                         }
                     }
+                    .sheet(item: $editingItem) { item in
+                        NavigationStack {
+                            Form {
+                                Section("Labor") {
+                                    LabeledContent("Hours") {
+                                        TextField("0.0", text: $editHours)
+                                            .keyboardType(.decimalPad)
+                                            .multilineTextAlignment(.trailing)
+                                    }
+                                    LabeledContent("$/hr") {
+                                        TextField("0.00", text: $editRate)
+                                            .keyboardType(.decimalPad)
+                                            .multilineTextAlignment(.trailing)
+                                    }
+                                }
+                                Section("Parts") {
+                                    LabeledContent("Cost") {
+                                        TextField("0.00", text: $editParts)
+                                            .keyboardType(.decimalPad)
+                                            .multilineTextAlignment(.trailing)
+                                    }
+                                }
+                            }
+                            .navigationTitle(item.part)
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Cancel") { editingItem = nil }
+                                }
+                                ToolbarItem(placement: .confirmationAction) {
+                                    Button("Save") {
+                                        Task { await saveEdit(item: item) }
+                                    }
+                                    .disabled(vm.isSaving)
+                                }
+                            }
+                        }
+                        .presentationDetents([.medium])
+                    }
                 }
 
                 // Action buttons
@@ -136,7 +206,7 @@ struct ReportDetailView: View {
                     // Open inspection report PDF
                     if let pdfURL = URL(string: "\(SessionAPI.baseURL)/reports/\(r.id)/pdf") {
                         Link(destination: pdfURL) {
-                            Label("View Inspection Report PDF", systemImage: "doc.text.fill")
+                            Label("Regenerate Report PDF", systemImage: "doc.text.fill")
                                 .font(.subheadline.bold())
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
@@ -222,6 +292,19 @@ struct ReportDetailView: View {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
+    }
+
+    private func saveEdit(item: ReportEstimateItem) async {
+        let hours = Double(editHours) ?? item.laborHours
+        let rate = Double(editRate) ?? item.laborRate
+        let parts = Double(editParts) ?? item.partsCost
+        let patches = vm.estimateItems.map { i in
+            i.id == item.id
+                ? EstimateItemPatch(part: i.part, laborHours: hours, laborRate: rate, partsCost: parts)
+                : EstimateItemPatch(part: i.part, laborHours: i.laborHours, laborRate: i.laborRate, partsCost: i.partsCost)
+        }
+        await vm.patchEstimate(reportId: reportId, items: patches)
+        editingItem = nil
     }
 }
 
