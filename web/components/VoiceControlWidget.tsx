@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState, useRef, startTransition } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useVoiceControl } from '@/lib/voice/useVoiceControl'
 import { createVoiceTools } from '@/lib/voice/tools'
@@ -16,11 +16,11 @@ export function VoiceControlWidget() {
   const [activationMode, setActivationMode] = useState<ActivationMode>('push-to-talk')
 
   const tools = useMemo(() => createVoiceTools({
-    navigate: path => startTransition(() => router.push(path)),
+    navigate: path => { console.log('[voice] router.push', path); router.push(path) },
     selectAgent: name => context.selectAgent(name),
     sendMessage: text => context.sendMessage(text),
-    selectCustomer: name => startTransition(() => router.push(`/customers?voice_select=${encodeURIComponent(name)}`)),
-    selectReport: query => startTransition(() => router.push(`/reports?voice_select=${encodeURIComponent(query)}`)),
+    selectCustomer: name => router.push(`/customers?voice_select=${encodeURIComponent(name)}`),
+    selectReport: query => router.push(`/reports?voice_select=${encodeURIComponent(query)}`),
     editLine: (service, field, value) => context.editLine(service, field, value),
     addLine: (service, hours, rate, parts) => context.addLine(service, hours, rate, parts),
   }), [context, router])
