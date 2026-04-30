@@ -31,14 +31,12 @@ function buildDefaultTurnDetection(session: TransportSessionConfig): RealtimeTur
   }
 
   return {
-    type: "server_vad",
+    type: "semantic_vad",
     createResponse: true,
+    eagerness: "high",
     ...(session.outputMode === "audio" || session.outputMode === "text+audio"
       ? {}
       : { interruptResponse: false }),
-    prefixPaddingMs: 300,
-    silenceDurationMs: 200,
-    threshold: 0.5,
   };
 }
 
