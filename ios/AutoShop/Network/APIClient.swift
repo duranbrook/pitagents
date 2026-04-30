@@ -68,6 +68,10 @@ final class APIClient {
         try await get("/reports/\(reportId)")
     }
 
+    func patchEstimate(reportId: String, items: [EstimateItemPatch]) async throws -> ReportDetail {
+        try await patch("/reports/\(reportId)/estimate", body: EstimateUpdateRequest(items: items))
+    }
+
     // MARK: - Messages
 
     func listMessages(vehicleId: String) async throws -> [MessageResponse] {
@@ -108,6 +112,20 @@ final class APIClient {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try encoder.encode(body)
         if auth { injectAuth(&req) }
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try validate(data: data, response: response)
+        return try decode(T.self, from: data)
+    }
+
+    private func patch<B: Encodable, T: Decodable>(
+        _ path: String, body: B
+    ) async throws -> T {
+        guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
+        var req = URLRequest(url: url)
+        req.httpMethod = "PATCH"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try encoder.encode(body)
+        injectAuth(&req)
         let (data, response) = try await URLSession.shared.data(for: req)
         try validate(data: data, response: response)
         return try decode(T.self, from: data)
