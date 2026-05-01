@@ -342,9 +342,13 @@ async def update_job_card(
 
             # Only decrement if quantity increased
             if delta > 0:
+                try:
+                    inv_uuid = uuid.UUID(inv_id_str)
+                except ValueError:
+                    continue
                 inv_result = await db.execute(
                     select(InventoryItem).where(
-                        InventoryItem.id == uuid.UUID(inv_id_str),
+                        InventoryItem.id == inv_uuid,
                         InventoryItem.shop_id == uuid.UUID(shop_id),
                     )
                 )
