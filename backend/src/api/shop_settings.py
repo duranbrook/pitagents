@@ -1,5 +1,6 @@
 import uuid
 from fastapi import APIRouter, Depends
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
@@ -53,10 +54,15 @@ async def _get_or_create(shop_id: uuid.UUID, db: AsyncSession) -> ShopSettings:
     result = await db.execute(select(ShopSettings).where(ShopSettings.shop_id == shop_id))
     settings = result.scalar_one_or_none()
     if settings is None:
-        settings = ShopSettings(shop_id=shop_id, nav_pins=[])
-        db.add(settings)
-        await db.commit()
-        await db.refresh(settings)
+        try:
+            settings = ShopSettings(shop_id=shop_id, nav_pins=[])
+            db.add(settings)
+            await db.commit()
+            await db.refresh(settings)
+        except IntegrityError:
+            await db.rollback()
+            result = await db.execute(select(ShopSettings).where(ShopSettings.shop_id == shop_id))
+            settings = result.scalar_one()
     return settings
 
 
