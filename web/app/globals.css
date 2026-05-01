@@ -2,6 +2,7 @@
 @plugin "@tailwindcss/typography";
 
 :root {
+  font-size: 17px;
   --background: #ffffff;
   --foreground: #171717;
   --accent: #d97706;
@@ -38,4 +39,9 @@ body {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.625rem;
+}
+
+/* Hide scrollbar on nav while keeping scroll functional */
+nav::-webkit-scrollbar {
+  display: none;
 }

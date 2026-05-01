@@ -72,7 +72,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <AppBackground />
 
       <nav
-        className="flex-shrink-0 h-12 flex items-center px-6 gap-1"
+        className="flex-shrink-0 h-12 flex items-center px-4 gap-0 overflow-x-auto"
         style={{
           position: 'relative',
           zIndex: 10,
@@ -80,10 +80,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           borderBottom: '1px solid rgba(255,255,255,0.09)',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         }}
       >
         {/* Brand */}
-        <div className="flex items-center gap-2 mr-7 flex-shrink-0">
+        <div className="flex items-center gap-2 mr-4 flex-shrink-0">
           <div
             className="w-[26px] h-[26px] rounded-md flex items-center justify-center"
             style={{ background: 'var(--accent)' }}
@@ -100,7 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-1.5 px-3.5 h-12 text-[13px] font-medium border-b-2 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 px-2.5 h-12 text-[12px] font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0"
               style={
                 active
                   ? { color: '#fff', borderBottomColor: 'var(--accent)' }
