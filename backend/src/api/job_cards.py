@@ -70,24 +70,8 @@ async def list_columns(
         .order_by(JobCardColumn.position)
     )
     cols = result.scalars().all()
-    return [_col_to_response(c) for c in cols]
-
-
-@router.post("/columns/seed", response_model=list[ColumnResponse], status_code=status.HTTP_201_CREATED)
-async def seed_columns(
-    shop_id: str = Depends(get_current_shop_id),
-    db: AsyncSession = Depends(get_db),
-):
-    """Seed default columns for a shop (idempotent — skips if columns already exist)."""
-    sid = uuid.UUID(shop_id)
-    result = await db.execute(
-        select(JobCardColumn)
-        .where(JobCardColumn.shop_id == sid)
-    )
-    existing = result.scalars().all()
-    if existing:
-        return [_col_to_response(c) for c in existing]
-    cols = await _seed_default_columns(sid, db)
+    if not cols:
+        cols = await _seed_default_columns(sid, db)
     return [_col_to_response(c) for c in cols]
 
 
