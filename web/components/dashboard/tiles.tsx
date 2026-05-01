@@ -99,8 +99,8 @@ export const GROUPS: GroupConfig[] = [
     tiles: [
       { id: 'customers', label: 'Customers',        icon: IconCustomers, status: 'live', route: '/customers' },
       { id: 'vehicles',  label: 'Vehicles',         icon: IconVehicle,   status: 'live', route: '/customers' },
-      { id: 'appointments',      label: 'Appointments',      icon: IconCalendar, status: 'soon' },
-      { id: 'service-reminders', label: 'Service Reminders', icon: IconBell,     status: 'soon' },
+      { id: 'appointments',      label: 'Appointments',      icon: IconCalendar, status: 'live', route: '/appointments' },
+      { id: 'service-reminders', label: 'Service Reminders', icon: IconBell,     status: 'live', route: '/reminders' },
     ],
   },
   {

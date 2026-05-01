@@ -9,13 +9,15 @@ import { VoiceControlWidget } from './VoiceControlWidget'
 import { pravatarUrl } from '@/lib/avatar'
 
 const NAV_ITEMS = [
-  { href: '/',           label: 'Home',      icon: <HomeIcon />,      exact: true },
-  { href: '/customers',  label: 'Customers', icon: <CustomersIcon />, exact: false },
-  { href: '/reports',    label: 'Reports',   icon: <ReportsIcon />,   exact: false },
-  { href: '/job-cards',  label: 'Job Cards', icon: <JobCardsIcon />,  exact: false },
-  { href: '/invoices',   label: 'Invoices',  icon: <InvoicesIcon />,  exact: false },
-  { href: '/inspect',    label: 'Inspect',   icon: <InspectIcon />,   exact: false },
-  { href: '/chat',       label: 'Chat',      icon: <ChatIcon />,      exact: false },
+  { href: '/',              label: 'Home',         icon: <HomeIcon />,         exact: true },
+  { href: '/customers',     label: 'Customers',    icon: <CustomersIcon />,    exact: false },
+  { href: '/reports',       label: 'Reports',      icon: <ReportsIcon />,      exact: false },
+  { href: '/job-cards',     label: 'Job Cards',    icon: <JobCardsIcon />,     exact: false },
+  { href: '/invoices',      label: 'Invoices',     icon: <InvoicesIcon />,     exact: false },
+  { href: '/appointments',  label: 'Appointments', icon: <AppointmentsIcon />, exact: false },
+  { href: '/reminders',     label: 'Reminders',    icon: <RemindersIcon />,    exact: false },
+  { href: '/inspect',       label: 'Inspect',      icon: <InspectIcon />,      exact: false },
+  { href: '/chat',          label: 'Chat',         icon: <ChatIcon />,         exact: false },
 ]
 
 function getEmail(): string {
@@ -162,4 +164,10 @@ function JobCardsIcon() {
 }
 function InvoicesIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 2h10v12l-2-1.5L9 14l-2-1.5L5 14l-2-1.5V2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><line x1="5" y1="9" x2="9" y2="9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+}
+function AppointmentsIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/><line x1="5" y1="1" x2="5" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="11" y1="1" x2="11" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="2" y1="7" x2="14" y2="7" stroke="currentColor" strokeWidth="1.5"/></svg>
+}
+function RemindersIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M8 2a4 4 0 0 1 4 4v3l1 2H3l1-2V6a4 4 0 0 1 4-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.5"/></svg>
 }

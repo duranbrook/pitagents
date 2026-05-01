@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { AppShell } from '@/components/AppShell'
 import CalendarGrid from '@/components/appointments/CalendarGrid'
 import NewAppointmentModal from '@/components/appointments/NewAppointmentModal'
 import type { Appointment } from '@/lib/types'
@@ -9,6 +10,14 @@ import { getAppointments, updateAppointment, convertAppointmentToJobCard } from 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 export default function AppointmentsPage() {
+  return (
+    <AppShell>
+      <AppointmentsContent />
+    </AppShell>
+  )
+}
+
+function AppointmentsContent() {
   const qc = useQueryClient()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
