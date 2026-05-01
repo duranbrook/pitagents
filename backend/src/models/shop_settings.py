@@ -24,6 +24,8 @@ class ShopSettings(Base):
     wisetack_merchant_id = Column(String(100), nullable=True)
     quickbooks_enabled = Column(Boolean, default=False)
     quickbooks_refresh_token_encrypted = Column(Text, nullable=True)
+    carmd_api_key = Column(String, nullable=True)
+    carmd_partner_token = Column(String, nullable=True)
     financing_threshold = Column(String(10), default="500")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
