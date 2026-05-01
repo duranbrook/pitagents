@@ -27,6 +27,9 @@ class JobCardColumn(Base):
 
 class JobCard(Base):
     __tablename__ = "job_cards"
+    __table_args__ = (
+        UniqueConstraint("shop_id", "number", name="uq_job_cards_shop_number"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     shop_id = Column(

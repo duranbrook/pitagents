@@ -126,7 +126,7 @@ def test_create_job_card(client, auth_headers, mock_db):
     card.created_at = datetime(2026, 5, 1, tzinfo=timezone.utc)
     card.updated_at = datetime(2026, 5, 1, tzinfo=timezone.utc)
     mock_db.execute.return_value.scalar_one_or_none.return_value = card
-    mock_db.execute.return_value.scalar.return_value = 0
+    mock_db.execute.return_value.scalar.return_value = None
     resp = client.post("/job-cards", json={}, headers=auth_headers)
     assert resp.status_code == 201
     assert resp.json()["number"] == "JC-0001"

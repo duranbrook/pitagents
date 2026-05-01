@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
 from src.db.base import get_db
 from src.api.deps import get_current_shop_id
 from src.models.job_card import JobCardColumn, JobCard
@@ -174,10 +174,10 @@ class JobCardUpdate(BaseModel):
     vehicle_id: Optional[str] = None
     column_id: Optional[str] = None
     technician_ids: Optional[list[str]] = None
-    services: Optional[list[dict]] = None
-    parts: Optional[list[dict]] = None
+    services: Optional[list[ServiceLine]] = None
+    parts: Optional[list[PartLine]] = None
     notes: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[Literal["active", "closed", "void"]] = None
 
 
 class JobCardResponse(BaseModel):
@@ -216,10 +216,16 @@ def _card_to_response(c: JobCard) -> JobCardResponse:
 
 async def _next_card_number(shop_id: uuid.UUID, db: AsyncSession) -> str:
     result = await db.execute(
-        select(sql_func.count(JobCard.id)).where(JobCard.shop_id == shop_id)
+        select(sql_func.max(JobCard.number)).where(JobCard.shop_id == shop_id)
     )
-    count = result.scalar() or 0
-    return f"JC-{count + 1:04d}"
+    last = result.scalar()  # e.g. "JC-0003" or None
+    if last is None:
+        return "JC-0001"
+    try:
+        n = int(last.split("-")[1])
+    except (IndexError, ValueError):
+        n = 0
+    return f"JC-{n + 1:04d}"
 
 
 # ---------------------------------------------------------------------------
@@ -231,7 +237,7 @@ async def _next_card_number(shop_id: uuid.UUID, db: AsyncSession) -> str:
 @router.get("", response_model=list[JobCardResponse])
 async def list_job_cards(
     column_id: Optional[str] = None,
-    status: Optional[str] = None,
+    card_status: Optional[str] = None,
     shop_id: str = Depends(get_current_shop_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -239,8 +245,8 @@ async def list_job_cards(
     q = select(JobCard).where(JobCard.shop_id == sid)
     if column_id:
         q = q.where(JobCard.column_id == uuid.UUID(column_id))
-    if status:
-        q = q.where(JobCard.status == status)
+    if card_status:
+        q = q.where(JobCard.status == card_status)
     result = await db.execute(q.order_by(JobCard.created_at.desc()))
     return [_card_to_response(c) for c in result.scalars().all()]
 
@@ -316,9 +322,9 @@ async def update_job_card(
     if body.technician_ids is not None:
         card.technician_ids = body.technician_ids
     if body.services is not None:
-        card.services = body.services
+        card.services = [s.model_dump() for s in body.services]
     if body.parts is not None:
-        card.parts = body.parts
+        card.parts = [p.model_dump() for p in body.parts]
     if body.notes is not None:
         card.notes = body.notes
     if body.status is not None:

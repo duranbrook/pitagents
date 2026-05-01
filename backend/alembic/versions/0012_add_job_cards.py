@@ -48,6 +48,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["vehicle_id"], ["vehicles.id"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["column_id"], ["job_card_columns.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("shop_id", "number", name="uq_job_cards_shop_number"),
     )
     op.create_index(op.f("ix_job_cards_shop_id"), "job_cards", ["shop_id"], unique=False)
     op.create_index(op.f("ix_job_cards_customer_id"), "job_cards", ["customer_id"], unique=False)
