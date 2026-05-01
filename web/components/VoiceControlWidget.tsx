@@ -16,7 +16,7 @@ export function VoiceControlWidget() {
   const [activationMode, setActivationMode] = useState<ActivationMode>('push-to-talk')
 
   const tools = useMemo(() => createVoiceTools({
-    navigate: path => { console.log('[voice] router.push', path); router.push(path) },
+    navigate: path => router.push(path),
     selectAgent: name => context.selectAgent(name),
     sendMessage: text => context.sendMessage(text),
     selectCustomer: name => router.push(`/customers?voice_select=${encodeURIComponent(name)}`),

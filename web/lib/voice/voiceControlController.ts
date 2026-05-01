@@ -672,7 +672,6 @@ class VoiceControlControllerImpl implements VoiceControlController {
       this.#connectAbortController = null;
       this.#setConnected(true);
       this.#setActivity("listening");
-      console.log('[voice] connected, session active, VAD listening')
       this.#debugLog("connect.ready");
       this.#emitEvent({ type: "voice.transport.connected" });
     } catch (error) {
@@ -710,7 +709,6 @@ class VoiceControlControllerImpl implements VoiceControlController {
   };
 
   startCapture = () => {
-    console.log('[voice] startCapture called', { destroyed: this.#destroyed, connected: this.connected, mode: this.sessionConfig.activationMode, capturing: this.#capturing })
     if (
       this.#destroyed ||
       !this.connected ||
@@ -727,7 +725,6 @@ class VoiceControlControllerImpl implements VoiceControlController {
   };
 
   stopCapture = () => {
-    console.log('[voice] stopCapture called', { destroyed: this.#destroyed, connected: this.connected, mode: this.sessionConfig.activationMode, capturing: this.#capturing })
     if (
       this.#destroyed ||
       !this.connected ||
@@ -1113,11 +1110,9 @@ class VoiceControlControllerImpl implements VoiceControlController {
     const toolName = item.name ?? "unknown_tool";
     const rawArgs = item.arguments ?? "{}";
     const startedAt = Date.now();
-    console.log('[voice] executing tool call:', toolName, 'args:', rawArgs)
     const matchingTool = this.#liveTools.find((tool) => tool.name === toolName);
 
     if (!matchingTool) {
-      console.log('[voice] no matching tool for:', toolName, 'registered:', this.#liveTools.map(t => t.name))
       const output = { ok: false, error: `No tool registered for ${toolName}.` };
       this.#transport?.sendFunctionResult(callId, output);
       this.#upsertToolCallRecord({
@@ -1213,7 +1208,6 @@ class VoiceControlControllerImpl implements VoiceControlController {
   };
 
   #handleToolOnlyNoAction(responseId: string | null) {
-    console.log('[voice] no tool call in response — model did not choose a tool')
     const message = "The model responded without choosing a registered tool.";
     const startedAt = Date.now();
 
@@ -1303,7 +1297,6 @@ class VoiceControlControllerImpl implements VoiceControlController {
   }
 
   #handleServerEvent = (event: RealtimeServerEvent) => {
-    console.log('[voice] server event:', event.type, event)
     this.#emitEvent(event);
 
     if (event.type === "response.created") {
@@ -1338,9 +1331,8 @@ class VoiceControlControllerImpl implements VoiceControlController {
     }
 
     if (event.type === "response.done") {
-      const response = event.response as { output?: unknown[]; status?: string; status_details?: unknown } | undefined;
+      const response = event.response as { output?: unknown[] } | undefined;
       const items = Array.isArray(response?.output) ? response.output : [];
-      console.log('[voice] response.done status:', response?.status, 'output items:', items.map((i: any) => ({ type: i?.type, name: i?.name, call_id: i?.call_id })), 'status_details:', response?.status_details)
       this.#handleResponseDone(event, items.filter(isFunctionCallItem));
     }
   };
