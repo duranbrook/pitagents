@@ -9,11 +9,12 @@ import { VoiceControlWidget } from './VoiceControlWidget'
 import { pravatarUrl } from '@/lib/avatar'
 
 const NAV_ITEMS = [
-  { href: '/',          label: 'Home',      icon: <HomeIcon />,      exact: true },
-  { href: '/customers', label: 'Customers', icon: <CustomersIcon />, exact: false },
-  { href: '/reports',   label: 'Reports',   icon: <ReportsIcon />,   exact: false },
-  { href: '/inspect',   label: 'Inspect',   icon: <InspectIcon />,   exact: false },
-  { href: '/chat',      label: 'Chat',      icon: <ChatIcon />,      exact: false },
+  { href: '/',           label: 'Home',      icon: <HomeIcon />,      exact: true },
+  { href: '/customers',  label: 'Customers', icon: <CustomersIcon />, exact: false },
+  { href: '/reports',    label: 'Reports',   icon: <ReportsIcon />,   exact: false },
+  { href: '/job-cards',  label: 'Job Cards', icon: <JobCardsIcon />,  exact: false },
+  { href: '/inspect',    label: 'Inspect',   icon: <InspectIcon />,   exact: false },
+  { href: '/chat',       label: 'Chat',      icon: <ChatIcon />,      exact: false },
 ]
 
 function getEmail(): string {
@@ -154,4 +155,7 @@ function InspectIcon() {
 }
 function ChatIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M2 3h12v8H2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M5 14h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+}
+function JobCardsIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><rect x="1" y="3" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.4"/><rect x="6" y="3" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.4"/><rect x="11" y="3" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.4"/></svg>
 }
