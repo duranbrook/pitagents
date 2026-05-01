@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/customers',  label: 'Customers', icon: <CustomersIcon />, exact: false },
   { href: '/reports',    label: 'Reports',   icon: <ReportsIcon />,   exact: false },
   { href: '/job-cards',  label: 'Job Cards', icon: <JobCardsIcon />,  exact: false },
+  { href: '/invoices',   label: 'Invoices',  icon: <InvoicesIcon />,  exact: false },
   { href: '/inspect',    label: 'Inspect',   icon: <InspectIcon />,   exact: false },
   { href: '/chat',       label: 'Chat',      icon: <ChatIcon />,      exact: false },
 ]
@@ -158,4 +159,7 @@ function ChatIcon() {
 }
 function JobCardsIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><rect x="1" y="3" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.4"/><rect x="6" y="3" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.4"/><rect x="11" y="3" width="4" height="10" rx="1" stroke="currentColor" strokeWidth="1.4"/></svg>
+}
+function InvoicesIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 2h10v12l-2-1.5L9 14l-2-1.5L5 14l-2-1.5V2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><line x1="5" y1="9" x2="9" y2="9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
 }
