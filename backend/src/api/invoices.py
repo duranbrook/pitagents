@@ -2,7 +2,7 @@ import uuid
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, cast, Integer
 from pydantic import BaseModel
 from typing import Optional, Literal
 from src.db.base import get_db
@@ -30,9 +30,7 @@ class InvoiceCreate(BaseModel):
     customer_id: Optional[str] = None
     vehicle_id: Optional[str] = None
     line_items: list[LineItem] = []
-    subtotal: float = 0.0
     tax_rate: float = 0.0
-    total: float = 0.0
     due_date: Optional[str] = None
     stripe_payment_link: Optional[str] = None
     pdf_url: Optional[str] = None
@@ -124,16 +122,17 @@ def _inv_to_response(inv: Invoice) -> InvoiceResponse:
 
 async def _next_invoice_number(shop_id: uuid.UUID, db: AsyncSession) -> str:
     result = await db.execute(
-        select(sql_func.max(Invoice.number)).where(Invoice.shop_id == shop_id)
+        select(sql_func.max(
+            cast(
+                sql_func.split_part(Invoice.number, "-", 2),
+                Integer
+            )
+        )).where(Invoice.shop_id == shop_id)
     )
-    last = result.scalar()
-    if last is None:
+    last_n = result.scalar()
+    if last_n is None:
         return "INV-0001"
-    try:
-        n = int(last.split("-")[1])
-    except (IndexError, ValueError):
-        n = 0
-    return f"INV-{n + 1:04d}"
+    return f"INV-{last_n + 1:04d}"
 
 
 def _compute_totals_from_line_items(line_items: list[dict], tax_rate: float) -> tuple[Decimal, Decimal]:
@@ -170,6 +169,7 @@ async def create_invoice(
     sid = uuid.UUID(shop_id)
     number = await _next_invoice_number(sid, db)
     line_items = [item.model_dump() for item in body.line_items]
+    subtotal, total = _compute_totals_from_line_items(line_items, body.tax_rate)
     inv = Invoice(
         shop_id=sid,
         number=number,
@@ -177,9 +177,9 @@ async def create_invoice(
         customer_id=uuid.UUID(body.customer_id) if body.customer_id else None,
         vehicle_id=uuid.UUID(body.vehicle_id) if body.vehicle_id else None,
         line_items=line_items,
-        subtotal=Decimal(str(body.subtotal)),
+        subtotal=subtotal,
         tax_rate=Decimal(str(body.tax_rate)),
-        total=Decimal(str(body.total)),
+        total=total,
         due_date=body.due_date,
         stripe_payment_link=body.stripe_payment_link,
         pdf_url=body.pdf_url,
@@ -207,6 +207,13 @@ async def create_invoice_from_job_card(
     card = result.scalar_one_or_none()
     if card is None:
         raise HTTPException(status_code=404, detail="Job card not found")
+
+    # Prevent duplicate invoices for the same job card
+    existing = await db.execute(
+        select(Invoice).where(Invoice.job_card_id == card.id, Invoice.shop_id == sid)
+    )
+    if existing.scalar_one_or_none() is not None:
+        raise HTTPException(status_code=409, detail="Invoice already exists for this job card")
 
     # Build line items from services and parts
     line_items: list[dict] = []
@@ -292,6 +299,8 @@ async def update_invoice(
     if body.vehicle_id is not None:
         inv.vehicle_id = uuid.UUID(body.vehicle_id) if body.vehicle_id else None
     if body.status is not None:
+        if body.status == "paid":
+            raise HTTPException(status_code=400, detail="Use record-payment to mark invoices as paid")
         inv.status = body.status
     if body.line_items is not None:
         inv.line_items = [item.model_dump() for item in body.line_items]
@@ -337,6 +346,9 @@ async def record_payment(
     payment_amount = Decimal(str(body.amount))
     current_paid = Decimal(str(inv.amount_paid or 0))
     new_paid = current_paid + payment_amount
+
+    if new_paid > Decimal(str(inv.total or 0)):
+        raise HTTPException(status_code=400, detail="Payment exceeds invoice total")
 
     event = InvoicePaymentEvent(
         invoice_id=iid,

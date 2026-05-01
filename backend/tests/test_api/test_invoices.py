@@ -46,9 +46,10 @@ def test_create_invoice_manual(client, auth_headers, mock_db):
     mock_db.add = MagicMock()
     mock_db.refresh = AsyncMock()
 
+    # subtotal and total are no longer accepted — computed server-side from line_items
     resp = client.post(
         "/invoices",
-        json={"subtotal": 80.0, "tax_rate": 0.0, "total": 80.0},
+        json={"line_items": [], "tax_rate": 0.0},
         headers=auth_headers,
     )
     assert resp.status_code == 201
@@ -84,12 +85,17 @@ def test_create_invoice_from_job_card(client, auth_headers, mock_db):
         call_count += 1
         result = MagicMock()
         if call_count == 1:
-            # _next_invoice_number → scalar returns None
-            result.scalar.return_value = None
+            # Job card lookup
             result.scalar_one_or_none.return_value = card
+            result.scalar.return_value = None
+        elif call_count == 2:
+            # Duplicate invoice check — no existing invoice
+            result.scalar_one_or_none.return_value = None
+            result.scalar.return_value = None
         else:
+            # _next_invoice_number
             result.scalar.return_value = None
-            result.scalar_one_or_none.return_value = card
+            result.scalar_one_or_none.return_value = None
         result.scalars.return_value.all.return_value = []
         return result
 
@@ -171,3 +177,95 @@ def test_record_payment_sets_paid(client, auth_headers, mock_db):
     assert data["method"] == "cash"
     # Status on invoice should have been set to "paid"
     assert inv.status == "paid"
+
+
+def test_record_payment_overpayment_rejected(client, auth_headers, mock_db):
+    inv_id = uuid.uuid4()
+    inv = _make_invoice(
+        id=inv_id,
+        total=Decimal("100.00"),
+        amount_paid=Decimal("0"),
+        status="pending",
+    )
+
+    mock_db.execute = AsyncMock(return_value=MagicMock(
+        scalar_one_or_none=MagicMock(return_value=inv),
+        scalar=MagicMock(return_value=None),
+        scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[]))),
+    ))
+    mock_db.commit = AsyncMock()
+    mock_db.add = MagicMock()
+    mock_db.refresh = AsyncMock()
+
+    resp = client.post(
+        f"/invoices/{inv_id}/record-payment",
+        json={"amount": 150.0, "method": "cash"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 400
+    assert "exceeds" in resp.json()["detail"].lower()
+
+
+def test_update_invoice_cannot_set_paid_directly(client, auth_headers, mock_db):
+    inv_id = uuid.uuid4()
+    inv = _make_invoice(id=inv_id, status="pending")
+
+    mock_db.execute = AsyncMock(return_value=MagicMock(
+        scalar_one_or_none=MagicMock(return_value=inv),
+        scalar=MagicMock(return_value=None),
+        scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[]))),
+    ))
+    mock_db.commit = AsyncMock()
+    mock_db.add = MagicMock()
+    mock_db.refresh = AsyncMock()
+
+    resp = client.patch(
+        f"/invoices/{inv_id}",
+        json={"status": "paid"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 400
+    assert "record-payment" in resp.json()["detail"]
+
+
+def test_create_invoice_from_job_card_duplicate_rejected(client, auth_headers, mock_db):
+    jc_id = uuid.uuid4()
+    card = MagicMock()
+    card.id = jc_id
+    card.shop_id = uuid.UUID(SHOP_ID)
+    card.customer_id = None
+    card.vehicle_id = None
+    card.services = []
+    card.parts = []
+
+    existing_inv = _make_invoice(job_card_id=jc_id)
+
+    call_count = 0
+
+    async def execute_side_effect(query, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        result = MagicMock()
+        if call_count == 1:
+            # Job card lookup
+            result.scalar_one_or_none.return_value = card
+            result.scalar.return_value = None
+        else:
+            # Duplicate invoice check — existing invoice found
+            result.scalar_one_or_none.return_value = existing_inv
+            result.scalar.return_value = None
+        result.scalars.return_value.all.return_value = []
+        return result
+
+    mock_db.execute = AsyncMock(side_effect=execute_side_effect)
+    mock_db.commit = AsyncMock()
+    mock_db.add = MagicMock()
+    mock_db.refresh = AsyncMock()
+
+    resp = client.post(
+        "/invoices/from-job-card",
+        json={"job_card_id": str(jc_id), "tax_rate": 0.0},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 409
+    assert "already exists" in resp.json()["detail"].lower()
