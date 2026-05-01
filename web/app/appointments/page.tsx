@@ -38,7 +38,7 @@ function AppointmentsContent() {
 
   const updateAppt = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Appointment> }) => updateAppointment(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
+    onSuccess: (updated) => { setSelectedAppt(updated); qc.invalidateQueries({ queryKey: ['appointments'] }) },
   })
 
   const prevMonth = () => { if (month === 1) { setMonth(12); setYear(y => y - 1) } else setMonth(m => m - 1) }
