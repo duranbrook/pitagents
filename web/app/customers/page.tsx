@@ -7,6 +7,7 @@ import { Suspense } from 'react'
 import { AppShell } from '@/components/AppShell'
 import { getCustomers, createCustomer, getVehicles, createVehicle } from '@/lib/api'
 import type { Customer, Vehicle } from '@/lib/types'
+import { pravatarUrl } from '@/lib/avatar'
 
 const AVATAR_COLORS = ['#6366f1', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444']
 function colorFor(id: string) {
@@ -94,9 +95,9 @@ function CustomersPageInner() {
 
   return (
     <AppShell>
-      <div className="flex h-full overflow-hidden">
-        {/* Left panel: customer list */}
-        <div className="w-56 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col">
+      <div className="flex h-full" style={{ padding: 16, gap: 12 }}>
+        {/* Left panel: customer list — glass panel */}
+        <div className="glass-panel flex-shrink-0 flex flex-col overflow-hidden" style={{ width: 256, borderRadius: 12 }}>
           <div className="p-3 border-b border-gray-800 flex items-center justify-between gap-2">
             <span className="text-sm font-semibold text-white">Customers</span>
             <button
@@ -128,12 +129,11 @@ function CustomersPageInner() {
                     : 'hover:bg-gray-800'
                 }`}
               >
-                <div
-                  className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
-                  style={{ background: colorFor(c.customer_id) }}
-                >
-                  {initials(c.name)}
-                </div>
+                <img
+                  src={pravatarUrl(c.customer_id, 36)}
+                  alt={c.name}
+                  style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(255,255,255,0.13)', flexShrink: 0 }}
+                />
                 <p className="text-xs font-medium text-white truncate">{c.name}</p>
               </button>
             ))}
@@ -145,21 +145,20 @@ function CustomersPageInner() {
           </div>
         </div>
 
-        {/* Right panel: customer detail */}
-        <div className="flex-1 bg-gray-950 overflow-y-auto">
+        {/* Right panel: customer detail — glass panel */}
+        <div className="glass-panel flex-1 flex flex-col overflow-hidden" style={{ borderRadius: 12 }}>
           {!selected ? (
             <div className="flex h-full items-center justify-center text-gray-600 text-sm">
               Select a customer
             </div>
           ) : (
-            <div className="p-6">
+            <div className="overflow-y-auto flex-1 p-6">
               <div className="flex items-center gap-4 mb-8">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
-                  style={{ background: colorFor(selected.customer_id) }}
-                >
-                  {initials(selected.name)}
-                </div>
+                <img
+                  src={pravatarUrl(selected.customer_id, 46)}
+                  alt={selected.name}
+                  style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(255,255,255,0.13)', flexShrink: 0 }}
+                />
                 <div className="flex-1 min-w-0">
                   <h1 className="text-xl font-semibold text-white truncate">{selected.name}</h1>
                   <p className="text-sm text-gray-400 mt-0.5 truncate">
