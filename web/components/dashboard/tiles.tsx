@@ -111,7 +111,7 @@ export const GROUPS: GroupConfig[] = [
       { id: 'inspect',       label: 'Inspect',       icon: IconInspect,   status: 'live', route: '/inspect' },
       { id: 'reports',       label: 'Reports',       icon: IconReport,    status: 'live', route: '/reports' },
       { id: 'job-cards',     label: 'Job Cards',     icon: IconClipboard, status: 'live', route: '/job-cards' },
-      { id: 'time-tracking', label: 'Time Tracking', icon: IconClock,     status: 'soon' },
+      { id: 'time-tracking', label: 'Time Tracking', icon: IconClock,     status: 'live', route: '/time-tracking' },
     ],
   },
   {
@@ -121,8 +121,8 @@ export const GROUPS: GroupConfig[] = [
     tiles: [
       { id: 'quotes',     label: 'Quotes & Estimates', icon: IconDollar,  status: 'live', route: '/reports' },
       { id: 'invoices',   label: 'Invoices',           icon: IconReceipt, status: 'live', route: '/invoices' },
-      { id: 'payments',   label: 'Payments',           icon: IconCard,    status: 'soon' },
-      { id: 'accounting', label: 'Accounting',         icon: IconChart,   status: 'soon' },
+      { id: 'payments',   label: 'Payments',           icon: IconCard,    status: 'live', route: '/payments' },
+      { id: 'accounting', label: 'Accounting',         icon: IconChart,   status: 'live', route: '/accounting' },
     ],
   },
   {
