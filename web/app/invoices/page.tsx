@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { Invoice } from '@/lib/types'
 import { getInvoices, getShopSettings } from '@/lib/api'
 import InvoiceDetail from '@/components/invoices/InvoiceDetail'
+import { AppShell } from '@/components/AppShell'
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#fbbf24', partial: '#60a5fa', paid: '#4ade80', overdue: '#f87171',
@@ -36,6 +37,7 @@ export default function InvoicesPage() {
     .reduce((s, i) => s + Number(i.amount_paid), 0)
 
   return (
+    <AppShell>
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{ padding: '20px 24px 0', flexShrink: 0 }}>
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 14 }}>Invoices</div>
@@ -112,5 +114,6 @@ export default function InvoicesPage() {
         />
       )}
     </div>
+    </AppShell>
   )
 }

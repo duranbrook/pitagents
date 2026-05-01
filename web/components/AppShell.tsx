@@ -20,6 +20,8 @@ const NAV_ITEMS = [
   { href: '/vendors',       label: 'Vendors',      icon: <VendorsIcon />,      exact: false },
   { href: '/inspect',       label: 'Inspect',      icon: <InspectIcon />,      exact: false },
   { href: '/chat',          label: 'Chat',         icon: <ChatIcon />,         exact: false },
+  { href: '/diagnose',      label: 'Diagnose',     icon: <DiagnoseIcon />,     exact: false },
+  { href: '/marketing',     label: 'Marketing',    icon: <MarketingIcon />,    exact: false },
 ]
 
 function getEmail(): string {
@@ -178,4 +180,10 @@ function InventoryIcon() {
 }
 function VendorsIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><rect x="2" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5"/><path d="M5 14V9h6v5" stroke="currentColor" strokeWidth="1.3"/><rect x="6" y="6" width="2" height="2" rx="0.3" stroke="currentColor" strokeWidth="1.2"/><rect x="10" y="6" width="2" height="2" rx="0.3" stroke="currentColor" strokeWidth="1.2"/><line x1="8" y1="2" x2="8" y2="4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+}
+function DiagnoseIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><circle cx="8" cy="7" r="4" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v2l1 1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M11 11l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+}
+function MarketingIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M2 5l5 3 7-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><rect x="1" y="4" width="14" height="8" rx="2" stroke="currentColor" strokeWidth="1.5"/></svg>
 }
