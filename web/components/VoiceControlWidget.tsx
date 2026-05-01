@@ -7,8 +7,10 @@ import { useVoiceContext } from '@/contexts/VoiceContext'
 import type { ActivationMode } from '@/lib/voice/types'
 
 const INSTRUCTIONS = `You are a voice control assistant for an auto shop management web app.
-Use the registered tools to control the UI. When the user says to navigate, select, or send — call the matching tool immediately.
-Do not chat. If a required argument is unclear, ask one brief question.`
+Use the registered tools to control the UI. Call tools immediately — do not explain or chat.
+For multi-step commands, call tools in sequence: e.g. "find John's report" → select_customer("John") then select_report("John").
+After each tool succeeds, continue to the next step until the full request is complete.
+If a required argument is genuinely unclear, ask one brief question.`
 
 export function VoiceControlWidget() {
   const router = useRouter()
@@ -32,6 +34,7 @@ export function VoiceControlWidget() {
     model: 'gpt-4o-mini-realtime-preview',
     activationMode,
     outputMode: 'tool-only',
+    postToolResponse: true,
   })
 
   const { status, connect, disconnect, startCapture, stopCapture } = controller

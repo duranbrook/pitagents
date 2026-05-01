@@ -502,6 +502,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
   #responseInFlight = false;
   #pendingPostToolResponse = false;
   #currentResponseIsPostTool = false;
+  #postToolChainDepth = 0;
   #runningToolCallCount = 0;
   #toolCallRecords = new Map<string, VoiceToolCallRecord>();
   #toolCallOrder: string[] = [];
@@ -902,6 +903,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
     this.#responseInFlight = false;
     this.#pendingPostToolResponse = false;
     this.#currentResponseIsPostTool = false;
+    this.#postToolChainDepth = 0;
     this.#runningToolCallCount = 0;
     this.#setCapturing(false);
   }
@@ -961,8 +963,9 @@ class VoiceControlControllerImpl implements VoiceControlController {
   }
 
   #requestPostToolResponse() {
+    this.#postToolChainDepth += 1;
     this.#pendingPostToolResponse = true;
-    this.#debugLog("response.create.post-tool");
+    this.#debugLog("response.create.post-tool", `depth=${this.#postToolChainDepth}`);
     this.#transport?.requestResponse();
     this.#setActivity("processing");
   }
@@ -1262,7 +1265,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
 
       if (
         this.#options.postToolResponse &&
-        !this.#currentResponseIsPostTool &&
+        this.#postToolChainDepth < 8 &&
         (pendingCalls.length > 0 || executedCount > 0)
       ) {
         this.#requestPostToolResponse();
