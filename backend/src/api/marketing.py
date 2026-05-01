@@ -137,7 +137,7 @@ async def update_campaign(
     campaign = result.scalar_one_or_none()
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found")
-    for field, value in body.model_dump(exclude_none=True).items():
+    for field, value in body.model_dump(exclude_unset=True).items():
         if field == "send_at" and value:
             value = datetime.fromisoformat(value)
         setattr(campaign, field, value)
@@ -213,7 +213,7 @@ async def get_audience_count(
             .where(
                 and_(
                     JobCard.shop_id == shop_uuid,
-                    JobCard.services.cast(String).contains(service_type),
+                    JobCard.services.cast(String).contains(f'"description": "{service_type}"'),
                 )
             )
             .distinct()
