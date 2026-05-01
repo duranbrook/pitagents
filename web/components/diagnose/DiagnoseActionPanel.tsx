@@ -16,9 +16,10 @@ export function DiagnoseActionPanel({ diagnosis, repairPlan, jobCardId, customer
   const [smsPreview, setSmsPreview] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
 
-  const partsNeeded = repairPlan
-    .filter(r => r.repair_desc || r.desc)
+  const partsNeeded = diagnosis
+    .filter(d => d.part)
     .slice(0, 5)
+    .map(d => d.part as string)
 
   const totalLaborHrs = repairPlan.reduce((sum, r) => sum + (r.labor_hrs || 0), 0)
 
@@ -48,8 +49,8 @@ export function DiagnoseActionPanel({ diagnosis, repairPlan, jobCardId, customer
         {partsNeeded.length === 0 ? (
           <div style={{ color: '#4b5563', fontSize: '13px' }}>No parts identified yet</div>
         ) : (
-          partsNeeded.map((r, i) => (
-            <div key={i} style={cardStyle}>{r.repair_desc || r.desc}</div>
+          partsNeeded.map((part, i) => (
+            <div key={i} style={cardStyle}>{part}</div>
           ))
         )}
       </div>
