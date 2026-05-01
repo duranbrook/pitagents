@@ -405,14 +405,13 @@ async def send_payment_link(
     stripe_key = os.getenv("STRIPE_SECRET_KEY", "")
     if not stripe_key:
         raise HTTPException(status_code=400, detail="Stripe not configured")
-    stripe_lib.api_key = stripe_key
     session = stripe_lib.checkout.Session.create(
         payment_method_types=["card"],
         line_items=[{
             "price_data": {
                 "currency": "usd",
                 "product_data": {"name": f"Invoice {inv.number}"},
-                "unit_amount": int(float(inv.total or 0) * 100),
+                "unit_amount": int(Decimal(str(inv.total or 0)) * 100),
             },
             "quantity": 1,
         }],
@@ -420,6 +419,7 @@ async def send_payment_link(
         success_url=os.getenv("FRONTEND_URL", "http://localhost:3000") + f"/invoices?paid={iid}",
         cancel_url=os.getenv("FRONTEND_URL", "http://localhost:3000") + f"/invoices/{iid}",
         metadata={"invoice_id": str(iid), "shop_id": shop_id},
+        api_key=stripe_key,
     )
     inv.stripe_payment_link = session.url
     await db.commit()
@@ -453,7 +453,7 @@ async def send_financing_link(
         link = (
             f"https://apply.synchronybank.com/car-care"
             f"?dealer={settings.synchrony_dealer_id}"
-            f"&amount={int(float(inv.total or 0))}"
+            f"&amount={int(Decimal(str(inv.total or 0)))}"
             f"&ref={iid}"
         )
     elif body.provider == "wisetack":
@@ -462,7 +462,7 @@ async def send_financing_link(
         link = (
             f"https://app.wisetack.com/#/apply"
             f"?merchant={settings.wisetack_merchant_id}"
-            f"&loan_amount={int(float(inv.total or 0))}"
+            f"&loan_amount={int(Decimal(str(inv.total or 0)))}"
             f"&ref={iid}"
         )
     else:

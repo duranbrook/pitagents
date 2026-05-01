@@ -186,7 +186,9 @@ export interface ShopSettings {
   stripe_publishable_key: string | null
   mitchell1_enabled: boolean
   synchrony_enabled: boolean
+  synchrony_dealer_id: string | null
   wisetack_enabled: boolean
+  wisetack_merchant_id: string | null
   quickbooks_enabled: boolean
   financing_threshold: string
 }

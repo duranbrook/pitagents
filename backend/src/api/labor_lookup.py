@@ -1,9 +1,12 @@
+import logging
 import os
 import httpx
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
 from src.api.deps import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/labor-lookup", tags=["labor-lookup"])
 
@@ -48,6 +51,6 @@ async def lookup_labor_time(
         if resp.status_code == 200:
             data = resp.json()
             return LaborLookupResponse(hours=data.get("laborHours"), source="mitchell1")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Mitchell1 lookup failed: %s", e)
     return LaborLookupResponse(hours=None, source="manual")
