@@ -1,4 +1,4 @@
-import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder } from './types'
+import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder, TimeEntry, Expense, PLSummary, PaymentsSummary, PaymentEvent } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -377,3 +377,45 @@ export const createPurchaseOrder = (vendorId: string, data: { items: PurchaseOrd
 
 export const receivePurchaseOrder = (vendorId: string, poId: string): Promise<PurchaseOrder> =>
   api.post(`/vendors/${vendorId}/orders/${poId}/receive`).then(r => r.data)
+
+// ── Time Tracking ─────────────────────────────────────────────────────────
+
+export const getTimeEntries = (params?: { user_id?: string; job_card_id?: string }): Promise<TimeEntry[]> =>
+  api.get('/time-entries', { params }).then(r => r.data)
+
+export const getActiveTimeEntries = (): Promise<TimeEntry[]> =>
+  api.get('/time-entries/active').then(r => r.data)
+
+export const clockIn = (data: { task_type: string; job_card_id?: string; notes?: string }): Promise<TimeEntry> =>
+  api.post('/time-entries/clock-in', data).then(r => r.data)
+
+export const clockOut = (entryId: string): Promise<TimeEntry> =>
+  api.post(`/time-entries/${entryId}/clock-out`).then(r => r.data)
+
+// ── Payments ──────────────────────────────────────────────────────────────
+
+export const getPaymentsSummary = (): Promise<PaymentsSummary> =>
+  api.get('/payments/summary').then(r => r.data)
+
+export const getPaymentHistory = (): Promise<PaymentEvent[]> =>
+  api.get('/payments/history').then(r => r.data)
+
+export const chasePayment = (invoiceId: string): Promise<{ status: string; payment_link: string }> =>
+  api.post(`/payments/chase/${invoiceId}`).then(r => r.data)
+
+// ── Accounting ────────────────────────────────────────────────────────────
+
+export const getExpenses = (params?: { category?: string }): Promise<Expense[]> =>
+  api.get('/accounting/expenses', { params }).then(r => r.data)
+
+export const createExpense = (data: Partial<Expense>): Promise<Expense> =>
+  api.post('/accounting/expenses', data).then(r => r.data)
+
+export const deleteExpense = (id: string): Promise<void> =>
+  api.delete(`/accounting/expenses/${id}`).then(() => undefined)
+
+export const getPLSummary = (period?: string): Promise<PLSummary> =>
+  api.get('/accounting/pl', { params: { period: period ?? 'mtd' } }).then(r => r.data)
+
+export const syncToQuickBooks = (): Promise<{ invoices_synced: number; expenses_synced: number }> =>
+  api.post('/accounting/sync-to-qb').then(r => r.data)

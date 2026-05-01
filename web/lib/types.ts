@@ -290,3 +290,59 @@ export interface PurchaseOrder {
   received_at: string | null
   created_at: string
 }
+
+// ── Time Tracking ─────────────────────────────────────────────────────────
+
+export interface TimeEntry {
+  id: string
+  shop_id: string
+  user_id: string
+  job_card_id: string | null
+  task_type: 'Repair' | 'Diagnosis' | 'Admin'
+  started_at: string
+  ended_at: string | null
+  duration_minutes: number | null
+  notes: string | null
+  qb_synced: boolean
+  created_at: string
+}
+
+// ── Accounting ────────────────────────────────────────────────────────────
+
+export interface Expense {
+  id: string
+  shop_id: string
+  description: string
+  amount: number
+  category: string
+  vendor: string | null
+  expense_date: string
+  qb_synced: boolean
+  created_at: string
+}
+
+export interface PLSummary {
+  period: string
+  revenue: number
+  expenses: number
+  net_profit: number
+  outstanding_ar: number
+}
+
+// ── Payments ──────────────────────────────────────────────────────────────
+
+export interface PaymentsSummary {
+  outstanding: number
+  overdue: number
+  collected_this_month: number
+  total_invoices: number
+}
+
+export interface PaymentEvent {
+  id: string
+  invoice_id: string
+  amount: number
+  method: string
+  recorded_at: string | null
+  notes: string | null
+}
