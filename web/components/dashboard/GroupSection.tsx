@@ -1,3 +1,5 @@
+'use client'
+
 import type { GroupConfig } from './tiles'
 import { FeatureTile } from './FeatureTile'
 
