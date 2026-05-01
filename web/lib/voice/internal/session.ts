@@ -33,7 +33,7 @@ function buildDefaultTurnDetection(session: TransportSessionConfig): RealtimeTur
   return {
     type: "semantic_vad",
     createResponse: true,
-    eagerness: "high",
+    eagerness: "low",
     ...(session.outputMode === "audio" || session.outputMode === "text+audio"
       ? {}
       : { interruptResponse: false }),

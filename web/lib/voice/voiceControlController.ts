@@ -1331,8 +1331,9 @@ class VoiceControlControllerImpl implements VoiceControlController {
     }
 
     if (event.type === "response.done") {
-      const response = event.response as { output?: unknown[] } | undefined;
+      const response = event.response as { output?: unknown[]; status?: string } | undefined;
       const items = Array.isArray(response?.output) ? response.output : [];
+      console.log('[voice] response.done', response?.status, items.map((i: any) => i?.type + (i?.name ? ':' + i.name : '') + (i?.text ? ' text="' + String(i.text).slice(0, 80) + '"' : '')))
       this.#handleResponseDone(event, items.filter(isFunctionCallItem));
     }
   };
