@@ -165,7 +165,7 @@ export interface Invoice {
   number: string
   customer_id: string | null
   vehicle_id: string | null
-  status: 'pending' | 'partial' | 'paid' | 'void'
+  status: 'pending' | 'partial' | 'paid' | 'void' | 'overdue'
   line_items: InvoiceLineItem[]
   subtotal: number
   tax_rate: number

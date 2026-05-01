@@ -18,11 +18,22 @@ export default function InvoicesPage() {
     queryKey: ['invoices', filter],
     queryFn: () => getInvoices(filter !== 'all' ? { status: filter } : undefined),
   })
+  const { data: allInvoices = [] } = useQuery({
+    queryKey: ['invoices', 'all'],
+    queryFn: () => getInvoices(),
+  })
   const { data: settings } = useQuery({ queryKey: ['shop-settings'], queryFn: getShopSettings })
   const financingThreshold = parseFloat(settings?.financing_threshold ?? '500')
 
-  const outstanding = invoices.filter(i => i.status !== 'paid').reduce((s, i) => s + Number(i.balance), 0)
-  const collected = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount_paid), 0)
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const outstanding = allInvoices
+    .filter(i => i.status !== 'paid' && i.status !== 'void')
+    .reduce((s, i) => s + Number(i.balance), 0)
+  const collected = allInvoices
+    .filter(i => i.status === 'paid' && new Date(i.created_at) >= startOfMonth)
+    .reduce((s, i) => s + Number(i.amount_paid), 0)
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -34,7 +45,7 @@ export default function InvoicesPage() {
           {[
             { label: 'Outstanding', value: `$${outstanding.toFixed(0)}`, color: '#f87171' },
             { label: 'Collected this month', value: `$${collected.toFixed(0)}`, color: '#4ade80' },
-            { label: 'Total invoices', value: String(invoices.length), color: '#fff' },
+            { label: 'Total invoices', value: String(allInvoices.length), color: '#fff' },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 9, padding: '11px 14px' }}>
               <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color }}>{value}</div>

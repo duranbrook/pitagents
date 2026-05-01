@@ -37,7 +37,7 @@ export default function FinancingModal({ invoice, onClose }: Props) {
           <>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Offer Financing</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>
-              Balance: <strong style={{ color: '#f87171' }}>${invoice.balance.toFixed(2)}</strong>
+              Balance: <strong style={{ color: '#f87171' }}>${Number(invoice.balance).toFixed(2)}</strong>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
               {PROVIDERS.map(p => (
