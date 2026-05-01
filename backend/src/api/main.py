@@ -24,6 +24,7 @@ from src.api.inventory import router as inventory_router
 from src.api.vendors import router as vendors_router
 from src.api.time_tracking import router as time_tracking_router
 from src.api.accounting import router as accounting_router
+from src.api.payments import router as payments_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -62,3 +63,4 @@ app.include_router(inventory_router)
 app.include_router(vendors_router)
 app.include_router(time_tracking_router)
 app.include_router(accounting_router)
+app.include_router(payments_router)
