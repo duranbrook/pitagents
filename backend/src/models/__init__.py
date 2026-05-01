@@ -10,9 +10,10 @@ from src.models.vehicle import Vehicle
 from src.models.customer_message import CustomerMessage
 from src.models.shop_settings import ShopSettings
 from src.models.job_card import JobCardColumn, JobCard
+from src.models.invoice import Invoice, InvoicePaymentEvent
 
 __all__ = [
     "Shop", "User", "InspectionSession", "Report", "MediaFile",
     "ChatMessage", "Quote", "Customer", "Vehicle", "CustomerMessage",
-    "ShopSettings", "JobCardColumn", "JobCard",
+    "ShopSettings", "JobCardColumn", "JobCard", "Invoice", "InvoicePaymentEvent",
 ]

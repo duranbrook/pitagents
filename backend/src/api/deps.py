@@ -40,3 +40,13 @@ def get_current_shop_id(current_user: dict = Depends(get_current_user)) -> str:
             detail="Token does not contain shop_id",
         )
     return shop_id
+
+
+def get_current_user_id(current_user: dict = Depends(get_current_user)) -> str:
+    user_id = current_user.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token does not contain user id",
+        )
+    return user_id
