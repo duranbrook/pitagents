@@ -7,6 +7,7 @@ from typing import Optional, Literal
 from src.db.base import get_db
 from src.api.deps import get_current_shop_id
 from src.models.job_card import JobCardColumn, JobCard
+from src.models.inventory import InventoryItem
 from sqlalchemy import func as sql_func
 
 router = APIRouter(prefix="/job-cards", tags=["job-cards"])
@@ -324,7 +325,34 @@ async def update_job_card(
     if body.services is not None:
         card.services = [s.model_dump() for s in body.services]
     if body.parts is not None:
-        card.parts = [p.model_dump() for p in body.parts]
+        old_parts = card.parts or []
+        new_parts = [p.model_dump() for p in body.parts]
+
+        # Decrement inventory stock for parts with inventory_item_id
+        for part in new_parts:
+            inv_id_str = part.get("inventory_item_id")
+            if not inv_id_str:
+                continue
+
+            # Find matching old part, if any
+            old_match = next((p for p in old_parts if p.get("inventory_item_id") == inv_id_str), None)
+            old_qty = float(old_match.get("qty", 0)) if old_match else 0
+            new_qty = float(part.get("qty", 0))
+            delta = int(new_qty - old_qty)
+
+            # Only decrement if quantity increased
+            if delta > 0:
+                inv_result = await db.execute(
+                    select(InventoryItem).where(
+                        InventoryItem.id == uuid.UUID(inv_id_str),
+                        InventoryItem.shop_id == uuid.UUID(shop_id),
+                    )
+                )
+                inv_item = inv_result.scalar_one_or_none()
+                if inv_item:
+                    inv_item.quantity = max(0, (inv_item.quantity or 0) - delta)
+
+        card.parts = new_parts
     if body.notes is not None:
         card.notes = body.notes
     if body.status is not None:

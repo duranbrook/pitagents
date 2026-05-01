@@ -135,3 +135,43 @@ def test_get_job_card_404(client, auth_headers, mock_db):
     mock_db.execute.return_value.scalar_one_or_none.return_value = None
     resp = client.get(f"/job-cards/{uuid.uuid4()}", headers=auth_headers)
     assert resp.status_code == 404
+
+
+def test_adding_part_with_inventory_item_decrements_stock(client, auth_headers, mock_db):
+    from unittest.mock import MagicMock
+    import uuid as uuid_mod
+
+    card_id = uuid_mod.uuid4()
+    inv_id = uuid_mod.uuid4()
+
+    card = MagicMock()
+    card.id = card_id
+    card.shop_id = uuid_mod.UUID(SHOP_ID)
+    card.number = "JC-0001"
+    card.customer_id = None
+    card.vehicle_id = None
+    card.column_id = None
+    card.technician_ids = []
+    card.services = []
+    card.parts = []
+    card.notes = None
+    card.status = "active"
+    card.created_at = datetime(2026, 5, 1, 0, 0, 0, tzinfo=timezone.utc)
+    card.updated_at = datetime(2026, 5, 1, 0, 0, 0, tzinfo=timezone.utc)
+
+    inv_item = MagicMock()
+    inv_item.id = inv_id
+    inv_item.quantity = 10
+
+    execute_results = [
+        MagicMock(scalar_one_or_none=MagicMock(return_value=card)),
+        MagicMock(scalar_one_or_none=MagicMock(return_value=inv_item)),
+    ]
+    mock_db.execute.side_effect = execute_results
+
+    resp = client.patch(
+        f"/job-cards/{card_id}",
+        json={"parts": [{"name": "Oil Filter", "sku": "OF-001", "qty": 2, "unit_cost": 4.0, "sell_price": 9.99, "inventory_item_id": str(inv_id)}]},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
