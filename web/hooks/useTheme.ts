@@ -10,6 +10,8 @@ const OVERLAYS: Record<BgTheme, string> = {
   vivid: 'rgba(0,0,0,0.22)',
 }
 
+const VALID_THEMES = new Set<string>(['dark', 'moody', 'vivid'])
+
 function applyOverlay(theme: BgTheme) {
   document.documentElement.style.setProperty('--bg-overlay', OVERLAYS[theme])
 }
@@ -18,8 +20,8 @@ export function useTheme() {
   const [theme, setThemeState] = useState<BgTheme>('moody')
 
   useEffect(() => {
-    const saved = localStorage.getItem('bgTheme') as BgTheme | null
-    const initial: BgTheme = saved && OVERLAYS[saved] ? saved : 'moody'
+    const saved = localStorage.getItem('bgTheme')
+    const initial: BgTheme = saved && VALID_THEMES.has(saved) ? (saved as BgTheme) : 'moody'
     setThemeState(initial)
     applyOverlay(initial)
   }, [])
