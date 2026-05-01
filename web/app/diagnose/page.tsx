@@ -35,19 +35,19 @@ export default function DiagnosePage() {
   const handleAnalyze = async (params: VehicleContext) => {
     setAnalyzing(true)
     try {
-      const [analyzeResult, tsbResult, recallResult, maintenanceResult] = await Promise.all([
+      const [analyzeRes, tsbRes, recallRes, maintenanceRes] = await Promise.allSettled([
         diagnoseAnalyze(params),
         diagnoseTsb(params.year, params.make, params.model),
         diagnoseRecalls(params.year, params.make, params.model),
         diagnoseMaintenance(params.year, params.make, params.model, params.mileage),
       ])
-      setDiagnosis(analyzeResult.diagnosis)
-      setRepairPlan(analyzeResult.repair_plan)
-      setTsbs(tsbResult.tsbs)
-      setRecalls(recallResult.recalls)
-      setMaintenance(maintenanceResult.maintenance)
-    } catch (_) {
-      // partial results ok
+      if (analyzeRes.status === 'fulfilled') {
+        setDiagnosis(analyzeRes.value.diagnosis)
+        setRepairPlan(analyzeRes.value.repair_plan)
+      }
+      if (tsbRes.status === 'fulfilled') setTsbs(tsbRes.value.tsbs)
+      if (recallRes.status === 'fulfilled') setRecalls(recallRes.value.recalls)
+      if (maintenanceRes.status === 'fulfilled') setMaintenance(maintenanceRes.value.maintenance)
     } finally {
       setAnalyzing(false)
     }
