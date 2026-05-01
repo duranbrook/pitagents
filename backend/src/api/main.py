@@ -22,6 +22,7 @@ from src.api.appointments import router as appointments_router, public_router as
 from src.api.service_reminders import router as reminders_router
 from src.api.inventory import router as inventory_router
 from src.api.vendors import router as vendors_router
+from src.api.time_tracking import router as time_tracking_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -58,3 +59,4 @@ app.include_router(booking_router)
 app.include_router(reminders_router)
 app.include_router(inventory_router)
 app.include_router(vendors_router)
+app.include_router(time_tracking_router)
