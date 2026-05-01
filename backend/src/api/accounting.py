@@ -187,8 +187,8 @@ async def get_pl_summary(
     expenses_result = await db.execute(
         select(sql_func.coalesce(sql_func.sum(Expense.amount), 0)).where(
             Expense.shop_id == sid,
-            Expense.created_at >= start,
-            Expense.created_at <= end,
+            Expense.expense_date >= start.date(),
+            Expense.expense_date <= end.date(),
         )
     )
     expenses_total = float(expenses_result.scalar() or 0)
@@ -225,17 +225,12 @@ async def sync_to_quickbooks(
     )
     unsynced_expenses = exp_result.scalars().all()
 
-    inv_result = await db.execute(
-        select(Invoice).where(Invoice.shop_id == sid, Invoice.status == "paid")
-    )
-    unsynced_invoices = [i for i in inv_result.scalars().all() if not getattr(i, "qb_synced", False)]
-
     for exp in unsynced_expenses:
         exp.qb_synced = True
     await db.commit()
 
     return {
-        "invoices_synced": len(unsynced_invoices),
+        "invoices_synced": 0,
         "expenses_synced": len(unsynced_expenses),
         "status": "ok",
     }
