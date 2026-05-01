@@ -13,7 +13,7 @@ Do not chat. If a required argument is unclear, ask one brief question.`
 export function VoiceControlWidget() {
   const router = useRouter()
   const context = useVoiceContext()
-  const [activationMode, setActivationMode] = useState<ActivationMode>('push-to-talk')
+  const [activationMode, setActivationMode] = useState<ActivationMode>('vad')
 
   const tools = useMemo(() => createVoiceTools({
     navigate: path => router.push(path),
