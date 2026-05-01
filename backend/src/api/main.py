@@ -15,6 +15,7 @@ from src.api import customers
 from src.api import vehicles
 from src.api import customer_messages
 from src.api.shop_settings import router as shop_settings_router
+from src.api.job_cards import router as job_cards_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -43,3 +44,4 @@ app.include_router(customers.router)
 app.include_router(vehicles.router)
 app.include_router(customer_messages.router)
 app.include_router(shop_settings_router)
+app.include_router(job_cards_router)
