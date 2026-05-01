@@ -192,3 +192,46 @@ export interface ShopSettings {
   quickbooks_enabled: boolean
   financing_threshold: string
 }
+
+// ── Appointments ──────────────────────────────────────────────────────────
+
+export interface Appointment {
+  id: string
+  shop_id: string
+  customer_id: string | null
+  vehicle_id: string | null
+  starts_at: string
+  ends_at: string
+  service_requested: string | null
+  status: 'pending' | 'confirmed' | 'cancelled'
+  notes: string | null
+  source: 'manual' | 'booking_link'
+  job_card_id: string | null
+  customer_name: string | null
+  customer_phone: string | null
+  customer_email: string | null
+  created_at: string
+}
+
+export interface BookingConfig {
+  slug: string
+  available_services: string[]
+  working_hours_start: string
+  working_hours_end: string
+  slot_duration_minutes: string
+  working_days: number[]
+}
+
+// ── Service Reminders ─────────────────────────────────────────────────────
+
+export interface ServiceReminderConfig {
+  id: string
+  shop_id: string
+  service_type: string
+  window_start_months: number
+  window_end_months: number
+  sms_enabled: boolean
+  email_enabled: boolean
+  message_template: string | null
+  created_at: string
+}

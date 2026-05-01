@@ -1,4 +1,4 @@
-import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings } from './types'
+import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -309,3 +309,29 @@ export const sendFinancingLink = (id: string, provider: string): Promise<{ appli
 
 export const recordPayment = (id: string, data: { amount: number; method: string; notes?: string }): Promise<Invoice> =>
   api.post(`/invoices/${id}/record-payment`, data).then(r => r.data)
+
+// ── Appointments ──────────────────────────────────────────────────────────
+export const getAppointments = (params?: { year?: number; month?: number }): Promise<Appointment[]> =>
+  api.get('/appointments', { params }).then(r => r.data)
+
+export const createAppointment = (data: Partial<Appointment>): Promise<Appointment> =>
+  api.post('/appointments', data).then(r => r.data)
+
+export const updateAppointment = (id: string, data: Partial<Appointment>): Promise<Appointment> =>
+  api.patch(`/appointments/${id}`, data).then(r => r.data)
+
+export const convertAppointmentToJobCard = (id: string): Promise<{ job_card_id: string; number: string }> =>
+  api.post(`/appointments/${id}/convert-to-job-card`).then(r => r.data)
+
+// ── Service Reminders ─────────────────────────────────────────────────────
+export const getReminderConfigs = (): Promise<ServiceReminderConfig[]> =>
+  api.get('/reminders/config').then(r => r.data)
+
+export const createReminderConfig = (data: Partial<ServiceReminderConfig>): Promise<ServiceReminderConfig> =>
+  api.post('/reminders/config', data).then(r => r.data)
+
+export const updateReminderConfig = (id: string, data: Partial<ServiceReminderConfig>): Promise<ServiceReminderConfig> =>
+  api.patch(`/reminders/config/${id}`, data).then(r => r.data)
+
+export const runReminderJob = (): Promise<{ reminders_sent: number }> =>
+  api.post('/reminders/run').then(r => r.data)
