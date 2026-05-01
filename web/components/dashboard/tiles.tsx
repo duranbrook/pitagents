@@ -153,8 +153,8 @@ export const GROUPS: GroupConfig[] = [
     accent: '#06b6d4',
     tiles: [
       { id: 'parts',     label: 'Parts Lookup', icon: IconWrench,   status: 'live', route: '/chat' },
-      { id: 'inventory', label: 'Inventory',    icon: IconBox,      status: 'soon' },
-      { id: 'vendors',   label: 'Vendors',      icon: IconBuilding, status: 'soon' },
+      { id: 'inventory', label: 'Inventory',    icon: IconBox,      status: 'live', route: '/inventory' },
+      { id: 'vendors',   label: 'Vendors',      icon: IconBuilding, status: 'live', route: '/vendors' },
     ],
   },
 ]

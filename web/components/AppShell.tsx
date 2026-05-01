@@ -16,6 +16,8 @@ const NAV_ITEMS = [
   { href: '/invoices',      label: 'Invoices',     icon: <InvoicesIcon />,     exact: false },
   { href: '/appointments',  label: 'Appointments', icon: <AppointmentsIcon />, exact: false },
   { href: '/reminders',     label: 'Reminders',    icon: <RemindersIcon />,    exact: false },
+  { href: '/inventory',     label: 'Inventory',    icon: <InventoryIcon />,    exact: false },
+  { href: '/vendors',       label: 'Vendors',      icon: <VendorsIcon />,      exact: false },
   { href: '/inspect',       label: 'Inspect',      icon: <InspectIcon />,      exact: false },
   { href: '/chat',          label: 'Chat',         icon: <ChatIcon />,         exact: false },
 ]
@@ -170,4 +172,10 @@ function AppointmentsIcon() {
 }
 function RemindersIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M8 2a4 4 0 0 1 4 4v3l1 2H3l1-2V6a4 4 0 0 1 4-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.5"/></svg>
+}
+function InventoryIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M2 5l6-3 6 3v7l-6 3-6-3V5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" strokeWidth="1.3"/><line x1="2" y1="5" x2="14" y2="5" stroke="currentColor" strokeWidth="1.3"/></svg>
+}
+function VendorsIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><rect x="2" y="4" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.5"/><path d="M5 14V9h6v5" stroke="currentColor" strokeWidth="1.3"/><rect x="6" y="6" width="2" height="2" rx="0.3" stroke="currentColor" strokeWidth="1.2"/><rect x="10" y="6" width="2" height="2" rx="0.3" stroke="currentColor" strokeWidth="1.2"/><line x1="8" y1="2" x2="8" y2="4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
 }
