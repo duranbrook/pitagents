@@ -138,7 +138,7 @@ def _cfg_to_response(cfg: BookingConfig) -> BookingConfigResponse:
 
 
 # ---------------------------------------------------------------------------
-# Routes — convert-to-job-card MUST come before /{appt_id}
+# Routes
 # ---------------------------------------------------------------------------
 
 @router.get("", response_model=list[AppointmentResponse])
@@ -184,20 +184,6 @@ async def create_appointment(
     await db.commit()
     await db.refresh(appt)
     return _appt_to_response(appt)
-
-
-@router.post(
-    "/convert-to-job-card",
-    status_code=status.HTTP_201_CREATED,
-)
-async def convert_to_job_card(
-    appt_id: str,
-    shop_id: str = Depends(get_current_shop_id),
-    db: AsyncSession = Depends(get_db),
-):
-    """This route handles /appointments/convert-to-job-card with appt_id as query param.
-    See the /{appt_id}/convert-to-job-card route below for the primary endpoint."""
-    raise HTTPException(status_code=422, detail="Use POST /appointments/{appt_id}/convert-to-job-card")
 
 
 @router.post(

@@ -91,7 +91,7 @@ class ServiceReminder(Base):
     status = Column(String(20), default="active", nullable=False)  # active|booked|inactive
     last_sent_at = Column(DateTime(timezone=True), nullable=True)
     last_service_at = Column(DateTime(timezone=True), nullable=True)
-    send_count = Column(Integer, default=0)
+    send_count = Column(Integer, nullable=False, server_default=sa.text("0"), default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     def __init__(self, **kwargs):

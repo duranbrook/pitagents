@@ -55,7 +55,7 @@ def upgrade() -> None:
         sa.Column("status", sa.String(length=20), nullable=False, server_default="active"),
         sa.Column("last_sent_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("last_service_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("send_count", sa.Integer(), nullable=True, server_default="0"),
+        sa.Column("send_count", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
