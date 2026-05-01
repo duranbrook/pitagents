@@ -9,10 +9,11 @@ import { VoiceControlWidget } from './VoiceControlWidget'
 import { pravatarUrl } from '@/lib/avatar'
 
 const NAV_ITEMS = [
-  { href: '/customers', label: 'Customers', icon: <CustomersIcon /> },
-  { href: '/reports',   label: 'Reports',   icon: <ReportsIcon /> },
-  { href: '/inspect',   label: 'Inspect',   icon: <InspectIcon /> },
-  { href: '/chat',      label: 'Chat',      icon: <ChatIcon /> },
+  { href: '/',          label: 'Home',      icon: <HomeIcon />,      exact: true },
+  { href: '/customers', label: 'Customers', icon: <CustomersIcon />, exact: false },
+  { href: '/reports',   label: 'Reports',   icon: <ReportsIcon />,   exact: false },
+  { href: '/inspect',   label: 'Inspect',   icon: <InspectIcon />,   exact: false },
+  { href: '/chat',      label: 'Chat',      icon: <ChatIcon />,      exact: false },
 ]
 
 function getEmail(): string {
@@ -86,7 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Nav items */}
         {NAV_ITEMS.map(item => {
-          const active = pathname.startsWith(item.href)
+          const active = item.exact ? pathname === item.href : pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}
@@ -139,6 +140,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   )
 }
 
+function HomeIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M2 7l6-5 6 5v7H2V7z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><rect x="6" y="10" width="4" height="4" rx="0.5" stroke="currentColor" strokeWidth="1.3"/></svg>
+}
 function CustomersIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 13c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
 }
