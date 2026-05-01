@@ -78,13 +78,13 @@ export function SettingsDropdown({ email, onLogout }: Props) {
         { label: 'Profile & Account', icon: <PersonIcon /> },
         { label: 'Shop Settings', icon: <SettingsIcon /> },
       ].map(row => (
-        <div
+        <button
           key={row.label}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', cursor: 'pointer', fontSize: 13, color: 'rgba(255,255,255,0.60)' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', width: '100%', cursor: 'pointer', fontSize: 13, color: 'rgba(255,255,255,0.60)', background: 'none', border: 'none', textAlign: 'left' }}
         >
           {row.icon}
           {row.label}
-        </div>
+        </button>
       ))}
 
       <div style={{ height: 1, background: 'rgba(255,255,255,0.07)' }} />
@@ -107,7 +107,12 @@ function PersonIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 13c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
 }
 function SettingsIcon() {
-  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="8" y1="5" x2="8" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
 }
 function SignOutIcon() {
   return <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 3H3v10h3M11 5l3 3-3 3M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
