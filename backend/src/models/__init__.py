@@ -11,9 +11,11 @@ from src.models.customer_message import CustomerMessage
 from src.models.shop_settings import ShopSettings
 from src.models.job_card import JobCardColumn, JobCard
 from src.models.invoice import Invoice, InvoicePaymentEvent
+from src.models.appointment import Appointment, BookingConfig
 
 __all__ = [
     "Shop", "User", "InspectionSession", "Report", "MediaFile",
     "ChatMessage", "Quote", "Customer", "Vehicle", "CustomerMessage",
     "ShopSettings", "JobCardColumn", "JobCard", "Invoice", "InvoicePaymentEvent",
+    "Appointment", "BookingConfig",
 ]
