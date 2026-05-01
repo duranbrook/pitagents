@@ -28,10 +28,7 @@ function severityIcon(s: string) {
 function FindingCard({ f }: { f: Finding }) {
   const { icon, color } = severityIcon(f.severity)
   return (
-    <div
-      className="rounded-xl p-4"
-      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
-    >
+    <div className="glass-card rounded-xl p-4">
       <div className="flex items-start gap-3 mb-2">
         <span className="text-base leading-none mt-0.5 flex-shrink-0" style={{ color }}>{icon}</span>
         <div className="flex-1 min-w-0">
@@ -65,10 +62,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
       <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
         {title}
       </p>
-      <div
-        className="rounded-xl p-4"
-        style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
-      >
+      <div className="glass-card rounded-xl p-4">
         {children}
       </div>
     </div>
@@ -408,11 +402,11 @@ function ReportsPageInner() {
 
   return (
     <AppShell>
-      <div className="flex h-full overflow-hidden">
+      <div className="flex h-full" style={{ padding: 16, gap: 12 }}>
         {/* Left panel: report list */}
         <div
-          className="w-64 flex-shrink-0 flex flex-col"
-          style={{ background: 'rgba(255,255,255,0.015)', borderRight: '1px solid rgba(255,255,255,0.07)' }}
+          className="glass-panel flex-shrink-0 flex flex-col overflow-y-auto"
+          style={{ width: 300, borderRadius: 12 }}
         >
           <div
             className="p-3 flex items-center gap-2"
@@ -460,7 +454,7 @@ function ReportsPageInner() {
         </div>
 
         {/* Right panel: report detail */}
-        <div className="flex-1 overflow-y-auto" style={{ background: '#030712' }}>
+        <div className="glass-panel flex-1 overflow-y-auto" style={{ borderRadius: 12, padding: '20px 24px' }}>
           {!selectedId ? (
             <div className="flex h-full items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.2)' }}>
               Select a report
@@ -470,7 +464,7 @@ function ReportsPageInner() {
               Loading…
             </div>
           ) : detail ? (
-            <div className="p-6 max-w-3xl space-y-5">
+            <div className="max-w-3xl space-y-5">
               {/* Vehicle header */}
               <div>
                 <h1 className="text-xl font-semibold text-white">
