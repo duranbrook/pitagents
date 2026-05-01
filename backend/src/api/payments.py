@@ -109,7 +109,10 @@ async def chase_payment(
     if not payment_link:
         stripe_key = os.getenv("STRIPE_SECRET_KEY", "")
         if stripe_key:
-            import stripe as stripe_lib
+            try:
+                import stripe as stripe_lib
+            except ImportError:
+                raise HTTPException(status_code=503, detail="Stripe package not installed")
             stripe_lib.api_key = stripe_key
             session = stripe_lib.checkout.Session.create(
                 payment_method_types=["card"],
