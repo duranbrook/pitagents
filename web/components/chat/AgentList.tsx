@@ -21,8 +21,8 @@ interface Props {
 export function AgentList({ selectedId, onSelect, lastMessages }: Props) {
   return (
     <div
-      className="flex flex-col h-full w-52 flex-shrink-0"
-      style={{ background: 'rgba(255,255,255,0.015)', borderRight: '1px solid rgba(255,255,255,0.07)' }}
+      className="flex flex-col h-full flex-shrink-0 glass-panel"
+      style={{ width: 208, borderRadius: 0, borderTop: 'none', borderBottom: 'none', borderLeft: 'none' }}
     >
       <div className="px-4 pt-5 pb-3">
         <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>

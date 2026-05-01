@@ -108,10 +108,16 @@ function InspectPageInner() {
 
   return (
     <AppShell>
-      <div className="flex h-full overflow-hidden">
+      <div className="flex h-full" style={{ padding: 16, gap: 12 }}>
         {/* Left panel: vehicle picker */}
-        <div className="w-56 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-y-auto">
-          <div className="p-3 border-b border-gray-800 flex-shrink-0">
+        <div
+          className="glass-panel flex-shrink-0 flex flex-col overflow-y-auto"
+          style={{ width: 220, borderRadius: 12 }}
+        >
+          <div
+            className="p-3 flex-shrink-0"
+            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+          >
             <span className="text-sm font-semibold text-white">Pick Vehicle</span>
           </div>
           <div className="flex-1 p-2">
@@ -123,9 +129,12 @@ function InspectPageInner() {
                       c.customer_id === selectedCustomerId ? null : c.customer_id,
                     )
                   }
-                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded text-left hover:bg-gray-800 text-xs font-semibold text-gray-300 transition-colors"
+                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded text-left text-xs font-semibold transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.7)' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                 >
-                  <span className="text-gray-500">
+                  <span style={{ color: 'rgba(255,255,255,0.3)' }}>
                     {selectedCustomerId === c.customer_id ? '▾' : '▸'}
                   </span>
                   <span className="truncate">{c.name}</span>
@@ -135,11 +144,12 @@ function InspectPageInner() {
                     <button
                       key={v.vehicle_id}
                       onClick={() => setSelectedVehicleId(v.vehicle_id)}
-                      className={`w-full flex items-center gap-2 pl-5 pr-2 py-1.5 rounded text-left text-xs transition-colors ${
-                        selectedVehicleId === v.vehicle_id
-                          ? 'bg-indigo-600/30 text-indigo-300'
-                          : 'text-gray-400 hover:bg-gray-800'
-                      }`}
+                      className="w-full flex items-center gap-2 pl-5 pr-2 py-1.5 rounded text-left text-xs transition-colors"
+                      style={selectedVehicleId === v.vehicle_id
+                        ? { background: 'rgba(217,119,6,0.18)', color: 'var(--accent)' }
+                        : { color: 'rgba(255,255,255,0.45)' }}
+                      onMouseEnter={e => { if (selectedVehicleId !== v.vehicle_id) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
+                      onMouseLeave={e => { if (selectedVehicleId !== v.vehicle_id) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                     >
                       <span>🚗</span>
                       <span className="truncate">
@@ -153,39 +163,45 @@ function InspectPageInner() {
         </div>
 
         {/* Right panel: upload flow */}
-        <div className="flex-1 bg-gray-950 overflow-y-auto">
+        <div className="glass-panel flex-1 overflow-y-auto" style={{ borderRadius: 12, padding: '20px 24px' }}>
           {!selectedVehicleId ? (
-            <div className="flex h-full items-center justify-center text-gray-600 text-sm">
+            <div className="flex h-full items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
               Select a vehicle to start an inspection
             </div>
           ) : (
-            <div className="p-6 max-w-2xl space-y-6">
+            <div className="max-w-2xl space-y-6">
               <div>
                 <h1 className="text-xl font-semibold text-white">
                   {selectedVehicle
                     ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`
                     : 'Inspection'}
                 </h1>
-                <p className="text-sm text-gray-400 mt-0.5">
+                <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   Upload inspection recording then photos
                 </p>
               </div>
 
               {/* Audio upload */}
-              <section className="border border-gray-700 rounded-xl p-5">
-                <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-3">
+              <section className="glass-card rounded-xl p-5">
+                <p
+                  className="text-xs uppercase tracking-widest font-semibold mb-3"
+                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                >
                   Audio / Video Recording
                 </p>
                 {!audioFile ? (
                   <div
                     onClick={() => audioInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center cursor-pointer hover:border-gray-500 transition-colors"
+                    className="rounded-xl p-8 text-center cursor-pointer transition-colors"
+                    style={{ border: '2px dashed rgba(255,255,255,0.15)' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.3)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'}
                   >
                     <p className="text-4xl mb-3">🎙</p>
-                    <p className="text-gray-400 text-sm font-medium">
+                    <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
                       Drop audio or video, or click to browse
                     </p>
-                    <p className="text-gray-600 text-xs mt-1">MP3, M4A, MP4, MOV, WAV</p>
+                    <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>MP3, M4A, MP4, MOV, WAV</p>
                     <input
                       ref={audioInputRef}
                       type="file"
@@ -196,7 +212,10 @@ function InspectPageInner() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 bg-gray-800 rounded-lg p-3">
+                    <div
+                      className="flex items-center gap-3 rounded-lg p-3"
+                      style={{ background: 'rgba(255,255,255,0.06)' }}
+                    >
                       <span className="text-xl">🎙</span>
                       <p className="text-sm text-white flex-1 truncate">{audioFile.name}</p>
                       <button
@@ -204,18 +223,21 @@ function InspectPageInner() {
                           setAudioFile(null)
                           setTranscript('')
                         }}
-                        className="text-gray-500 hover:text-gray-300 text-sm"
+                        className="text-sm transition-colors"
+                        style={{ color: 'rgba(255,255,255,0.35)' }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'}
                       >
                         ✕
                       </button>
                     </div>
                     {transcribing && (
-                      <p className="text-xs text-gray-500">Transcribing preview…</p>
+                      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Transcribing preview…</p>
                     )}
                     {transcript && !transcribing && (
-                      <div className="bg-gray-800 rounded-lg p-3">
-                        <p className="text-xs text-gray-500 mb-1.5">Transcript preview</p>
-                        <p className="text-xs text-gray-300 leading-relaxed line-clamp-6">
+                      <div className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                        <p className="text-xs mb-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Transcript preview</p>
+                        <p className="text-xs leading-relaxed line-clamp-6" style={{ color: 'rgba(255,255,255,0.6)' }}>
                           {transcript}
                         </p>
                       </div>
@@ -225,16 +247,20 @@ function InspectPageInner() {
               </section>
 
               {/* Photo upload */}
-              <section className="border border-gray-700 rounded-xl p-5">
-                <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-3">
+              <section className="glass-card rounded-xl p-5">
+                <p
+                  className="text-xs uppercase tracking-widest font-semibold mb-3"
+                  style={{ color: 'rgba(255,255,255,0.3)' }}
+                >
                   Inspection Photos{' '}
-                  <span className="normal-case font-normal text-gray-600">(optional, up to 20)</span>
+                  <span className="normal-case font-normal" style={{ color: 'rgba(255,255,255,0.2)' }}>(optional, up to 20)</span>
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {photoPreviews.map((src, i) => (
                     <div
                       key={i}
-                      className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-800 border border-gray-700"
+                      className="relative w-20 h-20 rounded-lg overflow-hidden"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
                     >
                       <img
                         src={src}
@@ -252,7 +278,16 @@ function InspectPageInner() {
                   {photos.length < 20 && (
                     <button
                       onClick={() => photoInputRef.current?.click()}
-                      className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-700 flex flex-col items-center justify-center text-gray-600 hover:text-gray-400 hover:border-gray-500 transition-colors text-xs gap-1"
+                      className="w-20 h-20 rounded-lg flex flex-col items-center justify-center transition-colors text-xs gap-1"
+                      style={{ border: '2px dashed rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.3)' }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.3)'
+                        ;(e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.15)'
+                        ;(e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'
+                      }}
                     >
                       <span className="text-xl">+</span>
                       <span>Add</span>
@@ -270,7 +305,10 @@ function InspectPageInner() {
               </section>
 
               {analyzeError && (
-                <p className="text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg px-4 py-3">
+                <p
+                  className="text-sm rounded-lg px-4 py-3"
+                  style={{ color: '#f87171', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}
+                >
                   {analyzeError}
                 </p>
               )}
@@ -278,7 +316,8 @@ function InspectPageInner() {
               <button
                 onClick={handleAnalyze}
                 disabled={!audioFile || !selectedVehicleId || analyzing}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
+                className="w-full text-white font-semibold py-3 rounded-xl transition-opacity"
+                style={{ background: 'var(--accent)', opacity: (!audioFile || !selectedVehicleId || analyzing) ? 0.5 : 1 }}
               >
                 {analyzing ? '⏳ Analyzing… (~30 seconds)' : '▶ Analyze Inspection'}
               </button>

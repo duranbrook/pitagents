@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { AppBackground } from '@/components/AppBackground'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,6 +15,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    let navigated = false
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/login`,
@@ -23,36 +25,45 @@ export default function LoginPage() {
           body: JSON.stringify({ email, password }),
         },
       )
-      if (!res.ok) {
-        setError('Invalid email or password')
-        return
-      }
+      if (!res.ok) { setError('Invalid email or password'); return }
       const data = await res.json()
       localStorage.setItem('token', data.access_token)
+      navigated = true
       router.push('/chat')
     } catch {
       setError('Could not connect to server')
     } finally {
-      setLoading(false)
+      if (!navigated) setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-lg">P</span>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <AppBackground />
+
+      <div
+        className="w-full max-w-sm glass-panel"
+        style={{ padding: '32px 28px', position: 'relative', zIndex: 1 }}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 mb-8">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'var(--accent)' }}
+          >
+            <span className="text-white font-bold text-lg">A</span>
           </div>
-          <span className="text-white text-xl font-semibold">PitAgents</span>
+          <span className="text-white text-xl font-bold tracking-tight">AutoShop</span>
         </div>
 
-        <h1 className="text-white text-2xl font-semibold mb-2">Sign in</h1>
-        <p className="text-gray-400 text-sm mb-8">Access your shop&apos;s AI team</p>
+        <h1 className="text-white text-2xl font-bold mb-1.5 tracking-tight">Sign in</h1>
+        <p className="text-sm mb-8" style={{ color: 'rgba(255,255,255,0.44)' }}>
+          Access your shop&apos;s AI team
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-300 mb-1.5" htmlFor="email">
+            <label className="block text-sm mb-1.5" style={{ color: 'rgba(255,255,255,0.65)' }} htmlFor="email">
               Email
             </label>
             <input
@@ -62,12 +73,18 @@ export default function LoginPage() {
               onChange={e => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="w-full bg-gray-800 text-gray-100 rounded-lg px-4 py-2.5 text-sm border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none"
+              style={{
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.12)',
+              }}
+              onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+              onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.12)')}
             />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1.5" htmlFor="password">
+            <label className="block text-sm mb-1.5" style={{ color: 'rgba(255,255,255,0.65)' }} htmlFor="password">
               Password
             </label>
             <input
@@ -77,24 +94,32 @@ export default function LoginPage() {
               onChange={e => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="w-full bg-gray-800 text-gray-100 rounded-lg px-4 py-2.5 text-sm border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none"
+              style={{
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.12)',
+              }}
+              onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
+              onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.12)')}
             />
           </div>
 
-          {error && (
-            <p className="text-red-400 text-sm">{error}</p>
-          )}
+          {error && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="w-full rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-opacity"
+            style={{
+              background: 'var(--accent)',
+              boxShadow: '0 2px 14px var(--accent-glow)',
+            }}
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 
-        <p className="text-gray-600 text-xs mt-6 text-center">
+        <p className="text-xs mt-6 text-center" style={{ color: 'rgba(255,255,255,0.28)' }}>
           Use <span className="font-mono">owner@shop.com</span> / <span className="font-mono">testpass</span>
         </p>
       </div>

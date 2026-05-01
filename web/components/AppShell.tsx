@@ -1,41 +1,57 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { AppBackground } from './AppBackground'
+import { SettingsDropdown } from './SettingsDropdown'
 import { VoiceControlWidget } from './VoiceControlWidget'
+import { pravatarUrl } from '@/lib/avatar'
 
 const NAV_ITEMS = [
-  { href: '/customers', label: 'Customers', icon: '👥' },
-  { href: '/reports', label: 'Reports', icon: '📋' },
-  { href: '/inspect', label: 'Inspect', icon: '🔍' },
-  { href: '/chat', label: 'Chat', icon: '💬' },
+  { href: '/customers', label: 'Customers', icon: <CustomersIcon /> },
+  { href: '/reports',   label: 'Reports',   icon: <ReportsIcon /> },
+  { href: '/inspect',   label: 'Inspect',   icon: <InspectIcon /> },
+  { href: '/chat',      label: 'Chat',      icon: <ChatIcon /> },
 ]
 
-function getInitials(): string {
+function getEmail(): string {
+  if (typeof window === 'undefined') return ''
   const token = localStorage.getItem('token')
-  if (!token) return '?'
+  if (!token) return ''
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
-    const email = payload.email as string
-    return email ? email[0].toUpperCase() : '?'
+    return (payload.email as string) ?? ''
   } catch {
-    return '?'
+    return ''
   }
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [initials, setInitials] = useState('·')
+  const [email, setEmail] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
       router.replace('/login')
     } else {
-      setInitials(getInitials())
+      setEmail(getEmail())
     }
   }, [router])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   function handleLogout() {
     localStorage.removeItem('token')
@@ -43,52 +59,95 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ background: '#030712' }}>
+    <div className="flex flex-col h-screen overflow-hidden">
+      <AppBackground />
+
       <nav
-        className="flex-shrink-0 h-11 flex items-center px-4 gap-1"
-        style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+        className="flex-shrink-0 h-12 flex items-center px-6 gap-1"
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          background: 'rgba(0,0,0,0.35)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(255,255,255,0.09)',
+        }}
       >
-        <div className="flex items-center gap-2 mr-6 flex-shrink-0">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-            <span className="text-white text-xs font-bold">P</span>
+        {/* Brand */}
+        <div className="flex items-center gap-2 mr-7 flex-shrink-0">
+          <div
+            className="w-[26px] h-[26px] rounded-md flex items-center justify-center"
+            style={{ background: 'var(--accent)' }}
+          >
+            <span className="text-white text-xs font-bold">A</span>
           </div>
-          <span className="text-white text-sm font-semibold">AutoShop</span>
+          <span className="text-white text-sm font-bold tracking-tight">AutoShop</span>
         </div>
+
+        {/* Nav items */}
         {NAV_ITEMS.map(item => {
           const active = pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-1.5 px-3 h-11 text-sm border-b-2 transition-colors whitespace-nowrap"
-              style={active ? {
-                color: 'var(--accent)',
-                borderBottomColor: 'var(--accent)',
-              } : {
-                color: 'rgba(255,255,255,0.4)',
-                borderBottomColor: 'transparent',
-              }}
+              className="flex items-center gap-1.5 px-3.5 h-12 text-[13px] font-medium border-b-2 transition-colors whitespace-nowrap"
+              style={
+                active
+                  ? { color: '#fff', borderBottomColor: 'var(--accent)' }
+                  : { color: 'rgba(255,255,255,0.48)', borderBottomColor: 'transparent' }
+              }
             >
-              <span className="text-base leading-none">{item.icon}</span>
+              {item.icon}
               {item.label}
             </Link>
           )
         })}
-        <div className="ml-auto flex items-center gap-2">
+
+        {/* Right side */}
+        <div className="ml-auto flex items-center gap-3">
           <VoiceControlWidget />
-          <button
-            onClick={handleLogout}
-            title="Log out"
-            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
-            style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
-          >
-            {initials}
-          </button>
+          {/* Avatar + settings dropdown */}
+          <div ref={settingsRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setSettingsOpen(v => !v)}
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'block' }}
+            >
+              <img
+                src={pravatarUrl(email || 'default', 40)}
+                alt="Settings"
+                style={{
+                  width: 32, height: 32, borderRadius: '50%', objectFit: 'cover',
+                  border: '2px solid rgba(217,119,6,0.5)',
+                  display: 'block',
+                }}
+              />
+            </button>
+            {settingsOpen && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, zIndex: 100 }}>
+                <SettingsDropdown email={email} onLogout={handleLogout} />
+              </div>
+            )}
+          </div>
         </div>
       </nav>
-      <main className="flex-1 min-h-0 overflow-hidden">
+
+      <main className="flex-1 min-h-0 overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
         {children}
       </main>
     </div>
   )
+}
+
+function CustomersIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 13c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+}
+function ReportsIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="5" y1="9" x2="9" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+}
+function InspectIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><circle cx="8" cy="8" r="5" stroke="currentColor" strokeWidth="1.5"/><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.5"/></svg>
+}
+function ChatIcon() {
+  return <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M2 3h12v8H2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M5 14h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
 }
