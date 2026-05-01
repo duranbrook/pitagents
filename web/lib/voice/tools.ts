@@ -20,7 +20,12 @@ export function createVoiceTools(dispatchers: {
   selectReport: (query: string) => void
   editLine: (service: string, field: EditField, value: number) => void
   addLine: (service: string, hours: number, rate: number, parts: number) => void
+  agentNames?: string[]
 }): VoiceTool<any>[] {
+  const agentList = dispatchers.agentNames ?? []
+  const agentDesc = agentList.length > 0
+    ? `Available agents: ${agentList.map(n => `"${n}"`).join(', ')}.`
+    : 'Say the agent\'s role name.'
   return [
     defineVoiceTool({
       name: 'navigate_to_tab',
@@ -34,14 +39,41 @@ export function createVoiceTools(dispatchers: {
       },
     }),
     defineVoiceTool({
-      name: 'select_agent',
-      description: 'Select a chat agent by name. Available agents are "Assistant" and "Tom".',
+      name: 'scroll',
+      description: 'Scroll the current page up or down. Use when the user says "scroll down", "scroll up", "go down", "go up", or similar.',
       parameters: z.object({
-        name: z.string().describe('Agent name, e.g. "Assistant" or "Tom"'),
+        direction: z.enum(['up', 'down']).describe('Direction to scroll'),
+        amount: z.enum(['small', 'medium', 'large']).optional().describe('How far: small=200px, medium=500px, large=to bottom/top. Defaults to medium.'),
+      }),
+      execute: ({ direction, amount = 'medium' }) => {
+        const distances: Record<string, number> = { small: 200, medium: 500, large: 99999 }
+        const px = distances[amount] ?? 500
+        const dy = direction === 'down' ? px : -px
+        // Find the largest scrollable container — window.scrollBy won't work in fixed-layout apps
+        const scrollable = Array.from(document.querySelectorAll<Element>('*'))
+          .filter(el => {
+            const s = window.getComputedStyle(el)
+            return (s.overflowY === 'auto' || s.overflowY === 'scroll') && el.scrollHeight > el.clientHeight
+          })
+          .sort((a, b) => (b.clientHeight * b.scrollWidth) - (a.clientHeight * a.scrollWidth))[0]
+        if (scrollable) {
+          scrollable.scrollBy({ top: dy, behavior: 'smooth' })
+        } else {
+          window.scrollBy({ top: dy, behavior: 'smooth' })
+        }
+        return { ok: true, direction, amount }
+      },
+    }),
+    defineVoiceTool({
+      name: 'select_agent',
+      description: `Switch to a chat agent by name. ${agentDesc}`,
+      parameters: z.object({
+        name: z.string().describe('Agent name or role, e.g. "Service Advisor", "Technician"'),
       }),
       execute: ({ name }) => {
         const ok = dispatchers.selectAgent(name)
-        return ok ? { ok: true } : { ok: false, message: `No agent found matching "${name}". Available: Assistant, Tom.` }
+        const available = agentList.length > 0 ? agentList.join(', ') : 'unknown'
+        return ok ? { ok: true } : { ok: false, message: `No agent found matching "${name}". Available: ${available}.` }
       },
     }),
     defineVoiceTool({
@@ -57,7 +89,7 @@ export function createVoiceTools(dispatchers: {
     }),
     defineVoiceTool({
       name: 'select_customer',
-      description: 'Navigate to the Customers tab and open a customer record by name.',
+      description: 'Navigate to the Customers tab and open a customer record by name. Use for "find customer X", "open X\'s record", "show me X", "do you have a customer named X".',
       parameters: z.object({
         name: z.string().describe('Customer name or partial name, e.g. "John Smith" or "Smith"'),
       }),
@@ -68,9 +100,9 @@ export function createVoiceTools(dispatchers: {
     }),
     defineVoiceTool({
       name: 'select_report',
-      description: 'Navigate to the Reports tab and open a report by vehicle name or description.',
+      description: 'Navigate to the Reports tab and open a report by vehicle or customer. Use for "do you have a report for X", "show me X\'s report", "find the report for [vehicle/customer]", "open the [year make model] report".',
       parameters: z.object({
-        query: z.string().describe('Vehicle name or partial description, e.g. "Civic" or "2019 Honda"'),
+        query: z.string().describe('Vehicle name, customer name, or description, e.g. "2019 Toyota Camry", "James", "Civic"'),
       }),
       execute: ({ query }) => {
         dispatchers.selectReport(query)
