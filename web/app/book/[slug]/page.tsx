@@ -12,6 +12,11 @@ export default function BookingPage() {
   return <BookingForm slug={slug} />
 }
 
+function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 function BookingForm({ slug }: { slug: string }) {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [form, setForm] = useState({
@@ -76,8 +81,9 @@ function BookingForm({ slug }: { slug: string }) {
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>PREFERRED DATE & TIME</div>
               <input type="datetime-local" value={form.starts_at} onChange={e => {
                 const start = new Date(e.target.value)
-                const end = new Date(start.getTime() + parseInt(config.slot_duration_minutes) * 60000)
-                setForm(f => ({ ...f, starts_at: e.target.value, ends_at: end.toISOString().slice(0, 16) }))
+                const durationMs = (parseInt(config.slot_duration_minutes, 10) || 60) * 60000
+                const end = new Date(start.getTime() + durationMs)
+                setForm(f => ({ ...f, starts_at: e.target.value, ends_at: toDatetimeLocal(end) }))
               }} style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '12px 14px', color: '#fff', fontSize: 13 }} />
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>

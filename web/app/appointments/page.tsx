@@ -56,7 +56,7 @@ function AppointmentsContent() {
           </div>
         </div>
         <button
-          onClick={() => { setSelectedDate(new Date(year, month - 1, 1)); setShowNewModal(true) }}
+          onClick={() => { setSelectedDate(new Date()); setShowNewModal(true) }}
           style={{ height: 32, padding: '0 14px', borderRadius: 7, border: 'none', background: '#d97706', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
         >
           + New Appointment

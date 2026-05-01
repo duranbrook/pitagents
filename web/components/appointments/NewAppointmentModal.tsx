@@ -8,13 +8,18 @@ interface Props {
   onClose: () => void
 }
 
+function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export default function NewAppointmentModal({ defaultDate, onClose }: Props) {
   const qc = useQueryClient()
   const [form, setForm] = useState({
     customer_name: '',
     service_requested: '',
-    starts_at: defaultDate.toISOString().slice(0, 16),
-    ends_at: new Date(defaultDate.getTime() + 3600000).toISOString().slice(0, 16),
+    starts_at: toDatetimeLocal(defaultDate),
+    ends_at: toDatetimeLocal(new Date(defaultDate.getTime() + 3600000)),
     status: 'confirmed' as const,
     notes: '',
   })
