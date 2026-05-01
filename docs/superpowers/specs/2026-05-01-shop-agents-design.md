@@ -131,8 +131,48 @@ System prompts for each agent must:
 
 ---
 
+## Agent Configurability
+
+The five agents above are the defaults — seeded on first run. The system must support creating, editing, and deleting agents without code changes.
+
+### Tool registry
+A fixed list of all available tools the system knows about. Each tool has:
+- `id` — machine key (e.g. `customers`, `inspect`, `invoices`)
+- `label` — human label shown in the builder UI
+- `description` — one sentence, shown in the hover tooltip
+
+New tools are added to the registry by developers. Shop owners cannot invent new tools — they can only assign existing ones to agents.
+
+### Agent record (stored in DB, per shop)
+```
+Agent {
+  id          UUID
+  shop_id     UUID
+  name        String          -- e.g. "Service Advisor"
+  role_tagline String         -- e.g. "Front desk · Customer intake"
+  accent_color String         -- hex, drives sidebar avatar color
+  system_prompt String        -- editable free-text; seeded from default template
+  tools       String[]        -- list of tool IDs from the registry
+  sort_order  Int             -- controls sidebar position
+  created_at  DateTime
+}
+```
+
+### Builder UI (in Settings)
+- **Agent list** — shows all agents for this shop, drag-to-reorder
+- **Create agent** — name, tagline, color picker, then tool assignment
+- **Edit agent** — same form; system prompt is an expandable advanced field
+- **Delete agent** — only allowed if agent has no recent chat history (soft guard)
+- **Tool assignment** — checkbox grid of all registry tools; checked = enabled for this agent
+
+### Sidebar reflects DB
+The `AgentList` component fetches agents from the backend at load time instead of using a hardcoded constant. The five default agents are seeded into the DB on shop creation — not hardcoded in frontend code.
+
+---
+
 ## What This Is Not
 
 - **Not a permissions system.** Any user can talk to any agent. Role boundaries are semantic (what the agent knows), not access-controlled.
 - **Not a multi-user system.** One shop owner talks to all five agents. The personas are knowledge domains, not separate accounts.
 - **Not replacing the dashboard yet.** Dashboard tiles still link to full pages. Chat is the primary path; pages are the verification fallback.
+- **Not a free-form AI builder.** Shop owners pick tools from a fixed registry. They cannot write arbitrary code or connect external APIs.
