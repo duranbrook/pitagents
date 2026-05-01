@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { AppShell } from '@/components/AppShell'
 import { DiagnoseInputBar } from '@/components/diagnose/DiagnoseInputBar'
 import { DiagnoseTabs } from '@/components/diagnose/DiagnoseTabs'
 import { DiagnoseActionPanel } from '@/components/diagnose/DiagnoseActionPanel'
@@ -54,36 +55,38 @@ export default function DiagnosePage() {
   }
 
   return (
-    <div style={{ background: '#0d0d0d', minHeight: '100vh', padding: '32px', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
-      <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#f9fafb', marginBottom: '8px' }}>Diagnose</h1>
-      <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Vehicle diagnostic lookup powered by CarMD</p>
+    <AppShell>
+      <div style={{ padding: '32px', color: '#fff' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#f9fafb', marginBottom: '8px' }}>Diagnose</h1>
+        <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '24px' }}>Vehicle diagnostic lookup powered by CarMD</p>
 
-      <DiagnoseInputBar onAnalyze={handleAnalyze} loading={analyzing} />
+        <DiagnoseInputBar onAnalyze={handleAnalyze} loading={analyzing} />
 
-      {hasOpenRecall && (
-        <div style={{ background: '#450a0a', border: '1px solid #7f1d1d', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#fca5a5', fontWeight: 600, fontSize: '14px' }}>
-          ⚠ Open NHTSA Safety Recall — See Recalls tab for details
+        {hasOpenRecall && (
+          <div style={{ background: '#450a0a', border: '1px solid #7f1d1d', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', color: '#fca5a5', fontWeight: 600, fontSize: '14px' }}>
+            ⚠ Open NHTSA Safety Recall — See Recalls tab for details
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+          <DiagnoseTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            diagnosis={diagnosis}
+            repairPlan={repairPlan}
+            tsbs={tsbs}
+            recalls={recalls}
+            maintenance={maintenance}
+            loading={analyzing}
+          />
+          <DiagnoseActionPanel
+            diagnosis={diagnosis}
+            repairPlan={repairPlan}
+            jobCardId={null}
+            customerId={null}
+          />
         </div>
-      )}
-
-      <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
-        <DiagnoseTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          diagnosis={diagnosis}
-          repairPlan={repairPlan}
-          tsbs={tsbs}
-          recalls={recalls}
-          maintenance={maintenance}
-          loading={analyzing}
-        />
-        <DiagnoseActionPanel
-          diagnosis={diagnosis}
-          repairPlan={repairPlan}
-          jobCardId={null}
-          customerId={null}
-        />
       </div>
-    </div>
+    </AppShell>
   )
 }
