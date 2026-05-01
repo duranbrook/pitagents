@@ -95,3 +95,98 @@ export interface FinalizeQuoteResponse {
   report_pdf_url: string | null
   share_token: string | null
 }
+
+// ── Job Cards ─────────────────────────────────────────────────────────────
+
+export interface JobCardColumn {
+  id: string
+  shop_id: string
+  name: string
+  position: number
+  created_at: string
+}
+
+export interface ServiceLine {
+  description: string
+  labor_hours: number
+  labor_rate: number
+  labor_cost: number
+}
+
+export interface PartLine {
+  name: string
+  sku: string | null
+  qty: number
+  unit_cost: number
+  sell_price: number
+  inventory_item_id: string | null
+}
+
+export interface JobCard {
+  id: string
+  shop_id: string
+  number: string
+  customer_id: string | null
+  vehicle_id: string | null
+  column_id: string | null
+  technician_ids: string[]
+  services: ServiceLine[]
+  parts: PartLine[]
+  notes: string | null
+  status: 'active' | 'closed' | 'void'
+  created_at: string
+  updated_at: string
+}
+
+export interface JobCardCreate {
+  customer_id?: string
+  vehicle_id?: string
+  column_id?: string
+  technician_ids?: string[]
+  services?: ServiceLine[]
+  parts?: PartLine[]
+  notes?: string
+}
+
+// ── Invoices ──────────────────────────────────────────────────────────────
+
+export interface InvoiceLineItem {
+  type: 'labor' | 'part'
+  description: string
+  qty: number
+  unit_price: number
+  total: number
+}
+
+export interface Invoice {
+  id: string
+  shop_id: string
+  job_card_id: string | null
+  number: string
+  customer_id: string | null
+  vehicle_id: string | null
+  status: 'pending' | 'partial' | 'paid' | 'void'
+  line_items: InvoiceLineItem[]
+  subtotal: number
+  tax_rate: number
+  total: number
+  amount_paid: number
+  balance: number
+  due_date: string | null
+  stripe_payment_link: string | null
+  pdf_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ShopSettings {
+  id: string
+  shop_id: string
+  nav_pins: string[]
+  stripe_publishable_key: string | null
+  mitchell1_enabled: boolean
+  synchrony_enabled: boolean
+  wisetack_enabled: boolean
+  quickbooks_enabled: boolean
+  financing_threshold: string
+}

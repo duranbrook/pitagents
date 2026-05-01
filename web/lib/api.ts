@@ -1,4 +1,4 @@
-import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse } from './types'
+import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -243,3 +243,69 @@ export const updateQuoteLineItems = (
 
 export const finalizeQuote = (quoteId: string): Promise<FinalizeQuoteResponse> =>
   api.put(`/quotes/${quoteId}/finalize`, {}).then(r => r.data)
+
+// ── Shop Settings ──────────────────────────────────────────────────────────
+export const getShopSettings = (): Promise<ShopSettings> =>
+  api.get('/settings/shop').then(r => r.data)
+
+export const updateShopSettings = (data: Partial<ShopSettings>): Promise<ShopSettings> =>
+  api.patch('/settings/shop', data).then(r => r.data)
+
+// ── Job Card Columns ───────────────────────────────────────────────────────
+export const getJobCardColumns = (): Promise<JobCardColumn[]> =>
+  api.get('/job-cards/columns').then(r => r.data)
+
+export const createJobCardColumn = (data: { name: string; position: number }): Promise<JobCardColumn> =>
+  api.post('/job-cards/columns', data).then(r => r.data)
+
+export const updateJobCardColumn = (id: string, data: { name?: string; position?: number }): Promise<JobCardColumn> =>
+  api.patch(`/job-cards/columns/${id}`, data).then(r => r.data)
+
+export const deleteJobCardColumn = (id: string): Promise<void> =>
+  api.delete(`/job-cards/columns/${id}`).then(() => undefined)
+
+// ── Job Cards ──────────────────────────────────────────────────────────────
+export const getJobCards = (params?: { column_id?: string; card_status?: string }): Promise<JobCard[]> =>
+  api.get('/job-cards', { params }).then(r => r.data)
+
+export const getJobCard = (id: string): Promise<JobCard> =>
+  api.get(`/job-cards/${id}`).then(r => r.data)
+
+export const createJobCard = (data: JobCardCreate): Promise<JobCard> =>
+  api.post('/job-cards', data).then(r => r.data)
+
+export const updateJobCard = (id: string, data: Partial<JobCard>): Promise<JobCard> =>
+  api.patch(`/job-cards/${id}`, data).then(r => r.data)
+
+export const deleteJobCard = (id: string): Promise<void> =>
+  api.delete(`/job-cards/${id}`).then(() => undefined)
+
+export const lookupLaborTime = (data: {
+  year: number; make: string; model: string; engine?: string; service: string
+}): Promise<{ hours: number | null; source: string }> =>
+  api.post('/labor-lookup', data).then(r => r.data)
+
+// ── Invoices ───────────────────────────────────────────────────────────────
+export const getInvoices = (params?: { status?: string }): Promise<Invoice[]> =>
+  api.get('/invoices', { params }).then(r => r.data)
+
+export const getInvoice = (id: string): Promise<Invoice> =>
+  api.get(`/invoices/${id}`).then(r => r.data)
+
+export const createInvoice = (data: Partial<Invoice>): Promise<Invoice> =>
+  api.post('/invoices', data).then(r => r.data)
+
+export const createInvoiceFromJobCard = (job_card_id: string): Promise<Invoice> =>
+  api.post('/invoices/from-job-card', { job_card_id }).then(r => r.data)
+
+export const updateInvoice = (id: string, data: Partial<Invoice>): Promise<Invoice> =>
+  api.patch(`/invoices/${id}`, data).then(r => r.data)
+
+export const sendPaymentLink = (id: string): Promise<{ payment_link: string }> =>
+  api.post(`/invoices/${id}/payment-link`).then(r => r.data)
+
+export const sendFinancingLink = (id: string, provider: string): Promise<{ application_link: string; provider: string }> =>
+  api.post(`/invoices/${id}/financing-link`, { provider }).then(r => r.data)
+
+export const recordPayment = (id: string, data: { amount: number; method: string; notes?: string }): Promise<Invoice> =>
+  api.post(`/invoices/${id}/record-payment`, data).then(r => r.data)
