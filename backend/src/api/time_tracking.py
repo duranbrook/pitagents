@@ -88,6 +88,7 @@ async def clock_in(
 ):
     existing = await db.execute(
         select(TimeEntry).where(
+            TimeEntry.shop_id == uuid.UUID(shop_id),
             TimeEntry.user_id == uuid.UUID(user_id),
             TimeEntry.ended_at.is_(None),
         )
@@ -128,7 +129,10 @@ async def clock_out(
         raise HTTPException(status_code=400, detail="Already clocked out")
     now = datetime.now(timezone.utc)
     entry.ended_at = now
-    delta = now - entry.started_at
+    started = entry.started_at
+    if started.tzinfo is None:
+        started = started.replace(tzinfo=timezone.utc)
+    delta = now - started
     entry.duration_minutes = int(delta.total_seconds() / 60)
     await db.commit()
     await db.refresh(entry)
