@@ -15,6 +15,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+    let navigated = false
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/auth/login`,
@@ -27,11 +28,12 @@ export default function LoginPage() {
       if (!res.ok) { setError('Invalid email or password'); return }
       const data = await res.json()
       localStorage.setItem('token', data.access_token)
+      navigated = true
       router.push('/chat')
     } catch {
       setError('Could not connect to server')
     } finally {
-      setLoading(false)
+      if (!navigated) setLoading(false)
     }
   }
 
