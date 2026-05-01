@@ -22,7 +22,7 @@ class InventoryItem(Base):
     reorder_at = Column(Integer, default=0, nullable=False)
     cost_price = Column(Numeric(10, 2), default=0)
     sell_price = Column(Numeric(10, 2), default=0)
-    vendor_id = Column(UUID(as_uuid=True), nullable=True)  # FK added in vendors migration
+    vendor_id = Column(UUID(as_uuid=True), ForeignKey("vendors.id", ondelete="SET NULL"), nullable=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

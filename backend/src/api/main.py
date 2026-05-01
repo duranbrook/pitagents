@@ -21,6 +21,7 @@ from src.api.labor_lookup import router as labor_lookup_router
 from src.api.appointments import router as appointments_router, public_router as booking_router
 from src.api.service_reminders import router as reminders_router
 from src.api.inventory import router as inventory_router
+from src.api.vendors import router as vendors_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -56,3 +57,4 @@ app.include_router(appointments_router)
 app.include_router(booking_router)
 app.include_router(reminders_router)
 app.include_router(inventory_router)
+app.include_router(vendors_router)
