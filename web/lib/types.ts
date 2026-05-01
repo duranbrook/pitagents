@@ -346,3 +346,86 @@ export interface PaymentEvent {
   recorded_at: string | null
   notes: string | null
 }
+
+// ── Diagnose ──────────────────────────────────────────────────────────────────
+
+export interface DiagnosisItem {
+  urgency?: number
+  urgency_desc?: string
+  desc: string
+  layman_desc?: string
+  part?: string
+  repair?: { difficulty?: string }
+}
+
+export interface RepairPlanItem {
+  repair_desc?: string
+  desc?: string
+  labor_hrs?: number
+  labor_cost?: number
+  confidence?: string
+}
+
+export interface TsbItem {
+  tsb_id?: string
+  title?: string
+  component?: string
+  pub_date?: string
+  desc?: string
+}
+
+export interface RecallItem {
+  recall_date?: string
+  component?: string
+  consequence?: string
+  remedy?: string
+  nhtsa_id?: string
+}
+
+export interface MaintenanceItem {
+  desc?: string
+  mileage?: number
+  due_date?: string
+}
+
+export interface DiagnoseAnalyzeResult {
+  diagnosis: DiagnosisItem[]
+  repair_plan: RepairPlanItem[]
+}
+
+// ── Marketing ─────────────────────────────────────────────────────────────────
+
+export interface Campaign {
+  campaign_id: string
+  shop_id: string
+  name: string
+  status: 'draft' | 'scheduled' | 'active' | 'sent'
+  message_body: string
+  channel: 'sms' | 'email' | 'both'
+  audience_segment: AudienceSegment
+  send_at: string | null
+  sent_at: string | null
+  stats: CampaignStats
+  created_at: string
+}
+
+export interface AudienceSegment {
+  type: 'all_customers' | 'by_service' | 'by_last_visit' | 'by_vehicle_type'
+  service_type?: string
+  last_visit_months_start?: number
+  last_visit_months_end?: number
+  vehicle_type?: string
+}
+
+export interface CampaignStats {
+  sent_count?: number
+  opened_count?: number
+  booked_count?: number
+  revenue_attributed?: number
+}
+
+export interface CampaignTemplate {
+  id: string
+  name: string
+  message_body: string
+}

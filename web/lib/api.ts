@@ -1,4 +1,4 @@
-import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder, TimeEntry, Expense, PLSummary, PaymentsSummary, PaymentEvent } from './types'
+import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder, TimeEntry, Expense, PLSummary, PaymentsSummary, PaymentEvent, DiagnoseAnalyzeResult, DiagnosisItem, RepairPlanItem, TsbItem, RecallItem, MaintenanceItem, AudienceSegment, Campaign, CampaignTemplate } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -419,3 +419,88 @@ export const getPLSummary = (period?: string): Promise<PLSummary> =>
 
 export const syncToQuickBooks = (): Promise<{ invoices_synced: number; expenses_synced: number }> =>
   api.post('/accounting/sync-to-qb').then(r => r.data)
+
+// ── Diagnose ──────────────────────────────────────────────────────────────────
+
+export interface AnalyzeRequest {
+  year: number
+  make: string
+  model: string
+  engine?: string
+  mileage?: number
+  dtcs: string[]
+}
+
+export const diagnoseAnalyze = async (req: AnalyzeRequest): Promise<DiagnoseAnalyzeResult> => {
+  const { data } = await api.post('/diagnose/analyze', req)
+  return data
+}
+
+export const diagnoseTsb = async (year: number, make: string, model: string, engine?: string): Promise<{ tsbs: TsbItem[] }> => {
+  const { data } = await api.get('/diagnose/tsb', { params: { year, make, model, engine } })
+  return data
+}
+
+export const diagnoseRecalls = async (year: number, make: string, model: string): Promise<{ recalls: RecallItem[] }> => {
+  const { data } = await api.get('/diagnose/recalls', { params: { year, make, model } })
+  return data
+}
+
+export const diagnoseMaintenance = async (year: number, make: string, model: string, mileage = 0): Promise<{ maintenance: MaintenanceItem[] }> => {
+  const { data } = await api.get('/diagnose/maintenance', { params: { year, make, model, mileage } })
+  return data
+}
+
+export const diagnoseAddToJobCard = async (jobCardId: string, diagnosis: DiagnosisItem[], repairPlan: RepairPlanItem[]): Promise<{ ok: boolean }> => {
+  const { data } = await api.post('/diagnose/add-to-job-card', { job_card_id: jobCardId, diagnosis, repair_plan: repairPlan })
+  return data
+}
+
+export const diagnoseSendSummary = async (customerId: string, diagnosis: DiagnosisItem[]): Promise<{ sms_text: string; sent: boolean }> => {
+  const { data } = await api.post('/diagnose/send-summary', { customer_id: customerId, diagnosis })
+  return data
+}
+
+// ── Marketing ─────────────────────────────────────────────────────────────────
+
+export const fetchCampaignTemplates = async (): Promise<CampaignTemplate[]> => {
+  const { data } = await api.get('/marketing/templates')
+  return data
+}
+
+export const fetchCampaigns = async (status?: string): Promise<Campaign[]> => {
+  const { data } = await api.get('/marketing/campaigns', { params: status ? { status } : undefined })
+  return data
+}
+
+export const createCampaign = async (payload: Partial<Campaign>): Promise<Campaign> => {
+  const { data } = await api.post('/marketing/campaigns', payload)
+  return data
+}
+
+export const updateCampaign = async (id: string, payload: Partial<Campaign>): Promise<Campaign> => {
+  const { data } = await api.put(`/marketing/campaigns/${id}`, payload)
+  return data
+}
+
+export const deleteCampaign = async (id: string): Promise<void> => {
+  await api.delete(`/marketing/campaigns/${id}`)
+}
+
+export const fetchAudienceCount = async (segment: AudienceSegment): Promise<number> => {
+  const { data } = await api.get('/marketing/audience/count', {
+    params: {
+      segment_type: segment.type,
+      service_type: segment.service_type,
+      last_visit_months_start: segment.last_visit_months_start,
+      last_visit_months_end: segment.last_visit_months_end,
+      vehicle_type: segment.vehicle_type,
+    },
+  })
+  return data.count
+}
+
+export const sendCampaign = async (id: string): Promise<Campaign> => {
+  const { data } = await api.post(`/marketing/campaigns/${id}/send`)
+  return data
+}
