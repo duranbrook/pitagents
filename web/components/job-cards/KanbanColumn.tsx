@@ -10,7 +10,6 @@ interface Props {
   column: JobCardColumn
   cards: JobCard[]
   onCardClick: (card: JobCard) => void
-  onCardMove: (cardId: string, newColumnId: string) => void
   onAddCard: () => void
 }
 
@@ -37,8 +36,8 @@ export default function KanbanColumn({ column, cards, onCardClick, onAddCard }: 
             textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.25)',
             cursor: 'pointer', background: 'transparent', marginTop: 2,
           }}
-          onMouseEnter={e => { (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)' }}
-          onMouseLeave={e => { (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)' }}
         >
           + Add card
         </button>

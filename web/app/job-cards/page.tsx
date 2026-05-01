@@ -58,13 +58,13 @@ function JobCardsPageInner() {
           columns={columns}
           cards={cards}
           onCardClick={setSelectedCard}
-          onCardMove={(cardId, columnId) => moveCard.mutate({ id: cardId, columnId })}
           onAddCard={columnId => addCard.mutate(columnId)}
         />
       )}
 
       {selectedCard && (
         <JobCardDetail
+          key={selectedCard.id}
           card={selectedCard}
           columns={columns}
           onClose={() => setSelectedCard(null)}
