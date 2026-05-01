@@ -16,6 +16,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Fixed dark aesthetic — photo bg supersedes OS light/dark preference.
+   The --background token is kept for Tailwind compat but rarely surfaces. */
 body {
   background: var(--background);
   color: var(--foreground);
