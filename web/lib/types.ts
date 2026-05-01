@@ -235,3 +235,58 @@ export interface ServiceReminderConfig {
   message_template: string | null
   created_at: string
 }
+
+// ── Inventory ─────────────────────────────────────────────────────────────
+
+export interface InventoryItem {
+  id: string
+  shop_id: string
+  name: string
+  sku: string | null
+  category: string
+  quantity: number
+  reorder_at: number
+  cost_price: number
+  sell_price: number
+  margin_pct: number
+  stock_status: 'ok' | 'low' | 'out'
+  vendor_id: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ── Vendors ───────────────────────────────────────────────────────────────
+
+export interface Vendor {
+  id: string
+  shop_id: string
+  name: string
+  category: string
+  phone: string | null
+  email: string | null
+  website: string | null
+  address: string | null
+  rep_name: string | null
+  rep_phone: string | null
+  account_number: string | null
+  notes: string | null
+  source: string
+  ytd_spend: number
+  order_count: number
+  last_order_at: string | null
+  created_at: string
+}
+
+export interface PurchaseOrder {
+  id: string
+  vendor_id: string
+  po_number: string
+  status: 'pending' | 'ordered' | 'received'
+  items: Array<{ name: string; sku: string | null; qty: number; unit_cost: number }>
+  total: number
+  notes: string | null
+  ordered_at: string | null
+  received_at: string | null
+  created_at: string
+}

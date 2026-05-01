@@ -1,4 +1,4 @@
-import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig } from './types'
+import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -335,3 +335,45 @@ export const updateReminderConfig = (id: string, data: Partial<ServiceReminderCo
 
 export const runReminderJob = (): Promise<{ reminders_sent: number }> =>
   api.post('/reminders/run').then(r => r.data)
+
+// ── Inventory ─────────────────────────────────────────────────────────────
+
+export const getInventory = (params?: {
+  search?: string; category?: string; stock_status?: string; vendor_id?: string
+}): Promise<InventoryItem[]> =>
+  api.get('/inventory', { params }).then(r => r.data)
+
+export const createInventoryItem = (data: Partial<InventoryItem>): Promise<InventoryItem> =>
+  api.post('/inventory', data).then(r => r.data)
+
+export const updateInventoryItem = (id: string, data: Partial<InventoryItem>): Promise<InventoryItem> =>
+  api.patch(`/inventory/${id}`, data).then(r => r.data)
+
+export const adjustInventoryStock = (id: string, delta: number, reason?: string): Promise<InventoryItem> =>
+  api.post(`/inventory/${id}/adjust`, { delta, reason }).then(r => r.data)
+
+export const deleteInventoryItem = (id: string): Promise<void> =>
+  api.delete(`/inventory/${id}`).then(() => undefined)
+
+// ── Vendors ───────────────────────────────────────────────────────────────
+
+export const getVendors = (params?: { category?: string }): Promise<Vendor[]> =>
+  api.get('/vendors', { params }).then(r => r.data)
+
+export const createVendor = (data: Partial<Vendor>): Promise<Vendor> =>
+  api.post('/vendors', data).then(r => r.data)
+
+export const updateVendor = (id: string, data: Partial<Vendor>): Promise<Vendor> =>
+  api.patch(`/vendors/${id}`, data).then(r => r.data)
+
+export const deleteVendor = (id: string): Promise<void> =>
+  api.delete(`/vendors/${id}`).then(() => undefined)
+
+export const getVendorOrders = (vendorId: string): Promise<PurchaseOrder[]> =>
+  api.get(`/vendors/${vendorId}/orders`).then(r => r.data)
+
+export const createPurchaseOrder = (vendorId: string, data: { items: PurchaseOrder['items']; notes?: string }): Promise<PurchaseOrder> =>
+  api.post(`/vendors/${vendorId}/orders`, data).then(r => r.data)
+
+export const receivePurchaseOrder = (vendorId: string, poId: string): Promise<PurchaseOrder> =>
+  api.post(`/vendors/${vendorId}/orders/${poId}/receive`).then(r => r.data)
