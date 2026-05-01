@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock, AsyncMock, patch
 
 SHOP_ID = "00000000-0000-0000-0000-000000000099"
 USER_ID = "00000000-0000-0000-0000-000000000001"
@@ -269,3 +269,115 @@ def test_create_invoice_from_job_card_duplicate_rejected(client, auth_headers, m
     )
     assert resp.status_code == 409
     assert "already exists" in resp.json()["detail"].lower()
+
+
+def test_send_payment_link_no_stripe_key(client, auth_headers, mock_db, monkeypatch):
+    monkeypatch.delenv("STRIPE_SECRET_KEY", raising=False)
+    inv = _make_invoice()
+    mock_db.execute.return_value.scalar_one_or_none.return_value = inv
+    resp = client.post(f"/invoices/{inv.id}/payment-link", headers=auth_headers)
+    assert resp.status_code == 400
+    assert "Stripe not configured" in resp.json()["detail"]
+
+
+def test_send_payment_link_returns_link(client, auth_headers, mock_db, monkeypatch):
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_fake")
+    inv = _make_invoice()
+    mock_db.execute.return_value.scalar_one_or_none.return_value = inv
+    mock_db.commit = AsyncMock()
+    with patch("stripe.checkout.Session.create") as mock_create:
+        mock_session = MagicMock()
+        mock_session.url = "https://checkout.stripe.com/pay/cs_test_abc"
+        mock_create.return_value = mock_session
+        resp = client.post(f"/invoices/{inv.id}/payment-link", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json()["payment_link"] == "https://checkout.stripe.com/pay/cs_test_abc"
+
+
+def test_financing_link_not_configured(client, auth_headers, mock_db):
+    inv = _make_invoice(total=Decimal("500.00"))
+    settings = MagicMock()
+    settings.synchrony_enabled = False
+    settings.synchrony_dealer_id = None
+
+    call_count = 0
+
+    async def execute_side_effect(query, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        result = MagicMock()
+        if call_count == 1:
+            result.scalar_one_or_none.return_value = inv
+        else:
+            result.scalar_one_or_none.return_value = settings
+        result.scalar.return_value = None
+        result.scalars.return_value.all.return_value = []
+        return result
+
+    mock_db.execute = AsyncMock(side_effect=execute_side_effect)
+    resp = client.post(
+        f"/invoices/{inv.id}/financing-link",
+        json={"provider": "synchrony"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 400
+
+
+def test_financing_link_wisetack_configured(client, auth_headers, mock_db):
+    inv = _make_invoice(total=Decimal("600.00"))
+    settings = MagicMock()
+    settings.wisetack_enabled = True
+    settings.wisetack_merchant_id = "merchant-123"
+
+    call_count = 0
+
+    async def execute_side_effect(query, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        result = MagicMock()
+        if call_count == 1:
+            result.scalar_one_or_none.return_value = inv
+        else:
+            result.scalar_one_or_none.return_value = settings
+        result.scalar.return_value = None
+        result.scalars.return_value.all.return_value = []
+        return result
+
+    mock_db.execute = AsyncMock(side_effect=execute_side_effect)
+    resp = client.post(
+        f"/invoices/{inv.id}/financing-link",
+        json={"provider": "wisetack"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["provider"] == "wisetack"
+    assert "merchant-123" in data["application_link"]
+
+
+def test_financing_link_unknown_provider(client, auth_headers, mock_db):
+    inv = _make_invoice(total=Decimal("300.00"))
+    settings = MagicMock()
+
+    call_count = 0
+
+    async def execute_side_effect(query, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        result = MagicMock()
+        if call_count == 1:
+            result.scalar_one_or_none.return_value = inv
+        else:
+            result.scalar_one_or_none.return_value = settings
+        result.scalar.return_value = None
+        result.scalars.return_value.all.return_value = []
+        return result
+
+    mock_db.execute = AsyncMock(side_effect=execute_side_effect)
+    resp = client.post(
+        f"/invoices/{inv.id}/financing-link",
+        json={"provider": "unknown_provider"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 400
+    assert "Unknown provider" in resp.json()["detail"]

@@ -1,5 +1,7 @@
+import os
 import uuid
 from decimal import Decimal
+import stripe as stripe_lib
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, cast, Integer
@@ -9,6 +11,7 @@ from src.db.base import get_db
 from src.api.deps import get_current_shop_id, get_current_user_id
 from src.models.invoice import Invoice, InvoicePaymentEvent
 from src.models.job_card import JobCard
+from src.models.shop_settings import ShopSettings
 from sqlalchemy import func as sql_func
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
@@ -60,6 +63,10 @@ class RecordPayment(BaseModel):
     amount: float
     method: Literal["stripe", "card", "cash", "check"]
     notes: Optional[str] = None
+
+
+class FinancingLinkRequest(BaseModel):
+    provider: str  # synchrony | wisetack
 
 
 class InvoiceResponse(BaseModel):
@@ -377,3 +384,87 @@ async def record_payment(
         recorded_at=event.recorded_at.isoformat() if event.recorded_at else None,
         notes=event.notes,
     )
+
+
+@router.post("/{invoice_id}/payment-link")
+async def send_payment_link(
+    invoice_id: str,
+    shop_id: str = Depends(get_current_shop_id),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        iid = uuid.UUID(invoice_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid invoice_id")
+    result = await db.execute(
+        select(Invoice).where(Invoice.id == iid, Invoice.shop_id == uuid.UUID(shop_id))
+    )
+    inv = result.scalar_one_or_none()
+    if inv is None:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    stripe_key = os.getenv("STRIPE_SECRET_KEY", "")
+    if not stripe_key:
+        raise HTTPException(status_code=400, detail="Stripe not configured")
+    stripe_lib.api_key = stripe_key
+    session = stripe_lib.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "product_data": {"name": f"Invoice {inv.number}"},
+                "unit_amount": int(float(inv.total or 0) * 100),
+            },
+            "quantity": 1,
+        }],
+        mode="payment",
+        success_url=os.getenv("FRONTEND_URL", "http://localhost:3000") + f"/invoices?paid={iid}",
+        cancel_url=os.getenv("FRONTEND_URL", "http://localhost:3000") + f"/invoices/{iid}",
+        metadata={"invoice_id": str(iid), "shop_id": shop_id},
+    )
+    inv.stripe_payment_link = session.url
+    await db.commit()
+    return {"payment_link": session.url}
+
+
+@router.post("/{invoice_id}/financing-link")
+async def send_financing_link(
+    invoice_id: str,
+    body: FinancingLinkRequest,
+    shop_id: str = Depends(get_current_shop_id),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        iid = uuid.UUID(invoice_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid invoice_id")
+    result = await db.execute(
+        select(Invoice).where(Invoice.id == iid, Invoice.shop_id == uuid.UUID(shop_id))
+    )
+    inv = result.scalar_one_or_none()
+    if inv is None:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    settings_result = await db.execute(
+        select(ShopSettings).where(ShopSettings.shop_id == uuid.UUID(shop_id))
+    )
+    settings = settings_result.scalar_one_or_none()
+    if body.provider == "synchrony":
+        if not settings or not settings.synchrony_enabled or not getattr(settings, "synchrony_dealer_id", None):
+            raise HTTPException(status_code=400, detail="Synchrony Car Care not configured")
+        link = (
+            f"https://apply.synchronybank.com/car-care"
+            f"?dealer={settings.synchrony_dealer_id}"
+            f"&amount={int(float(inv.total or 0))}"
+            f"&ref={iid}"
+        )
+    elif body.provider == "wisetack":
+        if not settings or not settings.wisetack_enabled or not getattr(settings, "wisetack_merchant_id", None):
+            raise HTTPException(status_code=400, detail="Wisetack not configured")
+        link = (
+            f"https://app.wisetack.com/#/apply"
+            f"?merchant={settings.wisetack_merchant_id}"
+            f"&loan_amount={int(float(inv.total or 0))}"
+            f"&ref={iid}"
+        )
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown provider: {body.provider}")
+    return {"application_link": link, "provider": body.provider}
