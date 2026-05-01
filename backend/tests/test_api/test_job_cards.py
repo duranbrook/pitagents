@@ -100,3 +100,38 @@ def test_patch_invalid_uuid_returns_422(client, auth_headers, mock_db):
         headers=auth_headers,
     )
     assert resp.status_code == 422
+
+
+def test_list_job_cards_empty(client, auth_headers, mock_db):
+    mock_db.execute.return_value.scalars.return_value.all.return_value = []
+    resp = client.get("/job-cards", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+def test_create_job_card(client, auth_headers, mock_db):
+    from unittest.mock import MagicMock
+    from datetime import datetime, timezone
+    card = MagicMock()
+    card.id = uuid.uuid4()
+    card.shop_id = uuid.UUID(SHOP_ID)
+    card.number = "JC-0001"
+    card.customer_id = None
+    card.vehicle_id = None
+    card.column_id = None
+    card.technician_ids = []
+    card.services = []
+    card.parts = []
+    card.notes = None
+    card.status = "active"
+    card.created_at = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    card.updated_at = datetime(2026, 5, 1, tzinfo=timezone.utc)
+    mock_db.execute.return_value.scalar_one_or_none.return_value = card
+    mock_db.execute.return_value.scalar.return_value = 0
+    resp = client.post("/job-cards", json={}, headers=auth_headers)
+    assert resp.status_code == 201
+    assert resp.json()["number"] == "JC-0001"
+
+def test_get_job_card_404(client, auth_headers, mock_db):
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    resp = client.get(f"/job-cards/{uuid.uuid4()}", headers=auth_headers)
+    assert resp.status_code == 404
