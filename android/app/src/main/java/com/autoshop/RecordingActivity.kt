@@ -46,7 +46,7 @@ class RecordingActivity : ComponentActivity() {
 
     companion object {
         private const val TAG = "RecordingActivity"
-        private const val BASE_URL = "http://10.0.2.2:8000"   // points to host loopback in AVD
+        private const val BASE_URL = "https://backend-production-5320.up.railway.app"
     }
 
     private val audioRecorder by lazy { AudioRecorder(this) }
