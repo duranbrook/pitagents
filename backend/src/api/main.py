@@ -27,6 +27,7 @@ from src.api.accounting import router as accounting_router
 from src.api.payments import router as payments_router
 from src.api.diagnose import router as diagnose_router
 from src.api.marketing import router as marketing_router
+from src.api.agents import router as agents_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -68,3 +69,4 @@ app.include_router(accounting_router)
 app.include_router(payments_router)
 app.include_router(diagnose_router)
 app.include_router(marketing_router)
+app.include_router(agents_router)

@@ -429,3 +429,40 @@ export interface CampaignTemplate {
   name: string
   message_body: string
 }
+
+export interface ShopAgent {
+  id: string
+  name: string
+  role_tagline: string
+  accent_color: string
+  initials: string
+  system_prompt: string
+  tools: string[]
+  sort_order: number
+}
+
+export interface ToolInfo {
+  id: string
+  label: string
+  description: string
+}
+
+export interface AgentCreate {
+  name: string
+  role_tagline: string
+  accent_color: string
+  initials: string
+  system_prompt: string
+  tools: string[]
+  sort_order?: number
+}
+
+export interface AgentUpdate {
+  name?: string
+  role_tagline?: string
+  accent_color?: string
+  initials?: string
+  system_prompt?: string
+  tools?: string[]
+  sort_order?: number
+}

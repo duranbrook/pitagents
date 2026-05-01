@@ -1,4 +1,4 @@
-import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder, TimeEntry, Expense, PLSummary, PaymentsSummary, PaymentEvent, DiagnoseAnalyzeResult, DiagnosisItem, RepairPlanItem, TsbItem, RecallItem, MaintenanceItem, AudienceSegment, Campaign, CampaignTemplate } from './types'
+import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder, TimeEntry, Expense, PLSummary, PaymentsSummary, PaymentEvent, DiagnoseAnalyzeResult, DiagnosisItem, RepairPlanItem, TsbItem, RecallItem, MaintenanceItem, AudienceSegment, Campaign, CampaignTemplate, ShopAgent, ToolInfo, AgentCreate, AgentUpdate } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -504,3 +504,20 @@ export const sendCampaign = async (id: string): Promise<Campaign> => {
   const { data } = await api.post(`/marketing/campaigns/${id}/send`)
   return data
 }
+
+// ── Agents ────────────────────────────────────────────────────────────────────
+
+export const fetchAgents = (): Promise<ShopAgent[]> =>
+  api.get('/agents').then(r => r.data)
+
+export const fetchToolRegistry = (): Promise<ToolInfo[]> =>
+  api.get('/agents/tools').then(r => r.data)
+
+export const createAgent = (payload: AgentCreate): Promise<ShopAgent> =>
+  api.post('/agents', payload).then(r => r.data)
+
+export const updateAgent = (id: string, payload: AgentUpdate): Promise<ShopAgent> =>
+  api.put(`/agents/${id}`, payload).then(r => r.data)
+
+export const deleteAgent = (id: string): Promise<void> =>
+  api.delete(`/agents/${id}`).then(() => undefined)

@@ -1,32 +1,37 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { AppShell } from '@/components/AppShell'
 import { AgentList } from '@/components/chat/AgentList'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { useVoiceContext } from '@/contexts/VoiceContext'
-
-const AGENT_IDS: Record<string, string> = {
-  assistant: 'assistant',
-  tom: 'tom',
-}
+import { fetchAgents } from '@/lib/api'
 
 export default function ChatPage() {
-  const [selectedAgent, setSelectedAgent] = useState('assistant')
+  const [selectedAgent, setSelectedAgent] = useState('')
   const [lastMessages, setLastMessages] = useState<Record<string, string>>({})
   const voice = useVoiceContext()
+
+  const { data: agents = [] } = useQuery({ queryKey: ['agents'], queryFn: fetchAgents })
+
+  useEffect(() => {
+    if (agents.length > 0 && !selectedAgent) {
+      setSelectedAgent(agents[0].id)
+    }
+  }, [agents, selectedAgent])
 
   useEffect(() => {
     voice.registerSelectAgent((name) => {
       const key = name.toLowerCase()
-      const id = Object.keys(AGENT_IDS).find(agentId =>
-        agentId.includes(key) || key.includes(agentId)
+      const match = agents.find(a =>
+        a.name.toLowerCase().includes(key) || key.includes(a.name.toLowerCase())
       )
-      if (!id) return false
-      setSelectedAgent(id)
+      if (!match) return false
+      setSelectedAgent(match.id)
       return true
     })
-  }, [voice])
+  }, [voice, agents])
 
   return (
     <AppShell>
@@ -37,13 +42,15 @@ export default function ChatPage() {
           lastMessages={lastMessages}
         />
         <div className="flex-1 min-w-0">
-          <ChatPanel
-            key={selectedAgent}
-            agentId={selectedAgent}
-            onNewMessage={(text) =>
-              setLastMessages(prev => ({ ...prev, [selectedAgent]: text }))
-            }
-          />
+          {selectedAgent && (
+            <ChatPanel
+              key={selectedAgent}
+              agentId={selectedAgent}
+              onNewMessage={(text) =>
+                setLastMessages(prev => ({ ...prev, [selectedAgent]: text }))
+              }
+            />
+          )}
         </div>
       </div>
     </AppShell>

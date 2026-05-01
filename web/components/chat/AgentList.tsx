@@ -1,16 +1,8 @@
 'use client'
-
-interface Agent {
-  id: string
-  name: string
-  role: string
-  initials: string
-}
-
-const AGENTS: Agent[] = [
-  { id: 'assistant', name: 'Assistant', role: 'VIN lookup · Repair quotes', initials: 'A' },
-  { id: 'tom', name: 'Tom', role: 'Technician AI', initials: 'T' },
-]
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { fetchAgents } from '@/lib/api'
+import type { ShopAgent } from '@/lib/types'
 
 interface Props {
   selectedId: string
@@ -19,6 +11,11 @@ interface Props {
 }
 
 export function AgentList({ selectedId, onSelect, lastMessages }: Props) {
+  const { data: agents = [], isLoading } = useQuery({
+    queryKey: ['agents'],
+    queryFn: fetchAgents,
+  })
+
   return (
     <div
       className="flex flex-col h-full flex-shrink-0 glass-panel"
@@ -30,49 +27,18 @@ export function AgentList({ selectedId, onSelect, lastMessages }: Props) {
         </p>
       </div>
       <div className="flex-1 overflow-y-auto px-2 space-y-0.5">
-        {AGENTS.map(agent => {
-          const active = selectedId === agent.id
-          return (
-            <button
-              key={agent.id}
-              onClick={() => onSelect(agent.id)}
-              className="w-full flex items-center gap-2.5 py-2 rounded-lg text-left transition-all"
-              style={active ? {
-                background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
-                borderLeft: '2px solid var(--accent)',
-                paddingLeft: '8px',
-                paddingRight: '10px',
-              } : {
-                borderLeft: '2px solid transparent',
-                paddingLeft: '8px',
-                paddingRight: '10px',
-              }}
-              onMouseEnter={e => {
-                if (!active) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
-              }}
-              onMouseLeave={e => {
-                if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'
-              }}
-            >
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                style={{
-                  background: active ? 'var(--accent)' : 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: active ? '#fff' : 'rgba(255,255,255,0.6)',
-                }}
-              >
-                {agent.initials}
-              </div>
-              <div className="min-w-0">
-                <p className="text-[12px] font-medium text-white truncate">{agent.name}</p>
-                <p className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  {lastMessages[agent.id] ?? agent.role}
-                </p>
-              </div>
-            </button>
-          )
-        })}
+        {isLoading && (
+          <p className="text-[11px] px-2 py-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Loading…</p>
+        )}
+        {agents.map(agent => (
+          <AgentRow
+            key={agent.id}
+            agent={agent}
+            active={selectedId === agent.id}
+            lastMessage={lastMessages[agent.id]}
+            onSelect={() => onSelect(agent.id)}
+          />
+        ))}
       </div>
       <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <a
@@ -85,6 +51,109 @@ export function AgentList({ selectedId, onSelect, lastMessages }: Props) {
           ⚙ Settings
         </a>
       </div>
+    </div>
+  )
+}
+
+const TOOL_LABELS: Record<string, string> = {
+  vin_lookup: 'VIN Lookup',
+  quote_builder: 'Quotes & Estimates',
+  parts_search: 'Parts Search',
+  shop_data: 'Customer & Vehicle Records',
+}
+
+function AgentRow({
+  agent, active, lastMessage, onSelect,
+}: {
+  agent: ShopAgent
+  active: boolean
+  lastMessage?: string
+  onSelect: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+  const [tooltipTimer, setTooltipTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  const handleMouseEnter = () => {
+    setHovered(true)
+    const t = setTimeout(() => setShowTooltip(true), 400)
+    setTooltipTimer(t)
+  }
+
+  const handleMouseLeave = () => {
+    setHovered(false)
+    setShowTooltip(false)
+    if (tooltipTimer) clearTimeout(tooltipTimer)
+  }
+
+  const capabilities = agent.tools.map(t => TOOL_LABELS[t] ?? t)
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={onSelect}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className="w-full flex items-center gap-2.5 py-2 rounded-lg text-left transition-all"
+        style={active ? {
+          background: `color-mix(in srgb, ${agent.accent_color} 12%, transparent)`,
+          borderLeft: `2px solid ${agent.accent_color}`,
+          paddingLeft: '8px',
+          paddingRight: '10px',
+        } : {
+          borderLeft: '2px solid transparent',
+          paddingLeft: '8px',
+          paddingRight: '10px',
+          background: hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
+        }}
+      >
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+          style={{
+            background: active ? agent.accent_color : 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: active ? '#fff' : 'rgba(255,255,255,0.6)',
+          }}
+        >
+          {agent.initials}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[12px] font-medium text-white truncate">{agent.name}</p>
+          <p className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            {lastMessage ?? agent.role_tagline}
+          </p>
+        </div>
+      </button>
+
+      {showTooltip && (
+        <div
+          style={{
+            position: 'absolute',
+            left: '100%',
+            top: 0,
+            marginLeft: '8px',
+            zIndex: 50,
+            background: 'rgba(15,15,15,0.96)',
+            border: `1px solid ${agent.accent_color}44`,
+            borderRadius: '8px',
+            padding: '10px 12px',
+            width: '180px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            pointerEvents: 'none',
+          }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: agent.accent_color, marginBottom: '6px' }}>
+            Can help with
+          </p>
+          {capabilities.length > 0
+            ? capabilities.map(cap => (
+                <p key={cap} className="text-[11px] text-white mb-1">· {cap}</p>
+              ))
+            : <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>General assistance</p>
+          }
+        </div>
+      )}
     </div>
   )
 }

@@ -10,8 +10,9 @@ from sqlalchemy import select
 from src.api.deps import get_current_user
 from src.db.base import get_db, AsyncSessionLocal
 from src.models.chat_message import ChatMessage
-from src.agents.assistant import assistant_graph
-from src.agents.tom import tom_graph
+from src.models.shop_agent import ShopAgent
+from src.agents.graph_factory import build_react_graph
+from src.agents.tool_registry import build_tool_schemas_and_executor
 
 logger = logging.getLogger(__name__)
 
@@ -30,12 +31,42 @@ def _check_guardrails(message: str) -> str | None:
             return pattern.pattern
     return None
 
+
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-AGENT_GRAPHS: dict = {
-    "assistant": assistant_graph,
-    "tom": tom_graph,
-}
+# In-process graph cache: agent_id (str) -> compiled graph
+# Cleared on agent update/delete via agents.py
+_graph_cache: dict[str, object] = {}
+
+_DEFAULT_INTENT_LABELS = ["GENERAL", "LOOKUP", "ACTION", "ANALYTICS"]
+_DEFAULT_PROMPT_BLOCKS: dict[str, str] = {}
+
+
+async def _get_agent_graph(agent_id: str, shop_id: str, db: AsyncSession):
+    """Look up agent from DB, build and cache its LangGraph."""
+    if agent_id in _graph_cache:
+        return _graph_cache[agent_id]
+
+    result = await db.execute(
+        select(ShopAgent).where(
+            ShopAgent.id == uuid.UUID(agent_id),
+            ShopAgent.shop_id == uuid.UUID(shop_id),
+        )
+    )
+    agent = result.scalar_one_or_none()
+    if not agent:
+        return None
+
+    tool_schemas, tool_executor = build_tool_schemas_and_executor(agent.tools or [])
+    graph = build_react_graph(
+        system_prompt=agent.system_prompt,
+        tool_schemas=tool_schemas,
+        tool_executor=tool_executor if tool_schemas else None,
+        intent_labels=_DEFAULT_INTENT_LABELS,
+        prompt_blocks=_DEFAULT_PROMPT_BLOCKS,
+    )
+    _graph_cache[agent_id] = graph
+    return graph
 
 
 class MessageRequest(BaseModel):
@@ -97,7 +128,9 @@ async def get_history(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if agent_id not in AGENT_GRAPHS:
+    shop_id = current_user.get("shop_id", "")
+    graph = await _get_agent_graph(agent_id, shop_id, db)
+    if not graph:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
     user_id = uuid.UUID(current_user["sub"])
     result = await db.execute(
@@ -125,7 +158,9 @@ async def send_message(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if agent_id not in AGENT_GRAPHS:
+    shop_id = current_user.get("shop_id", "")
+    graph = await _get_agent_graph(agent_id, shop_id, db)
+    if not graph:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
 
     blocked = _check_guardrails(body.message)
@@ -151,8 +186,6 @@ async def send_message(
     async def event_generator():
         tool_calls: list[dict] = []
         final_messages: list[dict] = []
-
-        graph = AGENT_GRAPHS[agent_id]
 
         try:
             async for event in graph.astream(initial_state, config, stream_mode="custom"):
@@ -189,7 +222,9 @@ async def send_message_sync(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SyncMessageResponse:
-    if agent_id not in AGENT_GRAPHS:
+    shop_id = current_user.get("shop_id", "")
+    graph = await _get_agent_graph(agent_id, shop_id, db)
+    if not graph:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
 
     blocked = _check_guardrails(body.message)
@@ -212,7 +247,6 @@ async def send_message_sync(
     }
     config = {"configurable": {"db": db}}
 
-    graph = AGENT_GRAPHS[agent_id]
     tool_calls: list[dict] = []
     final_messages: list[dict] = []
 
