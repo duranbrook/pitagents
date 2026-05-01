@@ -1267,7 +1267,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
       if (
         this.#options.postToolResponse &&
         this.#postToolChainDepth < 8 &&
-        (pendingCalls.length > 0 || executedCount > 0)
+        (pendingCalls.length > 0 || executedCount > 0 || this.#toolExecutedDuringResponse)
       ) {
         this.#requestPostToolResponse();
       } else if (this.#runningToolCallCount === 0 && this.activity !== "error") {
