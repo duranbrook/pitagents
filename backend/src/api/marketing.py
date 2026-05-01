@@ -177,8 +177,10 @@ async def get_audience_count(
     from sqlalchemy import and_
     from datetime import timedelta
 
+    shop_uuid = uuid.UUID(shop_id)
+
     if segment_type == "all_customers":
-        q = select(func.count(Customer.id)).where(Customer.shop_id == shop_id)
+        q = select(func.count(Customer.id)).where(Customer.shop_id == shop_uuid)
         result = await db.execute(q)
         return {"count": result.scalar() or 0}
 
@@ -192,7 +194,7 @@ async def get_audience_count(
             select(JobCard.customer_id)
             .where(
                 and_(
-                    JobCard.shop_id == shop_id,
+                    JobCard.shop_id == shop_uuid,
                     JobCard.created_at >= window_start,
                     JobCard.created_at <= window_end,
                 )
@@ -210,7 +212,7 @@ async def get_audience_count(
             select(JobCard.customer_id)
             .where(
                 and_(
-                    JobCard.shop_id == shop_id,
+                    JobCard.shop_id == shop_uuid,
                     JobCard.services.cast(String).contains(service_type),
                 )
             )
@@ -229,7 +231,7 @@ async def get_audience_count(
             .join(Vehicle, Vehicle.id == JobCard.vehicle_id)
             .where(
                 and_(
-                    JobCard.shop_id == shop_id,
+                    JobCard.shop_id == shop_uuid,
                     Vehicle.make.ilike(f"%{vehicle_type}%"),
                 )
             )
