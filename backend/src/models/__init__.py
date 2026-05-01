@@ -8,8 +8,10 @@ from src.models.quote import Quote
 from src.models.customer import Customer
 from src.models.vehicle import Vehicle
 from src.models.customer_message import CustomerMessage
+from src.models.shop_settings import ShopSettings
 
 __all__ = [
     "Shop", "User", "InspectionSession", "Report", "MediaFile",
     "ChatMessage", "Quote", "Customer", "Vehicle", "CustomerMessage",
+    "ShopSettings",
 ]
