@@ -16,6 +16,7 @@ from src.models.service_reminder import ServiceReminderConfig, ServiceReminder
 from src.models.inventory import InventoryItem
 from src.models.vendor import Vendor, PurchaseOrder
 from src.models.time_entry import TimeEntry
+from src.models.expense import Expense
 
 __all__ = [
     "Shop", "User", "InspectionSession", "Report", "MediaFile",
@@ -26,4 +27,5 @@ __all__ = [
     "InventoryItem",
     "Vendor", "PurchaseOrder",
     "TimeEntry",
+    "Expense",
 ]
