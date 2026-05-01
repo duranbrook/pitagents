@@ -146,7 +146,7 @@ function InspectPageInner() {
                       onClick={() => setSelectedVehicleId(v.vehicle_id)}
                       className="w-full flex items-center gap-2 pl-5 pr-2 py-1.5 rounded text-left text-xs transition-colors"
                       style={selectedVehicleId === v.vehicle_id
-                        ? { background: 'rgba(99,102,241,0.25)', color: 'rgba(165,180,252,1)' }
+                        ? { background: 'rgba(217,119,6,0.18)', color: 'var(--accent)' }
                         : { color: 'rgba(255,255,255,0.45)' }}
                       onMouseEnter={e => { if (selectedVehicleId !== v.vehicle_id) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
                       onMouseLeave={e => { if (selectedVehicleId !== v.vehicle_id) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
