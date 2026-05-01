@@ -340,6 +340,8 @@ async def receive_order(
     po = result.scalar_one_or_none()
     if po is None:
         raise HTTPException(status_code=404, detail="Purchase order not found")
+    if po.status == "received":
+        raise HTTPException(status_code=409, detail="Purchase order already received")
 
     now = datetime.now(timezone.utc)
     items = json.loads(po.items or "[]")

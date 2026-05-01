@@ -56,6 +56,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["shop_id"], ["shops.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["vendor_id"], ["vendors.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("shop_id", "po_number", name="uq_purchase_orders_shop_po_number"),
     )
     op.create_index("ix_purchase_orders_shop_id", "purchase_orders", ["shop_id"])
     op.create_index("ix_purchase_orders_vendor_id", "purchase_orders", ["vendor_id"])
