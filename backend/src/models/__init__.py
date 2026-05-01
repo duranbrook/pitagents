@@ -13,6 +13,7 @@ from src.models.job_card import JobCardColumn, JobCard
 from src.models.invoice import Invoice, InvoicePaymentEvent
 from src.models.appointment import Appointment, BookingConfig
 from src.models.service_reminder import ServiceReminderConfig, ServiceReminder
+from src.models.inventory import InventoryItem
 
 __all__ = [
     "Shop", "User", "InspectionSession", "Report", "MediaFile",
@@ -20,4 +21,5 @@ __all__ = [
     "ShopSettings", "JobCardColumn", "JobCard", "Invoice", "InvoicePaymentEvent",
     "Appointment", "BookingConfig",
     "ServiceReminderConfig", "ServiceReminder",
+    "InventoryItem",
 ]
