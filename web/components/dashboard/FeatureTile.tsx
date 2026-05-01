@@ -34,7 +34,7 @@ export function FeatureTile({ tile, accentColor }: Props) {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: tile.status === 'live' ? hexToRgba(accentColor, 0.18) : 'rgba(255,255,255,0.05)',
     opacity: tile.status === 'soon' ? 0.35 : 1,
-    color: tile.status === 'live' ? accentColor : 'rgba(255,255,255,0.4)',
+    ...(tile.status === 'live' && { color: accentColor }),
   }
 
   const labelStyle: React.CSSProperties = {
