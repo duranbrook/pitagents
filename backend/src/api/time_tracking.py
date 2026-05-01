@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import Optional
 from src.db.base import get_db
 from src.api.deps import get_current_user_id, get_current_shop_id
-from src.models.time_entry import TimeEntry
+from src.models.time_entry import TimeEntry, VALID_TASK_TYPES
 
 router = APIRouter(prefix="/time-entries", tags=["time-tracking"])
 
@@ -86,6 +86,8 @@ async def clock_in(
     shop_id: str = Depends(get_current_shop_id),
     db: AsyncSession = Depends(get_db),
 ):
+    if body.task_type not in VALID_TASK_TYPES:
+        raise HTTPException(status_code=422, detail=f"task_type must be one of {VALID_TASK_TYPES}")
     existing = await db.execute(
         select(TimeEntry).where(
             TimeEntry.shop_id == uuid.UUID(shop_id),
