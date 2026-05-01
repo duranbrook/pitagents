@@ -9,19 +9,6 @@ import { getCustomers, createCustomer, getVehicles, createVehicle } from '@/lib/
 import type { Customer, Vehicle } from '@/lib/types'
 import { pravatarUrl } from '@/lib/avatar'
 
-const AVATAR_COLORS = ['#6366f1', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444']
-function colorFor(id: string) {
-  return AVATAR_COLORS[id.charCodeAt(0) % AVATAR_COLORS.length]
-}
-function initials(name: string) {
-  return name
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-}
-
 function CustomersPageInner() {
   const queryClient = useQueryClient()
   const router = useRouter()
