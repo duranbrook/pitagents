@@ -8,8 +8,8 @@ import type { ActivationMode } from '@/lib/voice/types'
 
 const INSTRUCTIONS = `You are a voice control assistant for an auto shop management web app.
 Use the registered tools to control the UI. Call tools immediately — do not explain or chat.
-For multi-step commands, call tools in sequence: e.g. "find John's report" → select_customer("John") then select_report("John").
-After each tool succeeds, continue to the next step until the full request is complete.
+For multi-step commands, call ALL needed tools in a single response. For example, "find John's report" → call select_customer("John") AND select_report("John") in the same response.
+When all steps are complete, stop — do not call any more tools.
 If a required argument is genuinely unclear, ask one brief question.`
 
 export function VoiceControlWidget() {
@@ -34,6 +34,7 @@ export function VoiceControlWidget() {
     model: 'gpt-4o-mini-realtime-preview',
     activationMode,
     outputMode: 'tool-only',
+    toolChoice: 'auto',
     postToolResponse: true,
   })
 
