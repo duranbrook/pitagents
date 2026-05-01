@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Vendor } from '@/lib/types'
 import { getVendorOrders, receivePurchaseOrder } from '@/lib/api'
@@ -11,6 +12,8 @@ const PO_STATUS_COLORS: Record<string, string> = {
 
 export default function VendorDetail({ vendor }: Props) {
   const qc = useQueryClient()
+  const [pendingId, setPendingId] = useState<string | null>(null)
+
   const { data: orders = [] } = useQuery({
     queryKey: ['vendor-orders', vendor.id],
     queryFn: () => getVendorOrders(vendor.id),
@@ -18,6 +21,8 @@ export default function VendorDetail({ vendor }: Props) {
 
   const receive = useMutation({
     mutationFn: (poId: string) => receivePurchaseOrder(vendor.id, poId),
+    onMutate: (poId) => setPendingId(poId),
+    onSettled: () => setPendingId(null),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['vendor-orders', vendor.id] }),
   })
 
@@ -92,7 +97,7 @@ export default function VendorDetail({ vendor }: Props) {
               {po.status !== 'received' && (
                 <button
                   onClick={() => receive.mutate(po.id)}
-                  disabled={receive.isPending}
+                  disabled={pendingId === po.id}
                   style={{ height: 24, padding: '0 8px', borderRadius: 5, border: '1px solid rgba(74,222,128,0.3)', background: 'rgba(74,222,128,0.06)', color: '#4ade80', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
                 >
                   Mark received
