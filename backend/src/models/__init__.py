@@ -12,10 +12,12 @@ from src.models.shop_settings import ShopSettings
 from src.models.job_card import JobCardColumn, JobCard
 from src.models.invoice import Invoice, InvoicePaymentEvent
 from src.models.appointment import Appointment, BookingConfig
+from src.models.service_reminder import ServiceReminderConfig, ServiceReminder
 
 __all__ = [
     "Shop", "User", "InspectionSession", "Report", "MediaFile",
     "ChatMessage", "Quote", "Customer", "Vehicle", "CustomerMessage",
     "ShopSettings", "JobCardColumn", "JobCard", "Invoice", "InvoicePaymentEvent",
     "Appointment", "BookingConfig",
+    "ServiceReminderConfig", "ServiceReminder",
 ]
