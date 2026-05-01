@@ -1,5 +1,6 @@
+import uuid
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from src.api.main import app
 
@@ -53,3 +54,28 @@ def test_diagnose_no_credentials_raises_422(client, auth_headers, mock_db):
             headers=auth_headers,
         )
     assert resp.status_code == 422
+
+
+def test_diagnose_add_to_job_card(client, auth_headers, mock_db):
+    mock_job_card = MagicMock()
+    mock_job_card.notes = "Existing notes"
+    mock_job_card.services = []
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_job_card
+
+    mock_db.execute = AsyncMock(return_value=mock_result)
+    mock_db.commit = AsyncMock()
+
+    resp = client.post(
+        "/diagnose/add-to-job-card",
+        json={
+            "job_card_id": str(uuid.uuid4()),
+            "diagnosis": [{"desc": "Misfire in cylinder 2"}],
+            "repair_plan": [{"repair_desc": "Replace ignition coil", "labor_hrs": 1.5}],
+        },
+        headers=auth_headers,
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["ok"] is True

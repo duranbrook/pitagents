@@ -1,3 +1,4 @@
+import base64
 import uuid as _uuid
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,6 +14,15 @@ router = APIRouter(prefix="/diagnose", tags=["diagnose"])
 CARMD_BASE = "https://api.carmd.com/v3.0"
 
 
+def _build_carmd_headers(api_key: str, partner_token: str) -> dict:
+    encoded = base64.b64encode(api_key.encode()).decode()
+    return {
+        "content-type": "application/json",
+        "authorization": f"Basic {encoded}",
+        "partner-token": partner_token,
+    }
+
+
 async def _get_carmd_creds(shop_id: str, db: AsyncSession) -> tuple[str | None, str | None]:
     result = await db.execute(select(ShopSettings).where(ShopSettings.shop_id == _uuid.UUID(shop_id)))
     settings = result.scalar_one_or_none()
@@ -22,13 +32,7 @@ async def _get_carmd_creds(shop_id: str, db: AsyncSession) -> tuple[str | None, 
 
 
 async def _carmd_get(path: str, params: dict, api_key: str, partner_token: str) -> dict:
-    import base64
-    encoded = base64.b64encode(api_key.encode()).decode()
-    headers = {
-        "content-type": "application/json",
-        "authorization": f"Basic {encoded}",
-        "partner-token": partner_token,
-    }
+    headers = _build_carmd_headers(api_key, partner_token)
     async with httpx.AsyncClient() as client:
         resp = await client.get(f"{CARMD_BASE}{path}", params=params, headers=headers)
         resp.raise_for_status()
@@ -36,13 +40,7 @@ async def _carmd_get(path: str, params: dict, api_key: str, partner_token: str) 
 
 
 async def _carmd_post(path: str, body: dict, api_key: str, partner_token: str) -> dict:
-    import base64
-    encoded = base64.b64encode(api_key.encode()).decode()
-    headers = {
-        "content-type": "application/json",
-        "authorization": f"Basic {encoded}",
-        "partner-token": partner_token,
-    }
+    headers = _build_carmd_headers(api_key, partner_token)
     async with httpx.AsyncClient() as client:
         resp = await client.post(f"{CARMD_BASE}{path}", json=body, headers=headers)
         resp.raise_for_status()
