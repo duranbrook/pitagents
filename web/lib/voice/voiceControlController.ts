@@ -1263,6 +1263,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
 
       this.#incrementResponseToolCount(responseId, pendingCalls.length);
 
+      console.log('[voice] chain-check', { responseId, executedCount, pendingCallsLen: pendingCalls.length, chainDepth: this.#postToolChainDepth, toolExecuted: this.#toolExecutedDuringResponse });
       if (
         this.#options.postToolResponse &&
         this.#postToolChainDepth < 8 &&
@@ -1294,6 +1295,7 @@ class VoiceControlControllerImpl implements VoiceControlController {
       }
 
       const responseId = extractResponseId(event);
+      console.log('[voice] outputItemDone', { tool: item.name, callId: item.call_id, responseId, topLevelResponseId: (event as any).response_id });
       this.#incrementResponseToolCount(responseId);
       await this.#executeToolCall(item, responseId);
     });
@@ -1334,9 +1336,9 @@ class VoiceControlControllerImpl implements VoiceControlController {
     }
 
     if (event.type === "response.done") {
-      const response = event.response as { output?: unknown[]; status?: string } | undefined;
+      const response = event.response as { output?: unknown[]; status?: string; id?: string } | undefined;
       const items = Array.isArray(response?.output) ? response.output : [];
-      console.log('[voice] response.done', response?.status, items.map((i: any) => i?.type + (i?.name ? ':' + i.name : '') + (i?.text ? ' text="' + String(i.text).slice(0, 80) + '"' : '')))
+      console.log('[voice] response.done', { status: response?.status, responseId: response?.id, topLevelResponseId: (event as any).response_id, items: items.map((i: any) => i?.type + (i?.name ? ':' + i.name : '')) });
       this.#handleResponseDone(event, items.filter(isFunctionCallItem));
     }
   };
