@@ -22,8 +22,8 @@ class InventoryItemCreate(BaseModel):
     category: str = "Misc"
     quantity: int = 0
     reorder_at: int = 0
-    cost_price: Optional[str] = None
-    sell_price: Optional[str] = None
+    cost_price: Optional[float] = None
+    sell_price: Optional[float] = None
     vendor_id: Optional[str] = None
     notes: Optional[str] = None
 
@@ -34,8 +34,8 @@ class InventoryItemUpdate(BaseModel):
     category: Optional[str] = None
     quantity: Optional[int] = None
     reorder_at: Optional[int] = None
-    cost_price: Optional[str] = None
-    sell_price: Optional[str] = None
+    cost_price: Optional[float] = None
+    sell_price: Optional[float] = None
     vendor_id: Optional[str] = None
     notes: Optional[str] = None
 
@@ -149,16 +149,16 @@ async def list_inventory(
         except ValueError:
             pass
 
+    if stock_status == "out":
+        q = q.where(InventoryItem.quantity == 0)
+    elif stock_status == "low":
+        q = q.where(InventoryItem.quantity > 0, InventoryItem.quantity <= InventoryItem.reorder_at)
+    elif stock_status == "ok":
+        q = q.where(InventoryItem.quantity > InventoryItem.reorder_at)
+
     q = q.order_by(InventoryItem.name.asc())
     result = await db.execute(q)
     items = result.scalars().all()
-
-    # Apply stock_status post-filter (computed field)
-    if stock_status:
-        items = [i for i in items if _compute_stock_status(
-            i.quantity if i.quantity is not None else 0,
-            i.reorder_at if i.reorder_at is not None else 0,
-        ) == stock_status]
 
     return [_item_to_response(i) for i in items]
 
@@ -183,8 +183,8 @@ async def create_inventory_item(
         category=body.category,
         quantity=body.quantity,
         reorder_at=body.reorder_at,
-        cost_price=Decimal(body.cost_price) if body.cost_price else None,
-        sell_price=Decimal(body.sell_price) if body.sell_price else None,
+        cost_price=Decimal(str(body.cost_price)) if body.cost_price is not None else None,
+        sell_price=Decimal(str(body.sell_price)) if body.sell_price is not None else None,
         vendor_id=uuid.UUID(body.vendor_id) if body.vendor_id else None,
         notes=body.notes,
     )
@@ -255,9 +255,9 @@ async def update_inventory_item(
     if body.reorder_at is not None:
         item.reorder_at = body.reorder_at
     if body.cost_price is not None:
-        item.cost_price = Decimal(body.cost_price)
+        item.cost_price = Decimal(str(body.cost_price))
     if body.sell_price is not None:
-        item.sell_price = Decimal(body.sell_price)
+        item.sell_price = Decimal(str(body.sell_price))
     if body.vendor_id is not None:
         item.vendor_id = uuid.UUID(body.vendor_id) if body.vendor_id else None
     if body.notes is not None:
@@ -294,6 +294,7 @@ async def adjust_stock(
     item.quantity = max(0, current_qty + body.delta)
 
     await db.commit()
+    await db.refresh(item)
     return _item_to_response(item)
 
 
