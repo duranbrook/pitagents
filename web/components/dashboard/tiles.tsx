@@ -130,10 +130,8 @@ export const GROUPS: GroupConfig[] = [
     label: 'AI Tools',
     accent: '#a855f7',
     tiles: [
-      { id: 'chat',         label: 'AI Chat',      icon: IconChat,        status: 'live', route: '/chat' },
-      { id: 'obd',          label: 'OBD Scanner',  icon: IconPlug,        status: 'soon' },
-      { id: 'ai-diagnose',  label: 'AI Diagnose',  icon: IconStethoscope, status: 'live', route: '/diagnose' },
-      { id: 'labor-guides', label: 'Labor Guides', icon: IconBook,        status: 'soon' },
+      { id: 'chat',        label: 'AI Chat',     icon: IconChat,        status: 'live', route: '/chat' },
+      { id: 'ai-diagnose', label: 'AI Diagnose', icon: IconStethoscope, status: 'live', route: '/diagnose' },
     ],
   },
   {
@@ -142,9 +140,6 @@ export const GROUPS: GroupConfig[] = [
     accent: '#ef4444',
     tiles: [
       { id: 'marketing', label: 'Marketing', icon: IconMegaphone, status: 'live', route: '/marketing' },
-      { id: 'reviews',   label: 'Reviews',   icon: IconStar,      status: 'soon' },
-      { id: 'leads',     label: 'Leads',     icon: IconTarget,    status: 'soon' },
-      { id: 'financing', label: 'Financing', icon: IconMoney,     status: 'soon' },
     ],
   },
   {

@@ -9,19 +9,9 @@ import { VoiceControlWidget } from './VoiceControlWidget'
 import { pravatarUrl } from '@/lib/avatar'
 
 const NAV_ITEMS = [
-  { href: '/',              label: 'Home',         icon: <HomeIcon />,         exact: true },
-  { href: '/customers',     label: 'Customers',    icon: <CustomersIcon />,    exact: false },
-  { href: '/reports',       label: 'Reports',      icon: <ReportsIcon />,      exact: false },
-  { href: '/job-cards',     label: 'Job Cards',    icon: <JobCardsIcon />,     exact: false },
-  { href: '/invoices',      label: 'Invoices',     icon: <InvoicesIcon />,     exact: false },
-  { href: '/appointments',  label: 'Appointments', icon: <AppointmentsIcon />, exact: false },
-  { href: '/reminders',     label: 'Reminders',    icon: <RemindersIcon />,    exact: false },
-  { href: '/inventory',     label: 'Inventory',    icon: <InventoryIcon />,    exact: false },
-  { href: '/vendors',       label: 'Vendors',      icon: <VendorsIcon />,      exact: false },
-  { href: '/inspect',       label: 'Inspect',      icon: <InspectIcon />,      exact: false },
-  { href: '/chat',          label: 'Chat',         icon: <ChatIcon />,         exact: false },
-  { href: '/diagnose',      label: 'Diagnose',     icon: <DiagnoseIcon />,     exact: false },
-  { href: '/marketing',     label: 'Marketing',    icon: <MarketingIcon />,    exact: false },
+  { href: '/',          label: 'Home',      icon: <HomeIcon />,      exact: true },
+  { href: '/customers', label: 'Customers', icon: <CustomersIcon />, exact: false },
+  { href: '/chat',      label: 'Chat',      icon: <ChatIcon />,      exact: false },
 ]
 
 function getEmail(): string {
