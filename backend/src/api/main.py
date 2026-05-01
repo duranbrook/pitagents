@@ -17,6 +17,7 @@ from src.api import customer_messages
 from src.api.shop_settings import router as shop_settings_router
 from src.api.job_cards import router as job_cards_router
 from src.api.invoices import router as invoices_router
+from src.api.labor_lookup import router as labor_lookup_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -47,3 +48,4 @@ app.include_router(customer_messages.router)
 app.include_router(shop_settings_router)
 app.include_router(job_cards_router)
 app.include_router(invoices_router)
+app.include_router(labor_lookup_router)
