@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, AsyncMock
 
 SHOP_ID = "00000000-0000-0000-0000-000000000099"
@@ -10,7 +11,7 @@ def test_list_columns_returns_existing(client, auth_headers, mock_db):
     col.shop_id = uuid.UUID(SHOP_ID)
     col.name = "Drop-Off"
     col.position = 0
-    col.created_at = "2026-05-01T00:00:00+00:00"
+    col.created_at = datetime(2026, 5, 1, 0, 0, 0, tzinfo=timezone.utc)
     mock_db.execute.return_value.scalars.return_value.all.return_value = [col]
     resp = client.get("/job-cards/columns", headers=auth_headers)
     assert resp.status_code == 200
@@ -39,7 +40,7 @@ def test_create_column(client, auth_headers, mock_db):
     col.shop_id = uuid.UUID(SHOP_ID)
     col.name = "Drop-Off"
     col.position = 0
-    col.created_at = "2026-05-01T00:00:00+00:00"
+    col.created_at = datetime(2026, 5, 1, 0, 0, 0, tzinfo=timezone.utc)
     mock_db.execute.return_value.scalar_one_or_none.return_value = col
     resp = client.post(
         "/job-cards/columns",
@@ -48,3 +49,54 @@ def test_create_column(client, auth_headers, mock_db):
     )
     assert resp.status_code == 201
     assert resp.json()["name"] == "Drop-Off"
+
+
+def test_update_column(client, auth_headers, mock_db):
+    col = MagicMock()
+    col.id = uuid.uuid4()
+    col.shop_id = uuid.UUID(SHOP_ID)
+    col.name = "In Progress"
+    col.position = 1
+    col.created_at = None
+    mock_db.execute.return_value.scalar_one_or_none.return_value = col
+    resp = client.patch(
+        f"/job-cards/columns/{col.id}",
+        json={"name": "In Progress"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "In Progress"
+
+
+def test_update_column_not_found(client, auth_headers, mock_db):
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    resp = client.patch(
+        f"/job-cards/columns/{uuid.uuid4()}",
+        json={"name": "Ghost"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+
+
+def test_delete_column(client, auth_headers, mock_db):
+    col = MagicMock()
+    col.id = uuid.uuid4()
+    col.shop_id = uuid.UUID(SHOP_ID)
+    mock_db.execute.return_value.scalar_one_or_none.return_value = col
+    resp = client.delete(f"/job-cards/columns/{col.id}", headers=auth_headers)
+    assert resp.status_code == 204
+
+
+def test_delete_column_not_found(client, auth_headers, mock_db):
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    resp = client.delete(f"/job-cards/columns/{uuid.uuid4()}", headers=auth_headers)
+    assert resp.status_code == 404
+
+
+def test_patch_invalid_uuid_returns_422(client, auth_headers, mock_db):
+    resp = client.patch(
+        "/job-cards/columns/not-a-uuid",
+        json={"name": "x"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 422

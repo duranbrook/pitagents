@@ -36,6 +36,7 @@ def upgrade() -> None:
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint('shop_id', 'position', name='uq_job_card_columns_shop_position'),
     )
     op.create_index(
         op.f("ix_job_card_columns_shop_id"),

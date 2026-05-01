@@ -23,7 +23,7 @@ class ColumnResponse(BaseModel):
     shop_id: str
     name: str
     position: int
-    created_at: str
+    created_at: Optional[str]
 
 
 class ColumnCreate(BaseModel):
@@ -42,7 +42,7 @@ def _col_to_response(c: JobCardColumn) -> ColumnResponse:
         shop_id=str(c.shop_id),
         name=c.name,
         position=c.position,
-        created_at=str(c.created_at),
+        created_at=c.created_at.isoformat() if c.created_at else None,
     )
 
 
