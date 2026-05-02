@@ -1,4 +1,4 @@
-import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder, TimeEntry, Expense, PLSummary, PaymentsSummary, PaymentEvent, DiagnoseAnalyzeResult, DiagnosisItem, RepairPlanItem, TsbItem, RecallItem, MaintenanceItem, AudienceSegment, Campaign, CampaignTemplate, ShopAgent, ToolInfo, AgentCreate, AgentUpdate } from './types'
+import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, ShopProfile, UserProfile, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder, TimeEntry, Expense, PLSummary, PaymentsSummary, PaymentEvent, DiagnoseAnalyzeResult, DiagnosisItem, RepairPlanItem, TsbItem, RecallItem, MaintenanceItem, AudienceSegment, Campaign, CampaignTemplate, ShopAgent, ToolInfo, AgentCreate, AgentUpdate, BookingConfig } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -243,6 +243,30 @@ export const updateQuoteLineItems = (
 
 export const finalizeQuote = (quoteId: string): Promise<FinalizeQuoteResponse> =>
   api.put(`/quotes/${quoteId}/finalize`, {}).then(r => r.data)
+
+// ── Auth / User ───────────────────────────────────────────────────────────
+export const getMe = (): Promise<UserProfile> =>
+  api.get('/auth/me').then(r => r.data)
+
+export const updateProfile = (name: string): Promise<UserProfile> =>
+  api.patch('/auth/profile', { name }).then(r => r.data)
+
+export const updatePassword = (currentPassword: string, newPassword: string): Promise<{ ok: boolean }> =>
+  api.patch('/auth/password', { current_password: currentPassword, new_password: newPassword }).then(r => r.data)
+
+// ── Shop Profile ──────────────────────────────────────────────────────────
+export const getShopProfile = (): Promise<ShopProfile> =>
+  api.get('/settings/profile').then(r => r.data)
+
+export const updateShopProfile = (data: Partial<ShopProfile>): Promise<ShopProfile> =>
+  api.patch('/settings/profile', data).then(r => r.data)
+
+// ── Booking Config ────────────────────────────────────────────────────────
+export const getMyBookingConfig = (): Promise<BookingConfig> =>
+  api.get('/appointments/my-config').then(r => r.data)
+
+export const updateMyBookingConfig = (data: Partial<BookingConfig>): Promise<BookingConfig> =>
+  api.patch('/appointments/my-config', data).then(r => r.data)
 
 // ── Shop Settings ──────────────────────────────────────────────────────────
 export const getShopSettings = (): Promise<ShopSettings> =>
