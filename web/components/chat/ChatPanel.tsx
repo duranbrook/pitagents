@@ -9,13 +9,13 @@ import { VoiceButton } from './VoiceButton'
 import { ImageAttach } from './ImageAttach'
 import { QuoteSummary } from './QuoteSummary'
 import { useVoiceContext } from '@/contexts/VoiceContext'
+import type { ShopAgent } from '@/lib/types'
 
 interface StreamingMessage {
   text: string
   toolCalls: ToolCallRecord[]
 }
 
-const AGENT_NAMES: Record<string, string> = { assistant: 'Assistant', tom: 'Tom' }
 
 const ASSISTANT_CAPABILITIES = [
   {
@@ -34,10 +34,11 @@ const ASSISTANT_CAPABILITIES = [
 
 interface Props {
   agentId: string
+  agent?: ShopAgent
   onNewMessage: (text: string) => void
 }
 
-export function ChatPanel({ agentId, onNewMessage }: Props) {
+export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
   const router = useRouter()
   const qc = useQueryClient()
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -183,12 +184,27 @@ export function ChatPanel({ agentId, onNewMessage }: Props) {
       <div className="flex flex-col flex-1 min-w-0" style={{ background: '#030712' }}>
         {/* Header */}
         <div
-          className="flex-shrink-0 px-5 py-3 flex items-center gap-2"
+          className="flex-shrink-0 px-5 py-3 flex items-center gap-2.5"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
         >
-          <span className="font-semibold text-sm text-white">{AGENT_NAMES[agentId] ?? agentId}</span>
+          {agent?.accent_color && (
+            <div
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ background: agent.accent_color }}
+            />
+          )}
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="font-semibold text-sm text-white leading-tight">
+              {agent?.persona_name ?? agent?.name ?? agentId}
+            </span>
+            {agent?.role_tagline && (
+              <span className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                {agent.role_tagline}
+              </span>
+            )}
+          </div>
           <span
-            className="text-[10px] px-1.5 py-0.5 rounded-full"
+            className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
             style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)' }}
           >
             AI

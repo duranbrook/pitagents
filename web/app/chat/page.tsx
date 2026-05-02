@@ -49,6 +49,7 @@ export default function ChatPage() {
             <ChatPanel
               key={selectedAgent}
               agentId={selectedAgent}
+              agent={agents.find(a => a.id === selectedAgent)}
               onNewMessage={(text) =>
                 setLastMessages(prev => ({ ...prev, [selectedAgent]: text }))
               }
