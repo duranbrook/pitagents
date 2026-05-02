@@ -6,6 +6,7 @@ final class AppState: ObservableObject {
     @Published var userEmail: String = ""
     @Published var userRole: String = ""
     @Published var shopId: String = ""
+    @Published var techAgentId: String = ""
 
     var isLoggedIn: Bool { token != nil }
 
@@ -29,6 +30,15 @@ final class AppState: ObservableObject {
         userEmail = ""
         userRole = ""
         shopId = ""
+        techAgentId = ""
+    }
+
+    func loadTechAgent() async {
+        guard userRole == "technician" else { return }
+        guard let agents = try? await APIClient.shared.listAgents() else { return }
+        if let tech = agents.first(where: { $0.name == "Technician" }) ?? agents.first {
+            techAgentId = tech.id
+        }
     }
 
     private func decodeToken(_ token: String) {
