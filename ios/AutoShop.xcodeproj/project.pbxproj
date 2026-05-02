@@ -31,6 +31,12 @@
 		CC8DAAD5521C61E2B3A9B78C /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A0A4155F0DC2EBD33991B9 /* ProfileView.swift */; };
 		FB217BC25EA3E2875AB9EBAA /* Config.plist in Resources */ = {isa = PBXBuildFile; fileRef = 492F35BFC5A51178D439B745 /* Config.plist */; };
 		FBE9AF92529B3383212F7744 /* VehicleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AFE5B0257A1C3F070333D8 /* VehicleListView.swift */; };
+		AA11223344556677AABBCCDD /* TechnicianInputBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCDD /* TechnicianInputBar.swift */; };
+		AA11223344556677AABBCCD1 /* PhotoTrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD1 /* PhotoTrayView.swift */; };
+		AA11223344556677AABBCCD2 /* VINScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD2 /* VINScannerView.swift */; };
+		AA11223344556677AABBCCD3 /* TranscribeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD3 /* TranscribeClient.swift */; };
+		AA11223344556677AABBCCD4 /* VideoRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD4 /* VideoRecorderView.swift */; };
+		AA11223344556677AABBCCD5 /* ReportCardBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD5 /* ReportCardBubble.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +66,12 @@
 		F3BE8A1B0B49C8FDFEFC1E7E /* CustomerListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerListView.swift; sourceTree = "<group>"; };
 		F54E70393BF8C35976194248 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		FE42894ADA110A37C69C9004 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		BB11223344556677AABBCCDD /* TechnicianInputBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TechnicianInputBar.swift; sourceTree = "<group>"; };
+		BB11223344556677AABBCCD1 /* PhotoTrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoTrayView.swift; sourceTree = "<group>"; };
+		BB11223344556677AABBCCD2 /* VINScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VINScannerView.swift; sourceTree = "<group>"; };
+		BB11223344556677AABBCCD3 /* TranscribeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscribeClient.swift; sourceTree = "<group>"; };
+		BB11223344556677AABBCCD4 /* VideoRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRecorderView.swift; sourceTree = "<group>"; };
+		BB11223344556677AABBCCD5 /* ReportCardBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportCardBubble.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -161,11 +173,24 @@
 			path = Storage;
 			sourceTree = "<group>";
 		};
+		CC11223344556677AABBCCDD /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				BB11223344556677AABBCCDD /* TechnicianInputBar.swift */,
+				BB11223344556677AABBCCD1 /* PhotoTrayView.swift */,
+				BB11223344556677AABBCCD2 /* VINScannerView.swift */,
+				BB11223344556677AABBCCD4 /* VideoRecorderView.swift */,
+				BB11223344556677AABBCCD5 /* ReportCardBubble.swift */,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
 		E5244AFF6344402DE570B3BB /* Views */ = {
 			isa = PBXGroup;
 			children = (
 				EA268B1DEEB780EA2F9EDB68 /* Assistant */,
 				AA80B486F1D32A5536877F64 /* Auth */,
+				CC11223344556677AABBCCDD /* Chat */,
 				4E4094186FA8326A67C2B7A2 /* Customers */,
 				7E0A6B85656995A8845A6399 /* Inspect */,
 				28827BF30AF212BE03F781D7 /* Main */,
@@ -187,6 +212,7 @@
 			children = (
 				4DAD0779E6B3558AF62B58E8 /* APIClient.swift */,
 				4A250B32A6EC06E811793050 /* APIModels.swift */,
+				BB11223344556677AABBCCD3 /* TranscribeClient.swift */,
 			);
 			path = Network;
 			sourceTree = "<group>";
@@ -285,6 +311,12 @@
 				774E213B46FB996E7420E3F0 /* VehicleDetailView.swift in Sources */,
 				FBE9AF92529B3383212F7744 /* VehicleListView.swift in Sources */,
 				18FE07258FA26EB593826ADE /* VideoCapture.swift in Sources */,
+				AA11223344556677AABBCCDD /* TechnicianInputBar.swift in Sources */,
+				AA11223344556677AABBCCD1 /* PhotoTrayView.swift in Sources */,
+				AA11223344556677AABBCCD2 /* VINScannerView.swift in Sources */,
+				AA11223344556677AABBCCD3 /* TranscribeClient.swift in Sources */,
+				AA11223344556677AABBCCD4 /* VideoRecorderView.swift in Sources */,
+				AA11223344556677AABBCCD5 /* ReportCardBubble.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

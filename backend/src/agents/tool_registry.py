@@ -3,7 +3,7 @@ Static registry of all tool bundles available to shop agents.
 Each entry maps tool_id -> metadata + LangGraph integration.
 Tool IDs are stored in ShopAgent.tools (list[str]).
 """
-from src.agents.tools.vin_tools import VIN_TOOL_SCHEMAS, lookup_vin, extract_vin_from_image
+from src.agents.tools.vin_tools import VIN_TOOL_SCHEMAS, lookup_vin, extract_vin_from_image, find_vehicle_by_vin
 from src.agents.tools.quote_tools import (
     QUOTE_TOOL_SCHEMAS,
     lookup_part_price,
@@ -31,6 +31,8 @@ async def _exec_vin(name: str, inp: dict, db: AsyncSession) -> dict:
         return await lookup_vin(inp["vin"])
     if name == "extract_vin_from_image":
         return await extract_vin_from_image(inp["image_url"])
+    if name == "find_vehicle_by_vin":
+        return await find_vehicle_by_vin(inp["vin"], db)
     return {"error": f"Unknown tool: {name}"}
 
 
@@ -40,7 +42,7 @@ async def _exec_quote(name: str, inp: dict, db: AsyncSession) -> dict:
     if name == "estimate_labor":
         return await estimate_labor(inp["task_name"], inp["hours"], db)
     if name == "create_quote":
-        return await create_quote(db, inp.get("session_id"))
+        return await create_quote(db, inp.get("session_id"), inp.get("vehicle_id"))
     if name == "create_quote_item":
         return await create_quote_item(
             inp["quote_id"], inp["item_type"], inp["description"],
@@ -81,7 +83,7 @@ TOOL_REGISTRY: dict[str, dict] = {
         "description": "Identify any vehicle by VIN number or image",
         "schemas": VIN_TOOL_SCHEMAS,
         "executor": _exec_vin,
-        "tool_names": {"lookup_vin", "extract_vin_from_image"},
+        "tool_names": {"lookup_vin", "extract_vin_from_image", "find_vehicle_by_vin"},
     },
     "quote_builder": {
         "label": "Quotes & Estimates",

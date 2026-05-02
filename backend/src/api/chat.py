@@ -71,18 +71,19 @@ async def _get_agent_graph(agent_id: str, shop_id: str, db: AsyncSession):
 
 class MessageRequest(BaseModel):
     message: str
-    image_url: str | None = None
+    image_url: str | None = None   # kept for backward compat
+    image_urls: list[str] = []
 
 
-def _build_user_content(message: str, image_url: str | None) -> list[dict]:
+def _build_user_content(message: str, image_urls: list[str]) -> list[dict]:
     content: list[dict] = []
-    if image_url:
-        if image_url.startswith("data:"):
-            header, _, encoded = image_url.partition(",")
+    for url in image_urls:
+        if url.startswith("data:"):
+            header, _, encoded = url.partition(",")
             media_type = header.split(":")[1].split(";")[0]
             content.append({"type": "image", "source": {"type": "base64", "media_type": media_type, "data": encoded}})
         else:
-            content.append({"type": "image", "source": {"type": "url", "url": image_url}})
+            content.append({"type": "image", "source": {"type": "url", "url": url}})
     content.append({"type": "text", "text": message})
     return content
 
@@ -172,7 +173,11 @@ async def send_message(
 
     user_id = uuid.UUID(current_user["sub"])
     history = await _load_history(user_id, agent_id, db)
-    user_content = _build_user_content(body.message, body.image_url)
+    # Merge legacy image_url into image_urls for backward compat
+    effective_urls = list(body.image_urls)
+    if body.image_url and body.image_url not in effective_urls:
+        effective_urls.append(body.image_url)
+    user_content = _build_user_content(body.message, effective_urls)
 
     initial_state = {
         "messages": history + [{"role": "user", "content": user_content}],
@@ -236,7 +241,11 @@ async def send_message_sync(
 
     user_id = uuid.UUID(current_user["sub"])
     history = await _load_history(user_id, agent_id, db)
-    user_content = _build_user_content(body.message, body.image_url)
+    # Merge legacy image_url into image_urls for backward compat
+    effective_urls = list(body.image_urls)
+    if body.image_url and body.image_url not in effective_urls:
+        effective_urls.append(body.image_url)
+    user_content = _build_user_content(body.message, effective_urls)
 
     initial_state = {
         "messages": history + [{"role": "user", "content": user_content}],

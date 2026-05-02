@@ -7,6 +7,9 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from google.auth import exceptions as google_auth_exceptions
 from src.config import settings
 from src.db.base import get_db
 from src.models.user import User
@@ -44,6 +47,10 @@ class UserProfileResponse(BaseModel):
     shop_id: str
 
 
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+
+
 class OkResponse(BaseModel):
     ok: bool = True
 
@@ -72,6 +79,50 @@ async def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    token = create_access_token({
+        "sub": str(user.id),
+        "shop_id": str(user.shop_id),
+        "role": user.role,
+        "email": user.email,
+    })
+    return TokenResponse(access_token=token)
+
+
+@router.post("/google", response_model=TokenResponse)
+async def google_login(
+    request: GoogleLoginRequest,
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponse:
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            request.id_token,
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID or None,
+        )
+    except (ValueError, google_auth_exceptions.GoogleAuthError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
+
+    google_sub = idinfo.get("sub")
+    if not google_sub:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
+    email = idinfo.get("email", "")
+    if not idinfo.get("email_verified"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Google email not verified")
+
+    result = await db.execute(select(User).where(User.google_id == google_sub))
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="No account found. Request a demo to get access.",
+            )
+        user.google_id = google_sub
+        await db.commit()
+
     token = create_access_token({
         "sub": str(user.id),
         "shop_id": str(user.shop_id),

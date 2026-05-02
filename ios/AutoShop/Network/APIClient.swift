@@ -92,6 +92,35 @@ final class APIClient {
         try await post("/chat/\(agentId)/message/sync", body: body)
     }
 
+    func listAgents() async throws -> [AgentListItem] {
+        try await get("/agents")
+    }
+
+    func fetchQuote(id: String) async throws -> QuoteResponse {
+        try await get("/quotes/\(id)")
+    }
+
+    func uploadVideo(data: Data, filename: String) async throws -> VideoUploadResponse {
+        guard let url = URL(string: baseURL + "/upload/video") else { throw APIError.invalidURL }
+        let boundary = UUID().uuidString
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        injectAuth(&req)
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: video/mp4\r\n\r\n".data(using: .utf8)!)
+        body.append(data)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        req.httpBody = body
+
+        let (respData, response) = try await URLSession.shared.data(for: req)
+        try validate(data: respData, response: response)
+        return try decode(VideoUploadResponse.self, from: respData)
+    }
+
     // MARK: - Helpers
 
     private func get<T: Decodable>(_ path: String) async throws -> T {

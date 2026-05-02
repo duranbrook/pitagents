@@ -43,6 +43,7 @@ def mock_db(mock_settings):
     result.scalar_one_or_none.return_value = None
     result.scalars.return_value.all.return_value = []
     session.execute.return_value = result
+    session.add = MagicMock()  # add() is sync in SQLAlchemy; avoid AsyncMock coroutine warning
     return session
 
 

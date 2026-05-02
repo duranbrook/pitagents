@@ -295,8 +295,60 @@ struct ChatHistoryItem: Decodable, Identifiable {
 
 struct ChatRequest: Encodable {
     let message: String
+    let imageUrls: [String]
+    init(message: String, imageUrls: [String] = []) {
+        self.message = message
+        self.imageUrls = imageUrls
+    }
+    enum CodingKeys: String, CodingKey {
+        case message
+        case imageUrls = "image_urls"
+    }
 }
 
 struct ChatResponse: Decodable {
     let text: String
+}
+
+// MARK: - Agents
+
+struct AgentListItem: Decodable, Identifiable {
+    let id: String
+    let name: String
+    let roleTagline: String
+    let accentColor: String
+    let initials: String
+    let tools: [String]
+    let sortOrder: Int
+    enum CodingKeys: String, CodingKey {
+        case id, name, initials, tools
+        case roleTagline = "role_tagline"
+        case accentColor = "accent_color"
+        case sortOrder = "sort_order"
+    }
+}
+
+struct VideoUploadResponse: Decodable {
+    let videoUrl: String
+    enum CodingKeys: String, CodingKey {
+        case videoUrl = "video_url"
+    }
+}
+
+extension ChatHistoryItem {
+    var quoteId: String? {
+        let text = displayText
+        guard let range = text.range(of: #"\[QUOTE:([0-9a-f\-]+)\]"#, options: .regularExpression) else {
+            return nil
+        }
+        let match = String(text[range])
+        let inner = match.dropFirst("[QUOTE:".count).dropLast(1)
+        return inner.isEmpty ? nil : String(inner)
+    }
+
+    var displayTextClean: String {
+        displayText
+            .replacingOccurrences(of: #"\[QUOTE:[0-9a-f\-]+\]\n?"#, with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }

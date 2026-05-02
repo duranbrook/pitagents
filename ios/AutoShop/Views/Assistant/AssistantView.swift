@@ -9,26 +9,72 @@ struct Agent: Identifiable, Hashable {
     let systemImage: String
 }
 
-let availableAgents: [Agent] = [
-    Agent(id: "assistant", displayName: "Assistant", subtitle: "General shop assistant", systemImage: "brain"),
-    Agent(id: "tom", displayName: "Tom", subtitle: "Parts & pricing specialist", systemImage: "wrench.and.screwdriver"),
-]
+// MARK: - Agent List ViewModel
+
+@MainActor
+final class AssistantListViewModel: ObservableObject {
+    @Published var agents: [Agent] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+
+    private static let iconByName: [String: String] = [
+        "Service Advisor": "person.text.rectangle",
+        "Technician": "wrench.and.screwdriver",
+        "Parts Manager": "shippingbox",
+        "Bookkeeper": "dollarsign.circle",
+        "Manager": "chart.bar",
+    ]
+
+    func load() async {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let items = try await APIClient.shared.listAgents()
+            agents = items.map { item in
+                Agent(
+                    id: item.id,
+                    displayName: item.name,
+                    subtitle: item.roleTagline,
+                    systemImage: Self.iconByName[item.name] ?? "brain"
+                )
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
 
 // MARK: - Agent List (primary view)
 
 struct AssistantView: View {
+    @StateObject private var vm = AssistantListViewModel()
+
     var body: some View {
-        List(availableAgents) { agent in
-            NavigationLink(value: agent) {
-                AgentRow(agent: agent)
+        Group {
+            if vm.isLoading && vm.agents.isEmpty {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(vm.agents) { agent in
+                    NavigationLink(value: agent) {
+                        AgentRow(agent: agent)
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                }
+                .listStyle(.plain)
             }
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         }
-        .listStyle(.plain)
         .navigationTitle("Agents")
         .navigationDestination(for: Agent.self) { agent in
             AgentChatView(agent: agent)
         }
+        .alert("Error", isPresented: Binding(
+            get: { vm.errorMessage != nil },
+            set: { if !$0 { vm.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { vm.errorMessage = nil }
+        } message: { Text(vm.errorMessage ?? "") }
+        .task { await vm.load() }
     }
 }
 
@@ -81,7 +127,22 @@ final class AgentChatViewModel: ObservableObject {
         isSending = true
         defer { isSending = false }
         do {
-            _ = try await APIClient.shared.sendChatMessage(ChatRequest(message: text), agentId: agentId)
+            _ = try await APIClient.shared.sendChatMessage(ChatRequest(message: text, imageUrls: []), agentId: agentId)
+            messages = try await APIClient.shared.chatHistory(agentId: agentId)
+        } catch {
+            messages.removeLast()
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func sendWithImages(text: String, imageUrls: [String], agentId: String) async {
+        let optimistic = ChatHistoryItem(role: "user", content: text.isEmpty ? "[Photos attached]" : text)
+        messages.append(optimistic)
+        isSending = true
+        defer { isSending = false }
+        do {
+            let req = ChatRequest(message: text.isEmpty ? "See attached photos" : text, imageUrls: imageUrls)
+            _ = try await APIClient.shared.sendChatMessage(req, agentId: agentId)
             messages = try await APIClient.shared.chatHistory(agentId: agentId)
         } catch {
             messages.removeLast()
@@ -94,20 +155,41 @@ final class AgentChatViewModel: ObservableObject {
 
 struct AgentChatView: View {
     let agent: Agent
+    let showMediaControls: Bool
     @StateObject private var vm = AgentChatViewModel()
     @State private var inputText = ""
+    @State private var isExpanded = false
     @FocusState private var inputFocused: Bool
+
+    init(agent: Agent, showMediaControls: Bool = false) {
+        self.agent = agent
+        self.showMediaControls = showMediaControls
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             messageList
+                .frame(maxHeight: isExpanded ? 120 : .infinity)
             Divider()
-            inputBar
+            if showMediaControls {
+                TechnicianInputBar(agent: agent, vm: vm, isExpanded: $isExpanded)
+            } else {
+                inputBar
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                agentNavTitle
+            ToolbarItem(placement: .principal) { agentNavTitle }
+            if showMediaControls && isExpanded {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        withAnimation(.spring(response: 0.3)) { isExpanded = false }
+                    } label: {
+                        Image(systemName: "chevron.down.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                            .font(.title3)
+                    }
+                }
             }
         }
         .alert("Error", isPresented: Binding(
@@ -117,6 +199,11 @@ struct AgentChatView: View {
             Button("OK", role: .cancel) { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
         .task { await vm.load(agentId: agent.id) }
+        .onChange(of: vm.isSending) { sending in
+            if !sending && isExpanded {
+                withAnimation(.spring(response: 0.3)) { isExpanded = false }
+            }
+        }
     }
 
     private var agentNavTitle: some View {
@@ -142,6 +229,15 @@ struct AgentChatView: View {
                     ForEach(Array(vm.messages.enumerated()), id: \.element.id) { idx, msg in
                         ChatBubble(item: msg, agent: agent, showAvatar: shouldShowAvatar(at: idx))
                             .id(msg.id)
+                        if msg.role != "user", let qid = msg.quoteId {
+                            HStack {
+                                Color.clear.frame(width: 28 + 6)
+                                ReportCardBubble(quoteId: qid)
+                                Spacer(minLength: 8)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.bottom, 4)
+                        }
                     }
                     if vm.isSending {
                         TypingIndicator(agent: agent)
@@ -219,7 +315,7 @@ struct ChatBubble: View {
                 }
             }
 
-            Text(item.displayText.isEmpty ? "…" : item.displayText)
+            Text(item.displayTextClean.isEmpty ? "…" : item.displayTextClean)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(isUser ? Color.accentColor : Color(.secondarySystemBackground))

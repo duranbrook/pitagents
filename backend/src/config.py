@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     # 7 days — appropriate for mobile clients that don't re-auth frequently
     JWT_EXPIRE_MINUTES: int = 10080
+    GOOGLE_CLIENT_ID: str = ""
 
     # Pricing flag default (per-shop override takes precedence at runtime)
     DEFAULT_PRICING_SOURCE: str = "shop"

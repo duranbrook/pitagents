@@ -66,16 +66,20 @@ QUOTE_TOOL_SCHEMAS = [
     {
         "name": "create_quote",
         "description": (
-            "Create a new draft quote in the database, optionally linked to an inspection session. "
-            "Returns the new quote ID."
+            "Create a new draft quote in the database, optionally linked to a vehicle (via vehicle_id) "
+            "or an inspection session (via session_id). Returns the new quote ID."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
+                "vehicle_id": {
+                    "type": "string",
+                    "description": "UUID of the vehicle this quote is for (use when you know the vehicle from a VIN lookup)",
+                },
                 "session_id": {
                     "type": "string",
-                    "description": "Optional UUID of the inspection session to link this quote to",
-                }
+                    "description": "Optional UUID of an inspection session to link this quote to",
+                },
             },
             "required": [],
         },
@@ -175,7 +179,11 @@ async def estimate_labor(task_name: str, hours: float, db: AsyncSession) -> dict
     }
 
 
-async def create_quote(db: AsyncSession, session_id: str | None = None) -> dict:
+async def create_quote(
+    db: AsyncSession,
+    session_id: str | None = None,
+    vehicle_id: str | None = None,
+) -> dict:
     sid = None
     if session_id:
         try:
@@ -183,7 +191,14 @@ async def create_quote(db: AsyncSession, session_id: str | None = None) -> dict:
         except ValueError:
             return {"error": f"Invalid session_id: {session_id}"}
 
-    quote = Quote(session_id=sid)
+    vid = None
+    if vehicle_id:
+        try:
+            vid = uuid.UUID(vehicle_id)
+        except ValueError:
+            return {"error": f"Invalid vehicle_id: {vehicle_id}"}
+
+    quote = Quote(session_id=sid, vehicle_id=vid)
     db.add(quote)
     await db.commit()
     await db.refresh(quote)

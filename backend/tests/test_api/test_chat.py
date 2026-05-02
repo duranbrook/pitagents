@@ -168,3 +168,19 @@ def test_guardrails_allows_automotive():
 def test_guardrails_allows_vin():
     from src.api.chat import _check_guardrails
     assert _check_guardrails("Look up VIN 1HGBH41JXMN109186") is None
+
+
+@pytest.mark.asyncio
+async def test_message_request_accepts_multiple_image_urls():
+    """Verify MessageRequest accepts image_urls list."""
+    from src.api.chat import MessageRequest
+    req = MessageRequest(message="hello", image_urls=["data:image/png;base64,abc", "data:image/jpeg;base64,def"])
+    assert len(req.image_urls) == 2
+
+def test_build_user_content_multiple_images():
+    from src.api.chat import _build_user_content
+    content = _build_user_content("describe these", ["data:image/png;base64,abc", "data:image/jpeg;base64,xyz"])
+    image_blocks = [b for b in content if b["type"] == "image"]
+    assert len(image_blocks) == 2
+    text_blocks = [b for b in content if b["type"] == "text"]
+    assert text_blocks[0]["text"] == "describe these"
