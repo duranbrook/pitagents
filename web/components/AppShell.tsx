@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { AppBackground } from './AppBackground'
-import { SettingsDropdown } from './SettingsDropdown'
+import { SettingsPanel } from './settings/SettingsPanel'
 import { VoiceControlWidget } from './VoiceControlWidget'
 import { pravatarUrl } from '@/lib/avatar'
 
@@ -30,8 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [email, setEmail] = useState('')
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const settingsRef = useRef<HTMLDivElement>(null)
+  const [settingsPanelOpen, setSettingsPanelOpen] = useState(false)
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
@@ -40,17 +39,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setEmail(getEmail())
     }
   }, [router])
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
-        setSettingsOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
 
   function handleLogout() {
     localStorage.removeItem('token')
@@ -108,34 +96,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Right side */}
         <div className="ml-auto flex items-center gap-3">
           <VoiceControlWidget />
-          {/* Avatar + settings dropdown */}
-          <div ref={settingsRef} style={{ position: 'relative' }}>
-            <button
-              onClick={() => setSettingsOpen(v => !v)}
-              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'block' }}
-            >
-              <img
-                src={pravatarUrl(email || 'default', 40)}
-                alt="Settings"
-                style={{
-                  width: 32, height: 32, borderRadius: '50%', objectFit: 'cover',
-                  border: '2px solid rgba(217,119,6,0.5)',
-                  display: 'block',
-                }}
-              />
-            </button>
-            {settingsOpen && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, zIndex: 100 }}>
-                <SettingsDropdown email={email} onLogout={handleLogout} />
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setSettingsPanelOpen(v => !v)}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'block' }}
+          >
+            <img
+              src={pravatarUrl(email || 'default', 40)}
+              alt="Settings"
+              style={{
+                width: 32, height: 32, borderRadius: '50%', objectFit: 'cover',
+                border: '2px solid rgba(217,119,6,0.5)',
+                display: 'block',
+              }}
+            />
+          </button>
         </div>
       </nav>
 
       <main className="flex-1 min-h-0 overflow-hidden" style={{ position: 'relative', zIndex: 1 }}>
         {children}
       </main>
+
+      {settingsPanelOpen && (
+        <SettingsPanel
+          onClose={() => setSettingsPanelOpen(false)}
+          onLogout={handleLogout}
+        />
+      )}
     </div>
   )
 }
