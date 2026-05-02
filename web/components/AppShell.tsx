@@ -9,7 +9,7 @@ import { VoiceControlWidget } from './VoiceControlWidget'
 import { pravatarUrl } from '@/lib/avatar'
 
 const NAV_ITEMS = [
-  { href: '/',          label: 'Home',      icon: <HomeIcon />,      exact: true },
+  { href: '/dashboard',  label: 'Home',      icon: <HomeIcon />,      exact: true },
   { href: '/customers', label: 'Customers', icon: <CustomersIcon />, exact: false },
   { href: '/chat',      label: 'Chat',      icon: <ChatIcon />,      exact: false },
 ]
