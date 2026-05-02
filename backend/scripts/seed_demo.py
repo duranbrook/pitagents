@@ -43,52 +43,52 @@ C6 = "cccccccc-0000-0000-0000-000000000006"  # Linda Thompson
 C7 = "cccccccc-0000-0000-0000-000000000007"  # Robert Martinez
 
 # Vehicles
-V1 = "vvvvvvvv-0000-0000-0000-000000000001"  # 2019 Toyota Camry      (James)
-V2 = "vvvvvvvv-0000-0000-0000-000000000002"  # 2021 BMW 330i          (Sarah)
-V3 = "vvvvvvvv-0000-0000-0000-000000000003"  # 2020 Ford F-150        (Marcus)
-V4 = "vvvvvvvv-0000-0000-0000-000000000004"  # 2018 Honda Civic       (Emily)
-V5 = "vvvvvvvv-0000-0000-0000-000000000005"  # 2022 Audi A4           (David)
-V6 = "vvvvvvvv-0000-0000-0000-000000000006"  # 2019 Subaru Outback    (Linda)
-V7 = "vvvvvvvv-0000-0000-0000-000000000007"  # 2017 Chevrolet Silverado (Robert)
+V1 = "b7b7b7b7-0000-0000-0000-000000000001"  # 2019 Toyota Camry      (James)
+V2 = "b7b7b7b7-0000-0000-0000-000000000002"  # 2021 BMW 330i          (Sarah)
+V3 = "b7b7b7b7-0000-0000-0000-000000000003"  # 2020 Ford F-150        (Marcus)
+V4 = "b7b7b7b7-0000-0000-0000-000000000004"  # 2018 Honda Civic       (Emily)
+V5 = "b7b7b7b7-0000-0000-0000-000000000005"  # 2022 Audi A4           (David)
+V6 = "b7b7b7b7-0000-0000-0000-000000000006"  # 2019 Subaru Outback    (Linda)
+V7 = "b7b7b7b7-0000-0000-0000-000000000007"  # 2017 Chevrolet Silverado (Robert)
 
 # Job card columns
-JCC1 = "jjjjjjjj-0000-0000-0000-000000000001"  # Scheduled
-JCC2 = "jjjjjjjj-0000-0000-0000-000000000002"  # In Progress
-JCC3 = "jjjjjjjj-0000-0000-0000-000000000003"  # Awaiting Parts
-JCC4 = "jjjjjjjj-0000-0000-0000-000000000004"  # Done
+JCC1 = "b8b8b8b8-0000-0000-0000-000000000001"  # Scheduled
+JCC2 = "b8b8b8b8-0000-0000-0000-000000000002"  # In Progress
+JCC3 = "b8b8b8b8-0000-0000-0000-000000000003"  # Awaiting Parts
+JCC4 = "b8b8b8b8-0000-0000-0000-000000000004"  # Done
 
 # Job cards
-JC1 = "jjjjjjjj-1111-0000-0000-000000000001"  # James  — brake service (Done)
-JC2 = "jjjjjjjj-1111-0000-0000-000000000002"  # Sarah  — transmission flush (In Progress)
-JC3 = "jjjjjjjj-1111-0000-0000-000000000003"  # Marcus — TPS replacement (Awaiting Parts)
-JC4 = "jjjjjjjj-1111-0000-0000-000000000004"  # Emily  — oil change + tire rotation (Done)
-JC5 = "jjjjjjjj-1111-0000-0000-000000000005"  # David  — A/C service (Scheduled)
+JC1 = "b9b9b9b9-1111-0000-0000-000000000001"  # James  — brake service (Done)
+JC2 = "b9b9b9b9-1111-0000-0000-000000000002"  # Sarah  — transmission flush (In Progress)
+JC3 = "b9b9b9b9-1111-0000-0000-000000000003"  # Marcus — TPS replacement (Awaiting Parts)
+JC4 = "b9b9b9b9-1111-0000-0000-000000000004"  # Emily  — oil change + tire rotation (Done)
+JC5 = "b9b9b9b9-1111-0000-0000-000000000005"  # David  — A/C service (Scheduled)
 
 # Invoices
-INV1 = "iiiiiiii-0000-0000-0000-000000000001"  # James  — paid $487.50
-INV2 = "iiiiiiii-0000-0000-0000-000000000002"  # Sarah  — pending $1,240.00
-INV3 = "iiiiiiii-0000-0000-0000-000000000003"  # Emily  — paid $198.50
+INV1 = "c4c4c4c4-0000-0000-0000-000000000001"  # James  — paid $487.50
+INV2 = "c4c4c4c4-0000-0000-0000-000000000002"  # Sarah  — pending $1,240.00
+INV3 = "c4c4c4c4-0000-0000-0000-000000000003"  # Emily  — paid $198.50
 
 # Payment events
-PE1 = "pppppppp-0000-0000-0000-000000000001"  # INV1 cash $487.50
-PE2 = "pppppppp-0000-0000-0000-000000000002"  # INV3 card $198.50
+PE1 = "c6c6c6c6-0000-0000-0000-000000000001"  # INV1 cash $487.50
+PE2 = "c6c6c6c6-0000-0000-0000-000000000002"  # INV3 card $198.50
 
 # Inspection sessions
-IS1 = "ssssssss-0000-0000-0000-000000000001"  # James (complete)
-IS2 = "ssssssss-0000-0000-0000-000000000002"  # Emily (complete)
-IS3 = "ssssssss-0000-0000-0000-000000000003"  # Sarah (processing)
+IS1 = "c7c7c7c7-0000-0000-0000-000000000001"  # James (complete)
+IS2 = "c7c7c7c7-0000-0000-0000-000000000002"  # Emily (complete)
+IS3 = "c7c7c7c7-0000-0000-0000-000000000003"  # Sarah (processing)
 
 # Reports
-R1 = "rrrrrrrr-0000-0000-0000-000000000001"  # James report (final)
-R2 = "rrrrrrrr-0000-0000-0000-000000000002"  # Emily report (final)
+R1 = "c8c8c8c8-0000-0000-0000-000000000001"  # James report (final)
+R2 = "c8c8c8c8-0000-0000-0000-000000000002"  # Emily report (final)
 
 # Report share tokens
 RS1 = "aa000001-0000-0000-0000-000000000001"
 RS2 = "aa000002-0000-0000-0000-000000000002"
 
 # Quotes
-Q1 = "qqqqqqqq-0000-0000-0000-000000000001"  # linked to IS1 (final)
-Q2 = "qqqqqqqq-0000-0000-0000-000000000002"  # linked to IS3 (draft)
+Q1 = "c9c9c9c9-0000-0000-0000-000000000001"  # linked to IS1 (final)
+Q2 = "c9c9c9c9-0000-0000-0000-000000000002"  # linked to IS3 (draft)
 
 # Vendors
 VEN1 = "eeeeeeee-0000-0000-0000-000000000001"  # NAPA Auto Parts
@@ -96,18 +96,18 @@ VEN2 = "eeeeeeee-0000-0000-0000-000000000002"  # AutoZone
 VEN3 = "eeeeeeee-0000-0000-0000-000000000003"  # Advance Auto Parts
 
 # Inventory items
-II1 = "iiiiiiii-1111-0000-0000-000000000001"  # 5W-30 Synthetic Oil
-II2 = "iiiiiiii-1111-0000-0000-000000000002"  # Oil Filter
-II3 = "iiiiiiii-1111-0000-0000-000000000003"  # Brake Pads (Front, Premium)
-II4 = "iiiiiiii-1111-0000-0000-000000000004"  # Brake Rotors (Front pair)
-II5 = "iiiiiiii-1111-0000-0000-000000000005"  # Throttle Position Sensor — F-150
-II6 = "iiiiiiii-1111-0000-0000-000000000006"  # Air Filter
-II7 = "iiiiiiii-1111-0000-0000-000000000007"  # Cabin Air Filter
-II8 = "iiiiiiii-1111-0000-0000-000000000008"  # ATF Transmission Fluid (gallon)
+II1 = "c5c5c5c5-1111-0000-0000-000000000001"  # 5W-30 Synthetic Oil
+II2 = "c5c5c5c5-1111-0000-0000-000000000002"  # Oil Filter
+II3 = "c5c5c5c5-1111-0000-0000-000000000003"  # Brake Pads (Front, Premium)
+II4 = "c5c5c5c5-1111-0000-0000-000000000004"  # Brake Rotors (Front pair)
+II5 = "c5c5c5c5-1111-0000-0000-000000000005"  # Throttle Position Sensor — F-150
+II6 = "c5c5c5c5-1111-0000-0000-000000000006"  # Air Filter
+II7 = "c5c5c5c5-1111-0000-0000-000000000007"  # Cabin Air Filter
+II8 = "c5c5c5c5-1111-0000-0000-000000000008"  # ATF Transmission Fluid (gallon)
 
 # Purchase orders
-PO1 = "oooooooo-0000-0000-0000-000000000001"  # TPS ordered from NAPA (pending)
-PO2 = "oooooooo-0000-0000-0000-000000000002"  # Brake parts received from AutoZone
+PO1 = "d4d4d4d4-0000-0000-0000-000000000001"  # TPS ordered from NAPA (pending)
+PO2 = "d4d4d4d4-0000-0000-0000-000000000002"  # Brake parts received from AutoZone
 
 # Appointments
 A1 = "aaaaaaaa-0000-0000-0000-000000000001"  # David Kim  May 5 (confirmed)
@@ -130,16 +130,16 @@ SR3 = "ffffffff-0000-0000-0000-000000000003"  # Emily  — Oil Change (booked)
 SR4 = "ffffffff-0000-0000-0000-000000000004"  # Sarah  — Full Service (active)
 
 # Time entries
-TE1 = "tttttttt-0000-0000-0000-000000000001"  # Tech on JC1 — 2.5 hrs brake service
-TE2 = "tttttttt-0000-0000-0000-000000000002"  # Tech on JC4 — 1.0 hr oil/rotation
-TE3 = "tttttttt-0000-0000-0000-000000000003"  # Tech on JC2 — in progress (no end_at)
-TE4 = "tttttttt-0000-0000-0000-000000000004"  # Tech on JC3 — 0.5 hr diagnostics
+TE1 = "d5d5d5d5-0000-0000-0000-000000000001"  # Tech on JC1 — 2.5 hrs brake service
+TE2 = "d5d5d5d5-0000-0000-0000-000000000002"  # Tech on JC4 — 1.0 hr oil/rotation
+TE3 = "d5d5d5d5-0000-0000-0000-000000000003"  # Tech on JC2 — in progress (no end_at)
+TE4 = "d5d5d5d5-0000-0000-0000-000000000004"  # Tech on JC3 — 0.5 hr diagnostics
 
 # Expenses
-EX1 = "xxxxxxxx-0000-0000-0000-000000000001"  # Shop supplies
-EX2 = "xxxxxxxx-0000-0000-0000-000000000002"  # Brake parts purchase
-EX3 = "xxxxxxxx-0000-0000-0000-000000000003"  # Utility bill
-EX4 = "xxxxxxxx-0000-0000-0000-000000000004"  # Equipment service
+EX1 = "d6d6d6d6-0000-0000-0000-000000000001"  # Shop supplies
+EX2 = "d6d6d6d6-0000-0000-0000-000000000002"  # Brake parts purchase
+EX3 = "d6d6d6d6-0000-0000-0000-000000000003"  # Utility bill
+EX4 = "d6d6d6d6-0000-0000-0000-000000000004"  # Equipment service
 
 # Campaigns (shop_id is stored as String, not UUID FK)
 CAM1 = "cccccccc-1111-0000-0000-000000000001"  # Spring A/C Check (sent)
@@ -164,13 +164,13 @@ CMSG2 = "cccccccc-3333-0000-0000-000000000002"  # Outbound report to Emily
 CMSG3 = "cccccccc-3333-0000-0000-000000000003"  # Inbound reply from Emily
 
 # Media files
-MF1 = "mmmmmmmm-0000-0000-0000-000000000001"  # VIN photo IS1
-MF2 = "mmmmmmmm-0000-0000-0000-000000000002"  # Odometer photo IS1
-MF3 = "mmmmmmmm-0000-0000-0000-000000000003"  # Damage photo IS1 (worn brake pads)
-MF4 = "mmmmmmmm-0000-0000-0000-000000000004"  # VIN photo IS2
+MF1 = "d7d7d7d7-0000-0000-0000-000000000001"  # VIN photo IS1
+MF2 = "d7d7d7d7-0000-0000-0000-000000000002"  # Odometer photo IS1
+MF3 = "d7d7d7d7-0000-0000-0000-000000000003"  # Damage photo IS1 (worn brake pads)
+MF4 = "d7d7d7d7-0000-0000-0000-000000000004"  # VIN photo IS2
 
 # Shop settings
-SS1 = "ssssssss-ssss-0000-0000-000000000001"
+SS1 = "d8d8d8d8-0000-0000-0000-000000000001"
 
 # ---------------------------------------------------------------------------
 # Helpers
