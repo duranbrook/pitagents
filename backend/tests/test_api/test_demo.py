@@ -1,4 +1,4 @@
-def test_submit_demo_request(client):
+def test_submit_demo_request(client, mock_db):
     """Valid demo request returns ok: true."""
     resp = client.post("/demo/request", json={
         "first_name": "Marcus",
@@ -10,6 +10,8 @@ def test_submit_demo_request(client):
     })
     assert resp.status_code == 200
     assert resp.json() == {"ok": True}
+    mock_db.add.assert_called_once()
+    mock_db.commit.assert_awaited_once()
 
 
 def test_submit_demo_request_no_message(client):
