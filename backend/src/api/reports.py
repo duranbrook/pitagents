@@ -49,7 +49,7 @@ class EstimateUpdateRequest(BaseModel):
 
 @router.get("/reports")
 async def list_reports(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_owner),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
     """List all reports (summary view)."""
