@@ -42,7 +42,7 @@ async def _exec_quote(name: str, inp: dict, db: AsyncSession) -> dict:
     if name == "estimate_labor":
         return await estimate_labor(inp["task_name"], inp["hours"], db)
     if name == "create_quote":
-        return await create_quote(db, inp.get("session_id"))
+        return await create_quote(db, inp.get("session_id"), inp.get("vehicle_id"))
     if name == "create_quote_item":
         return await create_quote_item(
             inp["quote_id"], inp["item_type"], inp["description"],
