@@ -34,8 +34,8 @@ struct TechnicianInputBar: View {
         }
         .background(Color(UIColor.systemBackground))
         .sheet(isPresented: $showVINScanner) {
-            VINScannerView { image in
-                attachedPhotos.append(AttachedPhoto(image: image, isVIN: true))
+            VINScannerView { vinString in
+                inputText = inputText.isEmpty ? "VIN: \(vinString)" : "\(inputText)\nVIN: \(vinString)"
                 withAnimation { isExpanded = true }
             }
         }
