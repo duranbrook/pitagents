@@ -89,6 +89,12 @@ class BookingConfigResponse(BaseModel):
     created_at: Optional[str] = None
 
 
+class BookingConfigUpdate(BaseModel):
+    working_hours_start: Optional[str] = None
+    working_hours_end: Optional[str] = None
+    slot_duration_minutes: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -141,20 +147,13 @@ def _cfg_to_response(cfg: BookingConfig) -> BookingConfigResponse:
 # Routes
 # ---------------------------------------------------------------------------
 
-class BookingConfigUpdate(BaseModel):
-    working_hours_start: Optional[str] = None
-    working_hours_end: Optional[str] = None
-    slot_duration_minutes: Optional[str] = None
-
-
 @router.get("/my-config", response_model=BookingConfigResponse)
 async def get_my_booking_config(
     shop_id: str = Depends(get_current_shop_id),
     db: AsyncSession = Depends(get_db),
 ):
-    import uuid as _uuid
     result = await db.execute(
-        select(BookingConfig).where(BookingConfig.shop_id == _uuid.UUID(shop_id))
+        select(BookingConfig).where(BookingConfig.shop_id == uuid.UUID(shop_id))
     )
     cfg = result.scalar_one_or_none()
     if cfg is None:
@@ -168,9 +167,8 @@ async def update_my_booking_config(
     shop_id: str = Depends(get_current_shop_id),
     db: AsyncSession = Depends(get_db),
 ):
-    import uuid as _uuid
     result = await db.execute(
-        select(BookingConfig).where(BookingConfig.shop_id == _uuid.UUID(shop_id))
+        select(BookingConfig).where(BookingConfig.shop_id == uuid.UUID(shop_id))
     )
     cfg = result.scalar_one_or_none()
     if cfg is None:
