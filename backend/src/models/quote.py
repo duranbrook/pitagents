@@ -11,6 +11,12 @@ class Quote(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id = Column(UUID(as_uuid=True), ForeignKey("inspection_sessions.id", ondelete="SET NULL"), nullable=True)
+    vehicle_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("vehicles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     status = Column(
         SAEnum("draft", "final", "sent", name="quote_status"),
         default="draft",
