@@ -67,15 +67,16 @@ def _to_response(s: ShopSettings) -> ShopSettingsResponse:
         shop_id=str(s.shop_id),
         nav_pins=s.nav_pins or [],
         stripe_publishable_key=s.stripe_publishable_key,
-        has_stripe_secret=bool(s.stripe_secret_key_encrypted),
+        has_stripe_secret=bool((s.stripe_secret_key_encrypted or "").strip()),
         mitchell1_enabled=bool(s.mitchell1_enabled),
-        has_mitchell1_key=bool(s.mitchell1_api_key_encrypted),
+        has_mitchell1_key=bool((s.mitchell1_api_key_encrypted or "").strip()),
         synchrony_enabled=bool(s.synchrony_enabled),
         synchrony_dealer_id=s.synchrony_dealer_id,
         wisetack_enabled=bool(s.wisetack_enabled),
         wisetack_merchant_id=s.wisetack_merchant_id,
         quickbooks_enabled=bool(s.quickbooks_enabled),
-        has_quickbooks_token=bool(s.quickbooks_refresh_token_encrypted),
+        has_quickbooks_token=bool((s.quickbooks_refresh_token_encrypted or "").strip()),
+        # carmd_api_key is a non-secret identifier, returned as plain text (unlike stripe/mitchell1/quickbooks)
         carmd_api_key=s.carmd_api_key,
         financing_threshold=s.financing_threshold or "500",
     )
@@ -162,7 +163,10 @@ async def update_shop_profile(
     if body.address is not None:
         shop.address = body.address
     if body.labor_rate is not None:
-        shop.labor_rate = Decimal(body.labor_rate)
+        try:
+            shop.labor_rate = Decimal(body.labor_rate)
+        except Exception:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="labor_rate must be a valid number")
     await db.commit()
     await db.refresh(shop)
     return ShopProfileResponse(
