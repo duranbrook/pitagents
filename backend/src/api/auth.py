@@ -1,29 +1,20 @@
+import uuid
 import jwt
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, HTTPException, status
+from typing import Optional
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from src.config import settings
+from src.db.base import get_db
+from src.models.user import User
+from src.api.deps import get_current_user, require_owner
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# In-memory test users (production would use a real DB lookup)
-_TEST_USERS: dict = {
-    "owner@shop.com": {
-        "id": "00000000-0000-0000-0000-000000000001",
-        "shop_id": "00000000-0000-0000-0000-000000000099",
-        "role": "owner",
-        "hashed_password": pwd_ctx.hash("testpass"),
-    },
-    "tech@shop.com": {
-        "id": "00000000-0000-0000-0000-000000000002",
-        "shop_id": "00000000-0000-0000-0000-000000000099",
-        "role": "technician",
-        "hashed_password": pwd_ctx.hash("testpass"),
-    },
-}
 
 
 class LoginRequest(BaseModel):
@@ -34,6 +25,27 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class ProfileUpdate(BaseModel):
+    name: str
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class UserProfileResponse(BaseModel):
+    id: str
+    email: str
+    name: Optional[str] = None
+    role: str
+    shop_id: str
+
+
+class OkResponse(BaseModel):
+    ok: bool = True
 
 
 def create_access_token(data: dict) -> str:
@@ -48,19 +60,68 @@ def create_access_token(data: dict) -> str:
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: LoginRequest) -> TokenResponse:
-    user = _TEST_USERS.get(request.email)
-    if user is None or not pwd_ctx.verify(request.password, user["hashed_password"]):
+async def login(
+    request: LoginRequest,
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponse:
+    result = await db.execute(select(User).where(User.email == request.email))
+    user = result.scalar_one_or_none()
+    if user is None or not pwd_ctx.verify(request.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     token = create_access_token({
-        "sub": user["id"],
-        "shop_id": user["shop_id"],
-        "role": user["role"],
-        "email": request.email,
+        "sub": str(user.id),
+        "shop_id": str(user.shop_id),
+        "role": user.role,
+        "email": user.email,
     })
     return TokenResponse(access_token=token)
+
+
+@router.get("/me", response_model=UserProfileResponse)
+async def get_me(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UserProfileResponse:
+    result = await db.execute(select(User).where(User.id == uuid.UUID(current_user["sub"])))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return UserProfileResponse(id=str(user.id), email=user.email, name=user.name, role=user.role, shop_id=str(user.shop_id))
+
+
+@router.patch("/profile", response_model=UserProfileResponse)
+async def update_profile(
+    body: ProfileUpdate,
+    current_user: dict = Depends(require_owner),
+    db: AsyncSession = Depends(get_db),
+) -> UserProfileResponse:
+    result = await db.execute(select(User).where(User.id == uuid.UUID(current_user["sub"])))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user.name = body.name
+    await db.commit()
+    await db.refresh(user)
+    return UserProfileResponse(id=str(user.id), email=user.email, name=user.name, role=user.role, shop_id=str(user.shop_id))
+
+
+@router.patch("/password", response_model=OkResponse)
+async def change_password(
+    body: PasswordChange,
+    current_user: dict = Depends(require_owner),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.id == uuid.UUID(current_user["sub"])))
+    user = result.scalar_one_or_none()
+    if user is None or not pwd_ctx.verify(body.current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+    user.hashed_password = pwd_ctx.hash(body.new_password)
+    await db.commit()
+    return OkResponse()

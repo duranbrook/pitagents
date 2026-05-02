@@ -120,3 +120,51 @@ def test_convert_to_job_card(client, auth_headers, mock_db):
     data = resp.json()
     assert "job_card_id" in data
     assert data["number"] == "JC-0001"
+
+
+def _make_cfg(**overrides):
+    cfg = MagicMock()
+    cfg.id = uuid.uuid4()
+    cfg.shop_id = uuid.UUID(SHOP_ID)
+    cfg.slug = "test-shop"
+    cfg.available_services = "[]"
+    cfg.working_hours_start = "08:00"
+    cfg.working_hours_end = "17:00"
+    cfg.slot_duration_minutes = "60"
+    cfg.working_days = "[1,2,3,4,5]"
+    cfg.created_at = None
+    for k, v in overrides.items():
+        setattr(cfg, k, v)
+    return cfg
+
+
+def test_get_my_booking_config(client, auth_headers, mock_db):
+    mock_db.execute.return_value.scalar_one_or_none.return_value = _make_cfg()
+    resp = client.get("/appointments/my-config", headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["slug"] == "test-shop"
+    assert data["working_hours_start"] == "08:00"
+    assert data["working_hours_end"] == "17:00"
+    assert data["slot_duration_minutes"] == "60"
+
+
+def test_get_my_booking_config_not_found(client, auth_headers, mock_db):
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    resp = client.get("/appointments/my-config", headers=auth_headers)
+    assert resp.status_code == 404
+
+
+def test_patch_my_booking_config(client, auth_headers, mock_db):
+    cfg = _make_cfg(working_hours_start="08:00", slot_duration_minutes="60")
+    mock_db.execute.return_value.scalar_one_or_none.return_value = cfg
+    resp = client.patch(
+        "/appointments/my-config",
+        json={"working_hours_start": "09:00", "slot_duration_minutes": "30"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["slug"] == "test-shop"
+    assert data["working_hours_start"] == "09:00"
+    assert data["slot_duration_minutes"] == "30"

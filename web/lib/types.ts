@@ -179,18 +179,53 @@ export interface Invoice {
   updated_at: string
 }
 
+// ── Auth / User ───────────────────────────────────────────────────────────
+
+export interface UserProfile {
+  id: string
+  email: string
+  name: string | null
+  role: string
+  shop_id: string
+}
+
+export interface ShopProfile {
+  id: string
+  name: string
+  address: string | null
+  labor_rate: string
+}
+
 export interface ShopSettings {
   id: string
   shop_id: string
   nav_pins: string[]
   stripe_publishable_key: string | null
+  has_stripe_secret: boolean
   mitchell1_enabled: boolean
+  has_mitchell1_key: boolean
   synchrony_enabled: boolean
   synchrony_dealer_id: string | null
   wisetack_enabled: boolean
   wisetack_merchant_id: string | null
   quickbooks_enabled: boolean
+  has_quickbooks_token: boolean
+  carmd_api_key: string | null
   financing_threshold: string
+}
+
+export interface ShopSettingsUpdate {
+  nav_pins?: string[]
+  stripe_publishable_key?: string
+  stripe_secret_key_encrypted?: string
+  mitchell1_enabled?: boolean
+  synchrony_enabled?: boolean
+  synchrony_dealer_id?: string
+  wisetack_enabled?: boolean
+  wisetack_merchant_id?: string
+  quickbooks_enabled?: boolean
+  carmd_api_key?: string
+  financing_threshold?: string
 }
 
 // ── Appointments ──────────────────────────────────────────────────────────
@@ -214,12 +249,21 @@ export interface Appointment {
 }
 
 export interface BookingConfig {
+  id: string
+  shop_id: string
   slug: string
-  available_services: string[]
+  available_services: string  // JSON-serialised array from backend, e.g. "[]"
   working_hours_start: string
   working_hours_end: string
   slot_duration_minutes: string
-  working_days: number[]
+  working_days: string        // JSON-serialised array from backend, e.g. "[1,2,3,4,5]"
+  created_at: string | null
+}
+
+export interface BookingConfigUpdate {
+  working_hours_start?: string
+  working_hours_end?: string
+  slot_duration_minutes?: string
 }
 
 // ── Service Reminders ─────────────────────────────────────────────────────

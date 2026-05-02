@@ -89,6 +89,12 @@ class BookingConfigResponse(BaseModel):
     created_at: Optional[str] = None
 
 
+class BookingConfigUpdate(BaseModel):
+    working_hours_start: Optional[str] = None
+    working_hours_end: Optional[str] = None
+    slot_duration_minutes: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -140,6 +146,41 @@ def _cfg_to_response(cfg: BookingConfig) -> BookingConfigResponse:
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
+@router.get("/my-config", response_model=BookingConfigResponse)
+async def get_my_booking_config(
+    shop_id: str = Depends(get_current_shop_id),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(BookingConfig).where(BookingConfig.shop_id == uuid.UUID(shop_id))
+    )
+    cfg = result.scalar_one_or_none()
+    if cfg is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking config not found")
+    return _cfg_to_response(cfg)
+
+
+@router.patch("/my-config", response_model=BookingConfigResponse)
+async def update_my_booking_config(
+    body: BookingConfigUpdate,
+    shop_id: str = Depends(get_current_shop_id),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(BookingConfig).where(BookingConfig.shop_id == uuid.UUID(shop_id))
+    )
+    cfg = result.scalar_one_or_none()
+    if cfg is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking config not found")
+    for field in ("working_hours_start", "working_hours_end", "slot_duration_minutes"):
+        val = getattr(body, field, None)
+        if val is not None:
+            setattr(cfg, field, val)
+    await db.commit()
+    await db.refresh(cfg)
+    return _cfg_to_response(cfg)
+
 
 @router.get("", response_model=list[AppointmentResponse])
 async def list_appointments(
