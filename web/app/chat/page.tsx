@@ -24,9 +24,12 @@ export default function ChatPage() {
   useEffect(() => {
     voice.registerSelectAgent((name) => {
       const key = name.toLowerCase()
-      const match = agents.find(a =>
-        a.name.toLowerCase().includes(key) || key.includes(a.name.toLowerCase())
-      )
+      const match = agents.find(a => {
+        const roleName = a.name.toLowerCase()
+        const personaName = (a.persona_name ?? '').toLowerCase()
+        return roleName.includes(key) || key.includes(roleName)
+          || (personaName && (personaName.includes(key) || key.includes(personaName)))
+      })
       if (!match) return false
       setSelectedAgent(match.id)
       return true

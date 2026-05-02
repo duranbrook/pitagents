@@ -7,7 +7,7 @@ import { createVoiceTools } from '@/lib/voice/tools'
 import { useVoiceContext } from '@/contexts/VoiceContext'
 import { fetchAgents } from '@/lib/api'
 
-const INSTRUCTIONS = `You are a voice navigator for an auto shop management app. You control the UI by calling tools. That is your only capability — you cannot answer questions from memory.
+const STATIC_INSTRUCTIONS = `You are a voice navigator for an auto shop management app. You control the UI by calling tools. That is your only capability — you cannot answer questions from memory.
 
 Always call a tool. Never respond with text.
 
@@ -24,7 +24,24 @@ export function VoiceControlWidget() {
   const router = useRouter()
   const context = useVoiceContext()
   const { data: agents } = useQuery({ queryKey: ['agents'], queryFn: fetchAgents })
-  const agentNames = useMemo(() => agents?.map(a => a.name) ?? [], [agents])
+
+  const { instructions, agentNames } = useMemo(() => {
+    if (!agents?.length) return { instructions: STATIC_INSTRUCTIONS, agentNames: [] as string[] }
+    const names: string[] = []
+    const rosterLines = agents.map(a => {
+      const display = a.persona_name ?? a.name
+      names.push(a.name)
+      if (a.persona_name) names.push(a.persona_name)
+      return `- ${display} (${a.name}) — ${a.role_tagline}`
+    })
+    const rosterBlock = [
+      'Your team members are:',
+      ...rosterLines,
+      '',
+      `When the user addresses any team member by name — "Tom, are you there?", "Hey ${agents[0].persona_name ?? agents[0].name}", or similar — call select_agent with that name immediately, before responding.`,
+    ].join('\n')
+    return { instructions: `${STATIC_INSTRUCTIONS}\n\n${rosterBlock}`, agentNames: names }
+  }, [agents])
 
   const tools = useMemo(() => createVoiceTools({
     navigate: path => router.push(path),
@@ -40,7 +57,7 @@ export function VoiceControlWidget() {
   const voiceOptions = useMemo(() => ({
     auth: { sessionEndpoint: '/api/session' },
     tools,
-    instructions: INSTRUCTIONS,
+    instructions,
     model: 'gpt-4o-realtime-preview',
     activationMode: 'vad' as const,
     outputMode: 'tool-only' as const,
