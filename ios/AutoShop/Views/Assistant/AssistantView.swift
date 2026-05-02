@@ -9,26 +9,72 @@ struct Agent: Identifiable, Hashable {
     let systemImage: String
 }
 
-let availableAgents: [Agent] = [
-    Agent(id: "assistant", displayName: "Assistant", subtitle: "General shop assistant", systemImage: "brain"),
-    Agent(id: "tom", displayName: "Tom", subtitle: "Parts & pricing specialist", systemImage: "wrench.and.screwdriver"),
-]
+// MARK: - Agent List ViewModel
+
+@MainActor
+final class AssistantListViewModel: ObservableObject {
+    @Published var agents: [Agent] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+
+    private static let iconByName: [String: String] = [
+        "Service Advisor": "person.text.rectangle",
+        "Technician": "wrench.and.screwdriver",
+        "Parts Manager": "shippingbox",
+        "Bookkeeper": "dollarsign.circle",
+        "Manager": "chart.bar",
+    ]
+
+    func load() async {
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let items = try await APIClient.shared.listAgents()
+            agents = items.map { item in
+                Agent(
+                    id: item.id,
+                    displayName: item.name,
+                    subtitle: item.roleTagline,
+                    systemImage: Self.iconByName[item.name] ?? "brain"
+                )
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
 
 // MARK: - Agent List (primary view)
 
 struct AssistantView: View {
+    @StateObject private var vm = AssistantListViewModel()
+
     var body: some View {
-        List(availableAgents) { agent in
-            NavigationLink(value: agent) {
-                AgentRow(agent: agent)
+        Group {
+            if vm.isLoading && vm.agents.isEmpty {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(vm.agents) { agent in
+                    NavigationLink(value: agent) {
+                        AgentRow(agent: agent)
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                }
+                .listStyle(.plain)
             }
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         }
-        .listStyle(.plain)
         .navigationTitle("Agents")
         .navigationDestination(for: Agent.self) { agent in
             AgentChatView(agent: agent)
         }
+        .alert("Error", isPresented: Binding(
+            get: { vm.errorMessage != nil },
+            set: { if !$0 { vm.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { vm.errorMessage = nil }
+        } message: { Text(vm.errorMessage ?? "") }
+        .task { await vm.load() }
     }
 }
 
