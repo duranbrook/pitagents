@@ -29,6 +29,7 @@ from src.api.diagnose import router as diagnose_router
 from src.api.marketing import router as marketing_router
 from src.api.agents import router as agents_router
 from src.api.admin import router as admin_router
+from src.api.demo import router as demo_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -72,3 +73,4 @@ app.include_router(diagnose_router)
 app.include_router(marketing_router)
 app.include_router(agents_router)
 app.include_router(admin_router)
+app.include_router(demo_router)
