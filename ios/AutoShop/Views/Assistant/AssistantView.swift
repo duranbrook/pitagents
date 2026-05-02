@@ -183,6 +183,15 @@ struct AgentChatView: View {
                     ForEach(Array(vm.messages.enumerated()), id: \.element.id) { idx, msg in
                         ChatBubble(item: msg, agent: agent, showAvatar: shouldShowAvatar(at: idx))
                             .id(msg.id)
+                        if msg.role != "user", let qid = msg.quoteId {
+                            HStack {
+                                Color.clear.frame(width: 28 + 6)
+                                ReportCardBubble(quoteId: qid)
+                                Spacer(minLength: 8)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.bottom, 4)
+                        }
                     }
                     if vm.isSending {
                         TypingIndicator(agent: agent)
@@ -260,7 +269,7 @@ struct ChatBubble: View {
                 }
             }
 
-            Text(item.displayText.isEmpty ? "…" : item.displayText)
+            Text(item.displayTextClean.isEmpty ? "…" : item.displayTextClean)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(isUser ? Color.accentColor : Color(.secondarySystemBackground))

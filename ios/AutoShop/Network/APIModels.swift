@@ -334,3 +334,21 @@ struct VideoUploadResponse: Decodable {
         case videoUrl = "video_url"
     }
 }
+
+extension ChatHistoryItem {
+    var quoteId: String? {
+        let text = displayText
+        guard let range = text.range(of: #"\[QUOTE:([0-9a-f\-]+)\]"#, options: .regularExpression) else {
+            return nil
+        }
+        let match = String(text[range])
+        let inner = match.dropFirst("[QUOTE:".count).dropLast(1)
+        return inner.isEmpty ? nil : String(inner)
+    }
+
+    var displayTextClean: String {
+        displayText
+            .replacingOccurrences(of: #"\[QUOTE:[0-9a-f\-]+\]\n?"#, with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
