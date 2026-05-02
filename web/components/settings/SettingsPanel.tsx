@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { AccountSection } from './sections/AccountSection'
+import { ShopProfileSection } from './sections/ShopProfileSection'
+import { AppearanceSection } from './sections/AppearanceSection'
 
 const SECTIONS = [
   { id: 'account',       label: 'Account',       emoji: '👤' },
@@ -121,7 +123,9 @@ export function SettingsPanel({ onClose, onLogout }: Props) {
           </div>
 
           {active === 'account' && <AccountSection />}
-          {active !== 'account' && (
+          {active === 'shop' && <ShopProfileSection />}
+          {active === 'appearance' && <AppearanceSection />}
+          {!['account', 'shop', 'appearance'].includes(active) && (
             <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
               {active} section coming soon
             </div>
