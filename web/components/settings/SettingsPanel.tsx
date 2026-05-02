@@ -76,6 +76,7 @@ export function SettingsPanel({ onClose, onLogout }: Props) {
           {SECTIONS.map(s => (
             <button
               key={s.id}
+              type="button"
               onClick={() => setActive(s.id)}
               style={{
                 display: 'block', width: '100%', textAlign: 'left',
@@ -92,6 +93,7 @@ export function SettingsPanel({ onClose, onLogout }: Props) {
 
           <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 8 }}>
             <button
+              type="button"
               onClick={onLogout}
               style={{
                 display: 'block', width: '100%', textAlign: 'left',

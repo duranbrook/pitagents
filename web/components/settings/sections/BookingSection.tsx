@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getMyBookingConfig, updateMyBookingConfig } from '@/lib/api'
 
@@ -41,12 +41,16 @@ export function BookingSection() {
     }
   }, [cfg])
 
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (clearTimer.current) clearTimeout(clearTimer.current) }, [])
+
   const save = useMutation({
     mutationFn: () => updateMyBookingConfig(form),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-booking-config'] })
       setMsg({ type: 'ok', text: 'Saved' })
-      setTimeout(() => setMsg(null), 2500)
+      if (clearTimer.current) clearTimeout(clearTimer.current)
+      clearTimer.current = setTimeout(() => setMsg(null), 2500)
     },
     onError: (e: Error) => setMsg({ type: 'err', text: e.message }),
   })
@@ -77,8 +81,9 @@ export function BookingSection() {
       <form onSubmit={e => { e.preventDefault(); save.mutate() }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
-            <label style={labelStyle}>Open time</label>
+            <label htmlFor="booking-start" style={labelStyle}>Open time</label>
             <input
+              id="booking-start"
               type="time"
               value={form.working_hours_start}
               onChange={e => setForm(f => ({ ...f, working_hours_start: e.target.value }))}
@@ -86,8 +91,9 @@ export function BookingSection() {
             />
           </div>
           <div>
-            <label style={labelStyle}>Close time</label>
+            <label htmlFor="booking-end" style={labelStyle}>Close time</label>
             <input
+              id="booking-end"
               type="time"
               value={form.working_hours_end}
               onChange={e => setForm(f => ({ ...f, working_hours_end: e.target.value }))}
@@ -96,8 +102,9 @@ export function BookingSection() {
           </div>
         </div>
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Slot duration (minutes)</label>
+          <label htmlFor="booking-slot" style={labelStyle}>Slot duration (minutes)</label>
           <select
+            id="booking-slot"
             value={form.slot_duration_minutes}
             onChange={e => setForm(f => ({ ...f, slot_duration_minutes: e.target.value }))}
             style={{ ...fieldStyle, cursor: 'pointer' }}

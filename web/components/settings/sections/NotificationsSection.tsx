@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getReminderConfigs, updateReminderConfig } from '@/lib/api'
 import type { ServiceReminderConfig } from '@/lib/types'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: 10, fontWeight: 600,
@@ -22,18 +22,34 @@ function ReminderRow({ cfg }: { cfg: ServiceReminderConfig }) {
   const [smsEnabled, setSmsEnabled] = useState(cfg.sms_enabled)
   const [emailEnabled, setEmailEnabled] = useState(cfg.email_enabled)
   const [msg, setMsg] = useState<string | null>(null)
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (clearTimer.current) clearTimeout(clearTimer.current) }, [])
 
   const save = useMutation({
-    mutationFn: () => updateReminderConfig(cfg.id, {
-      window_start_months: Number(windowStart),
-      window_end_months: Number(windowEnd),
-      sms_enabled: smsEnabled,
-      email_enabled: emailEnabled,
-    }),
+    mutationFn: () => {
+      const start = Number(windowStart)
+      const end = Number(windowEnd)
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start < 1 || end < 1) {
+        throw new Error('Months must be positive numbers')
+      }
+      if (start > end) throw new Error('Start month must be before end month')
+      return updateReminderConfig(cfg.id, {
+        window_start_months: start,
+        window_end_months: end,
+        sms_enabled: smsEnabled,
+        email_enabled: emailEnabled,
+      })
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['reminder-configs'] })
       setMsg('Saved')
-      setTimeout(() => setMsg(null), 2000)
+      if (clearTimer.current) clearTimeout(clearTimer.current)
+      clearTimer.current = setTimeout(() => setMsg(null), 2000)
+    },
+    onError: (e: Error) => {
+      setMsg(`Error: ${e.message}`)
+      if (clearTimer.current) clearTimeout(clearTimer.current)
+      clearTimer.current = setTimeout(() => setMsg(null), 3000)
     },
   })
 
@@ -53,9 +69,9 @@ function ReminderRow({ cfg }: { cfg: ServiceReminderConfig }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Remind</span>
-        <input value={windowStart} onChange={e => setWindowStart(e.target.value)} style={inputStyle} type="number" min="1" />
+        <input aria-label={`${cfg.service_type} reminder start months`} value={windowStart} onChange={e => setWindowStart(e.target.value)} style={inputStyle} type="number" min="1" />
         <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>–</span>
-        <input value={windowEnd} onChange={e => setWindowEnd(e.target.value)} style={inputStyle} type="number" min="1" />
+        <input aria-label={`${cfg.service_type} reminder end months`} value={windowEnd} onChange={e => setWindowEnd(e.target.value)} style={inputStyle} type="number" min="1" />
         <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>months out</span>
         <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', marginLeft: 4 }}>
           <input type="checkbox" checked={smsEnabled} onChange={e => setSmsEnabled(e.target.checked)} />
