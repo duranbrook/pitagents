@@ -10,11 +10,11 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     shop_id = Column(UUID(as_uuid=True), ForeignKey("shops.id"), nullable=False)
     email = Column(String(255), unique=True, nullable=False, index=True)
-    hashed_password = Column(String(255), nullable=False)
+    hashed_password = Column(String(255), nullable=True)  # nullable for Google OAuth users
+    google_id = Column(String(255), unique=True, nullable=True, index=True)
     role = Column(
         SAEnum("owner", "technician", name="user_role_enum"),
         nullable=False,
     )
     name = Column(String(255), nullable=True)
-    # Stores {"voice_mode": "hold" | "toggle"}
     preferences = Column(JSONB, nullable=False, server_default="{}")
