@@ -99,17 +99,27 @@ struct TechnicianInputBar: View {
 
     private var expandedView: some View {
         VStack(spacing: 8) {
-            if transcribeHint {
-                HStack {
-                    Image(systemName: "mic.fill").foregroundStyle(.secondary)
-                    Text("Transcribed — edit freely, then send")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
+            HStack {
+                if transcribeHint {
+                    HStack(spacing: 4) {
+                        Image(systemName: "mic.fill").foregroundStyle(.secondary)
+                        Text("Transcribed — edit freely, then send")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 8)
+                Spacer()
+                Button {
+                    withAnimation(.spring(response: 0.3)) { isExpanded = false }
+                    inputFocused = false
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(Color(.systemGray3))
+                }
             }
+            .padding(.horizontal, 14)
+            .padding(.top, 8)
 
             TextEditor(text: $inputText)
                 .font(.body)
