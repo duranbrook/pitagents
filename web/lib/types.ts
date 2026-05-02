@@ -439,6 +439,7 @@ export interface ShopAgent {
   system_prompt: string
   tools: string[]
   sort_order: number
+  persona_name?: string | null
 }
 
 export interface ToolInfo {
@@ -455,6 +456,7 @@ export interface AgentCreate {
   system_prompt: string
   tools: string[]
   sort_order?: number
+  persona_name?: string | null
 }
 
 export interface AgentUpdate {
@@ -465,4 +467,5 @@ export interface AgentUpdate {
   system_prompt?: string
   tools?: string[]
   sort_order?: number
+  persona_name?: string | null
 }
