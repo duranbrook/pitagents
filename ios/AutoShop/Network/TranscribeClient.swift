@@ -21,11 +21,15 @@ enum TranscribeClient {
         req.httpBody = body
 
         let (data, response) = try await URLSession.shared.data(for: req)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw APIError.serverError(0, "Transcription failed")
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.serverError(0, "No response")
         }
-        struct TranscribeResponse: Decodable { let text: String }
+        guard (200..<300).contains(http.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw APIError.serverError(http.statusCode, body)
+        }
+        struct TranscribeResponse: Decodable { let transcript: String }
         let result = try JSONDecoder().decode(TranscribeResponse.self, from: data)
-        return result.text
+        return result.transcript
     }
 }
