@@ -3,7 +3,11 @@ import os
 import sys
 from pathlib import Path
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.db.base import get_db
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -37,3 +41,21 @@ async def run_seed(x_admin_secret: str = Header(default="")):
         raise HTTPException(status_code=500, detail=output[-3000:])
 
     return {"status": "ok", "output": output}
+
+
+@router.post("/fix-passwords")
+async def fix_test_passwords(
+    x_admin_secret: str = Header(default=""),
+    db: AsyncSession = Depends(get_db),
+):
+    """Reset owner@shop.com and tech@shop.com to 'testpass'."""
+    _check_secret(x_admin_secret)
+    from passlib.context import CryptContext
+    ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    hashed = ctx.hash("testpass")
+    result = await db.execute(
+        text("UPDATE users SET hashed_password = :h WHERE email IN ('owner@shop.com', 'tech@shop.com')"),
+        {"h": hashed},
+    )
+    await db.commit()
+    return {"status": "ok", "updated": result.rowcount}
