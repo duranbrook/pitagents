@@ -115,6 +115,7 @@ export function SettingsPanel({ onClose, onLogout }: Props) {
               {SECTIONS.find(s => s.id === active)?.label}
             </div>
             <button
+              type="button"
               onClick={onClose}
               style={{
                 background: 'none', border: 'none',
