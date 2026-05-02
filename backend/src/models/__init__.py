@@ -19,6 +19,7 @@ from src.models.time_entry import TimeEntry
 from src.models.expense import Expense
 from src.models.campaign import Campaign
 from src.models.shop_agent import ShopAgent
+from src.models.demo_request import DemoRequest
 
 __all__ = [
     "Shop", "User", "InspectionSession", "Report", "MediaFile",
@@ -32,4 +33,5 @@ __all__ = [
     "Expense",
     "Campaign",
     "ShopAgent",
+    "DemoRequest",
 ]

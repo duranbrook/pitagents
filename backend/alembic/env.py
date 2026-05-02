@@ -16,7 +16,7 @@ if config.config_file_name is not None:
 
 # Import Base and all models so Alembic can detect them for autogenerate
 from src.db.base import Base, engine  # noqa: E402
-from src.models import Shop, User, InspectionSession, Report, MediaFile, ChatMessage, ShopSettings  # noqa: E402, F401
+from src.models import Shop, User, InspectionSession, Report, MediaFile, ChatMessage, ShopSettings, DemoRequest  # noqa: E402, F401
 
 target_metadata = Base.metadata
 
