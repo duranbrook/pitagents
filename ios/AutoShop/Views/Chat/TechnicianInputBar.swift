@@ -200,11 +200,6 @@ struct AttachedPhoto: Identifiable {
 
 // MARK: - Forward stubs (replaced in Tasks 11/12)
 
-struct PhotoTrayView: View {
-    @Binding var photos: [AttachedPhoto]
-    var body: some View { EmptyView() }
-}
-
 struct VINScannerView: View {
     let onCapture: (UIImage) -> Void
     var body: some View { EmptyView() }
