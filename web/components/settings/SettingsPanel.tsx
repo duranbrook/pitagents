@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { AccountSection } from './sections/AccountSection'
 
 const SECTIONS = [
   { id: 'account',       label: 'Account',       emoji: '👤' },
@@ -119,10 +120,12 @@ export function SettingsPanel({ onClose, onLogout }: Props) {
             </button>
           </div>
 
-          {/* Section placeholder — replaced in Tasks 6–10 */}
-          <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
-            {active} section coming soon
-          </div>
+          {active === 'account' && <AccountSection />}
+          {active !== 'account' && (
+            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
+              {active} section coming soon
+            </div>
+          )}
         </div>
       </div>
     </>
