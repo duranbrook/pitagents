@@ -204,6 +204,7 @@ function AgentForm({
   const [initials, setInitials] = useState(agent?.initials ?? '')
   const [prompt, setPrompt] = useState(agent?.system_prompt ?? '')
   const [selectedTools, setSelectedTools] = useState<string[]>(agent?.tools ?? [])
+  const [personaName, setPersonaName] = useState(agent?.persona_name ?? '')
   const [showPrompt, setShowPrompt] = useState(false)
 
   const save = useMutation({
@@ -211,6 +212,7 @@ function AgentForm({
       const payload: AgentCreate = {
         name, role_tagline: tagline, accent_color: color,
         initials, system_prompt: prompt, tools: selectedTools,
+        persona_name: personaName || null,
       }
       return isNew ? createAgent(payload) : updateAgent(agent!.id, payload)
     },
@@ -256,6 +258,16 @@ function AgentForm({
             maxLength={3}
           />
         </div>
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>Persona Name <span style={{ color: '#6b7280', fontWeight: 400, textTransform: 'none' }}>(optional — used for voice, e.g. "Tom")</span></label>
+        <input
+          value={personaName}
+          onChange={e => setPersonaName(e.target.value)}
+          style={{ ...inputStyle, maxWidth: '50%' }}
+          placeholder="e.g. Tom"
+        />
       </div>
 
       <div style={{ marginBottom: '12px' }}>
