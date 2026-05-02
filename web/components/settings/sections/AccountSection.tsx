@@ -101,12 +101,13 @@ export function AccountSection() {
             background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <span style={{ color: '#000', fontSize: 12, fontWeight: 700 }}>
-              {(user?.name || user?.email || '?')[0].toUpperCase()}
+              {(user?.name || user?.email || '?')[0]?.toUpperCase() ?? '?'}
             </span>
           </div>
           <div style={{ flex: 1 }}>
-            <label style={labelStyle}>Display name</label>
+            <label htmlFor="acc-name" style={labelStyle}>Display name</label>
             <input
+              id="acc-name"
               value={name}
               onChange={e => setName(e.target.value)}
               style={fieldStyle}
@@ -115,8 +116,9 @@ export function AccountSection() {
           </div>
         </div>
         <div style={{ marginBottom: 12 }}>
-          <label style={labelStyle}>Email</label>
+          <label htmlFor="acc-email" style={labelStyle}>Email</label>
           <input
+            id="acc-email"
             value={user?.email ?? ''}
             readOnly
             style={{ ...fieldStyle, color: 'rgba(255,255,255,0.35)', cursor: 'default' }}
