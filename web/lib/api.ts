@@ -1,4 +1,4 @@
-import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, ShopProfile, UserProfile, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder, TimeEntry, Expense, PLSummary, PaymentsSummary, PaymentEvent, DiagnoseAnalyzeResult, DiagnosisItem, RepairPlanItem, TsbItem, RecallItem, MaintenanceItem, AudienceSegment, Campaign, CampaignTemplate, ShopAgent, ToolInfo, AgentCreate, AgentUpdate, BookingConfig, BookingConfigUpdate } from './types'
+import type { Customer, Vehicle, ReportSummary, ReportDetail, Quote, QuoteLineItem, FinalizeQuoteResponse, JobCardColumn, JobCard, JobCardCreate, Invoice, ShopSettings, ShopSettingsUpdate, ShopProfile, UserProfile, Appointment, ServiceReminderConfig, InventoryItem, Vendor, PurchaseOrder, TimeEntry, Expense, PLSummary, PaymentsSummary, PaymentEvent, DiagnoseAnalyzeResult, DiagnosisItem, RepairPlanItem, TsbItem, RecallItem, MaintenanceItem, AudienceSegment, Campaign, CampaignTemplate, ShopAgent, ToolInfo, AgentCreate, AgentUpdate, BookingConfig, BookingConfigUpdate } from './types'
 import axios from 'axios'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -272,7 +272,7 @@ export const updateMyBookingConfig = (data: BookingConfigUpdate): Promise<Bookin
 export const getShopSettings = (): Promise<ShopSettings> =>
   api.get('/settings/shop').then(r => r.data)
 
-export const updateShopSettings = (data: Partial<ShopSettings>): Promise<ShopSettings> =>
+export const updateShopSettings = (data: ShopSettingsUpdate): Promise<ShopSettings> =>
   api.patch('/settings/shop', data).then(r => r.data)
 
 // ── Job Card Columns ───────────────────────────────────────────────────────

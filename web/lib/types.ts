@@ -214,6 +214,20 @@ export interface ShopSettings {
   financing_threshold: string
 }
 
+export interface ShopSettingsUpdate {
+  nav_pins?: string[]
+  stripe_publishable_key?: string
+  stripe_secret_key?: string
+  mitchell1_enabled?: boolean
+  synchrony_enabled?: boolean
+  synchrony_dealer_id?: string
+  wisetack_enabled?: boolean
+  wisetack_merchant_id?: string
+  quickbooks_enabled?: boolean
+  carmd_api_key?: string
+  financing_threshold?: string
+}
+
 // ── Appointments ──────────────────────────────────────────────────────────
 
 export interface Appointment {

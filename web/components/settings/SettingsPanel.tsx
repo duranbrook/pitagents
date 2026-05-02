@@ -5,6 +5,7 @@ import { ShopProfileSection } from './sections/ShopProfileSection'
 import { AppearanceSection } from './sections/AppearanceSection'
 import { BookingSection } from './sections/BookingSection'
 import { NotificationsSection } from './sections/NotificationsSection'
+import { IntegrationsSection } from './sections/IntegrationsSection'
 
 const SECTIONS = [
   { id: 'account',       label: 'Account',       emoji: '👤' },
@@ -132,7 +133,8 @@ export function SettingsPanel({ onClose, onLogout }: Props) {
           {active === 'appearance' && <AppearanceSection />}
           {active === 'booking' && <BookingSection />}
           {active === 'notifications' && <NotificationsSection />}
-          {!['account', 'shop', 'appearance', 'booking', 'notifications'].includes(active) && (
+          {active === 'integrations' && <IntegrationsSection />}
+          {!['account', 'shop', 'appearance', 'booking', 'notifications', 'integrations'].includes(active) && (
             <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
               {SECTIONS.find(s => s.id === active)?.label ?? active} section coming soon
             </div>
