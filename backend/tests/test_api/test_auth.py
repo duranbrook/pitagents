@@ -1,11 +1,7 @@
-import os
 import uuid
 import pytest
 from unittest.mock import MagicMock
 from passlib.context import CryptContext
-
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test_autoshop")
-os.environ.setdefault("JWT_SECRET", "test-secret-key-for-testing-only")
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -64,13 +60,16 @@ def test_get_me(client, mock_db, auth_headers):
     assert data["email"] == "owner@shop.com"
     assert data["name"] == "Test Owner"
     assert data["role"] == "owner"
+    assert data["shop_id"] == "00000000-0000-0000-0000-000000000099"
 
 
 def test_update_profile(client, mock_db, auth_headers):
     mock_db.execute.return_value.scalar_one_or_none.return_value = _make_user()
     resp = client.patch("/auth/profile", json={"name": "New Name"}, headers=auth_headers)
     assert resp.status_code == 200
-    assert resp.json()["email"] == "owner@shop.com"
+    data = resp.json()
+    assert data["email"] == "owner@shop.com"
+    assert data["name"] == "New Name"
 
 
 def test_change_password_success(client, mock_db, auth_headers):

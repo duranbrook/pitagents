@@ -10,7 +10,7 @@ from sqlalchemy import select
 from src.config import settings
 from src.db.base import get_db
 from src.models.user import User
-from src.api.deps import get_current_user
+from src.api.deps import get_current_user, require_owner
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -41,6 +41,11 @@ class UserProfileResponse(BaseModel):
     email: str
     name: Optional[str] = None
     role: str
+    shop_id: str
+
+
+class OkResponse(BaseModel):
+    ok: bool = True
 
 
 def create_access_token(data: dict) -> str:
@@ -85,13 +90,13 @@ async def get_me(
     user = result.scalar_one_or_none()
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return UserProfileResponse(id=str(user.id), email=user.email, name=user.name, role=user.role)
+    return UserProfileResponse(id=str(user.id), email=user.email, name=user.name, role=user.role, shop_id=str(user.shop_id))
 
 
 @router.patch("/profile", response_model=UserProfileResponse)
 async def update_profile(
     body: ProfileUpdate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_owner),
     db: AsyncSession = Depends(get_db),
 ) -> UserProfileResponse:
     result = await db.execute(select(User).where(User.id == uuid.UUID(current_user["sub"])))
@@ -101,13 +106,13 @@ async def update_profile(
     user.name = body.name
     await db.commit()
     await db.refresh(user)
-    return UserProfileResponse(id=str(user.id), email=user.email, name=user.name, role=user.role)
+    return UserProfileResponse(id=str(user.id), email=user.email, name=user.name, role=user.role, shop_id=str(user.shop_id))
 
 
-@router.patch("/password")
+@router.patch("/password", response_model=OkResponse)
 async def change_password(
     body: PasswordChange,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_owner),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.id == uuid.UUID(current_user["sub"])))
@@ -119,4 +124,4 @@ async def change_password(
         )
     user.hashed_password = pwd_ctx.hash(body.new_password)
     await db.commit()
-    return {"ok": True}
+    return OkResponse()
