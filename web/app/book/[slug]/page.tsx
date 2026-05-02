@@ -61,7 +61,7 @@ function BookingForm({ slug }: { slug: string }) {
           <div>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>What service do you need?</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {(config.available_services.length > 0 ? config.available_services : ['Oil Change', 'Tire Rotation', 'Brake Inspection', 'Full Service']).map(svc => (
+              {((): string[] => { try { const s = JSON.parse(config.available_services); return Array.isArray(s) && s.length > 0 ? s : ['Oil Change', 'Tire Rotation', 'Brake Inspection', 'Full Service'] } catch { return ['Oil Change', 'Tire Rotation', 'Brake Inspection', 'Full Service'] } })().map(svc => (
                 <div key={svc} onClick={() => { setForm(f => ({ ...f, service_requested: svc })); setStep(2) }} style={{
                   padding: '14px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600,
                   border: `1px solid ${form.service_requested === svc ? '#d97706' : 'rgba(255,255,255,0.1)'}`,

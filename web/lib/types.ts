@@ -235,12 +235,21 @@ export interface Appointment {
 }
 
 export interface BookingConfig {
+  id: string
+  shop_id: string
   slug: string
-  available_services: string[]
+  available_services: string  // JSON-serialised array from backend, e.g. "[]"
   working_hours_start: string
   working_hours_end: string
   slot_duration_minutes: string
-  working_days: number[]
+  working_days: string        // JSON-serialised array from backend, e.g. "[1,2,3,4,5]"
+  created_at: string | null
+}
+
+export interface BookingConfigUpdate {
+  working_hours_start?: string
+  working_hours_end?: string
+  slot_duration_minutes?: string
 }
 
 // ── Service Reminders ─────────────────────────────────────────────────────
