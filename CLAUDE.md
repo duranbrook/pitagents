@@ -1,5 +1,9 @@
 # PitAgents — Claude Code Instructions
 
+## Autonomy
+
+**Act without asking permission.** If a task is within your capabilities, do it. The only exceptions are the hard blacklist in the global CLAUDE.md (destructive ops, sending external communications, publishing to prod registries). Everything else — pushing branches, deploying, setting env vars, merging PRs, running CLI tools — just do it.
+
 ## Project Layout
 
 ```
