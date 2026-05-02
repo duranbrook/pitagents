@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct TechnicianInputBar: View {
     let agent: Agent
@@ -15,6 +16,9 @@ struct TechnicianInputBar: View {
     @State private var isTranscribing = false
     @State private var transcribeHint = false
     @State private var isUploadingVideo = false
+    @AppStorage("voiceMode") private var voiceMode = "hold"
+    @State private var audioRecorder: AVAudioRecorder?
+    @State private var recordingURL: URL?
 
     var body: some View {
         Group {
@@ -145,14 +149,26 @@ struct TechnicianInputBar: View {
     }
 
     private var micButton: some View {
-        Button { startVoiceRecording() } label: {
-            Image(systemName: isRecordingVoice ? "mic.fill" : "mic")
-                .font(.system(size: 17))
-                .frame(width: 36, height: 36)
-                .background(isRecordingVoice ? Color.red : Color(.secondarySystemBackground))
-                .foregroundStyle(isRecordingVoice ? .white : .primary)
-                .clipShape(Circle())
-        }
+        Image(systemName: isTranscribing ? "waveform" : (isRecordingVoice ? "mic.fill" : "mic"))
+            .font(.system(size: 17))
+            .frame(width: 36, height: 36)
+            .background(isRecordingVoice ? Color.red : Color(.secondarySystemBackground))
+            .foregroundStyle(isRecordingVoice ? .white : .primary)
+            .clipShape(Circle())
+            .gesture(
+                voiceMode == "hold"
+                ? AnyGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in if !isRecordingVoice { startVoiceRecording() } }
+                        .onEnded { _ in if isRecordingVoice { stopAndTranscribe() } }
+                        .map { _ in () }
+                  )
+                : AnyGesture(
+                    TapGesture()
+                        .onEnded { _ in startVoiceRecording() }
+                        .map { _ in () }
+                  )
+            )
     }
 
     private var sendButton: some View {
@@ -180,7 +196,49 @@ struct TechnicianInputBar: View {
     }
 
     private func startVoiceRecording() {
-        // Implemented in Task 13
+        guard !isRecordingVoice else {
+            stopAndTranscribe()
+            return
+        }
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("voice_\(UUID().uuidString).m4a")
+        let settings: [String: Any] = [
+            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+            AVSampleRateKey: 44100,
+            AVNumberOfChannelsKey: 1,
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
+        ]
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.record, mode: .default, options: [])
+            try AVAudioSession.sharedInstance().setActive(true)
+            audioRecorder = try AVAudioRecorder(url: url, settings: settings)
+            audioRecorder?.record()
+            recordingURL = url
+            isRecordingVoice = true
+            withAnimation { isExpanded = true }
+        } catch {
+            vm.errorMessage = "Microphone unavailable: \(error.localizedDescription)"
+        }
+    }
+
+    private func stopAndTranscribe() {
+        audioRecorder?.stop()
+        audioRecorder = nil
+        isRecordingVoice = false
+        guard let url = recordingURL else { return }
+        isTranscribing = true
+        Task {
+            defer { isTranscribing = false }
+            do {
+                let audioData = try Data(contentsOf: url)
+                let transcribed = try await TranscribeClient.transcribe(audioData: audioData)
+                await MainActor.run {
+                    inputText = transcribed
+                    transcribeHint = true
+                }
+            } catch {
+                vm.errorMessage = "Transcription failed: \(error.localizedDescription)"
+            }
+        }
     }
 }
 
