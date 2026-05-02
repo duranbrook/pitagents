@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const SECTIONS = [
   { id: 'account',       label: 'Account',       emoji: '👤' },
@@ -20,6 +20,12 @@ interface Props {
 
 export function SettingsPanel({ onClose, onLogout }: Props) {
   const [active, setActive] = useState<SectionId>('account')
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   return (
     <>
