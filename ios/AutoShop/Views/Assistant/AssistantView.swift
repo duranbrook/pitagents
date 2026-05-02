@@ -81,7 +81,7 @@ final class AgentChatViewModel: ObservableObject {
         isSending = true
         defer { isSending = false }
         do {
-            _ = try await APIClient.shared.sendChatMessage(ChatRequest(message: text), agentId: agentId)
+            _ = try await APIClient.shared.sendChatMessage(ChatRequest(message: text, imageUrls: []), agentId: agentId)
             messages = try await APIClient.shared.chatHistory(agentId: agentId)
         } catch {
             messages.removeLast()
@@ -94,20 +94,41 @@ final class AgentChatViewModel: ObservableObject {
 
 struct AgentChatView: View {
     let agent: Agent
+    let showMediaControls: Bool
     @StateObject private var vm = AgentChatViewModel()
     @State private var inputText = ""
+    @State private var isExpanded = false
     @FocusState private var inputFocused: Bool
+
+    init(agent: Agent, showMediaControls: Bool = false) {
+        self.agent = agent
+        self.showMediaControls = showMediaControls
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             messageList
+                .frame(maxHeight: isExpanded ? 120 : .infinity)
             Divider()
-            inputBar
+            if showMediaControls {
+                TechnicianInputBar(agent: agent, vm: vm, isExpanded: $isExpanded)
+            } else {
+                inputBar
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                agentNavTitle
+            ToolbarItem(placement: .principal) { agentNavTitle }
+            if showMediaControls && isExpanded {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        withAnimation(.spring(response: 0.3)) { isExpanded = false }
+                    } label: {
+                        Image(systemName: "chevron.down.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                            .font(.title3)
+                    }
+                }
             }
         }
         .alert("Error", isPresented: Binding(
@@ -117,6 +138,11 @@ struct AgentChatView: View {
             Button("OK", role: .cancel) { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
         .task { await vm.load(agentId: agent.id) }
+        .onChange(of: vm.isSending) { sending in
+            if !sending && isExpanded {
+                withAnimation(.spring(response: 0.3)) { isExpanded = false }
+            }
+        }
     }
 
     private var agentNavTitle: some View {
@@ -264,6 +290,19 @@ struct BubbleShape: Shape {
         }
 
         return path
+    }
+}
+
+// MARK: - Technician Input Bar (stub — replaced in Task 10)
+
+struct TechnicianInputBar: View {
+    let agent: Agent
+    @ObservedObject var vm: AgentChatViewModel
+    @Binding var isExpanded: Bool
+
+    var body: some View {
+        Text("Media bar coming in Task 10")
+            .padding()
     }
 }
 
