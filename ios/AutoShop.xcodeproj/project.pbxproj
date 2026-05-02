@@ -35,6 +35,7 @@
 		AA11223344556677AABBCCD1 /* PhotoTrayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD1 /* PhotoTrayView.swift */; };
 		AA11223344556677AABBCCD2 /* VINScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD2 /* VINScannerView.swift */; };
 		AA11223344556677AABBCCD3 /* TranscribeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD3 /* TranscribeClient.swift */; };
+		AA11223344556677AABBCCD4 /* VideoRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD4 /* VideoRecorderView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +69,7 @@
 		BB11223344556677AABBCCD1 /* PhotoTrayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoTrayView.swift; sourceTree = "<group>"; };
 		BB11223344556677AABBCCD2 /* VINScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VINScannerView.swift; sourceTree = "<group>"; };
 		BB11223344556677AABBCCD3 /* TranscribeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscribeClient.swift; sourceTree = "<group>"; };
+		BB11223344556677AABBCCD4 /* VideoRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRecorderView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -175,6 +177,7 @@
 				BB11223344556677AABBCCDD /* TechnicianInputBar.swift */,
 				BB11223344556677AABBCCD1 /* PhotoTrayView.swift */,
 				BB11223344556677AABBCCD2 /* VINScannerView.swift */,
+				BB11223344556677AABBCCD4 /* VideoRecorderView.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -309,6 +312,7 @@
 				AA11223344556677AABBCCD1 /* PhotoTrayView.swift in Sources */,
 				AA11223344556677AABBCCD2 /* VINScannerView.swift in Sources */,
 				AA11223344556677AABBCCD3 /* TranscribeClient.swift in Sources */,
+				AA11223344556677AABBCCD4 /* VideoRecorderView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

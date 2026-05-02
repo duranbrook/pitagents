@@ -146,6 +146,11 @@ struct TechnicianInputBar: View {
                 .background(Color(.secondarySystemBackground))
                 .clipShape(Circle())
         }
+        .sheet(isPresented: $showVideoRecorder) {
+            VideoRecorderView { url in
+                Task { await uploadVideo(at: url) }
+            }
+        }
     }
 
     private var micButton: some View {
@@ -217,6 +222,22 @@ struct TechnicianInputBar: View {
             withAnimation { isExpanded = true }
         } catch {
             vm.errorMessage = "Microphone unavailable: \(error.localizedDescription)"
+        }
+    }
+
+    private func uploadVideo(at url: URL) async {
+        isUploadingVideo = true
+        defer { isUploadingVideo = false }
+        do {
+            let data = try Data(contentsOf: url)
+            let response = try await APIClient.shared.uploadVideo(data: data, filename: url.lastPathComponent)
+            await MainActor.run {
+                let note = "[Video attached: \(response.videoUrl)]"
+                inputText = inputText.isEmpty ? note : "\(inputText)\n\(note)"
+                withAnimation { isExpanded = true }
+            }
+        } catch {
+            vm.errorMessage = "Video upload failed: \(error.localizedDescription)"
         }
     }
 
