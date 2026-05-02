@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
 export default function DemoPage() {
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '',
@@ -12,9 +14,7 @@ export default function DemoPage() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
 
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
-  function set(field: string, value: string) {
+  function set(field: keyof typeof form, value: string) {
     setForm(f => ({ ...f, [field]: value }))
   }
 
@@ -135,10 +135,10 @@ export default function DemoPage() {
                   <label style={labelStyle}>Number of locations</label>
                   <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.locations} onChange={e => set('locations', e.target.value)} required>
                     <option value="">Select...</option>
-                    <option>1 location</option>
-                    <option>2–5 locations</option>
-                    <option>6–20 locations</option>
-                    <option>20+ locations</option>
+                    <option value="1">1 location</option>
+                    <option value="2-5">2–5 locations</option>
+                    <option value="6-20">6–20 locations</option>
+                    <option value="20+">20+ locations</option>
                   </select>
                 </div>
                 <div style={{ marginBottom: 18 }}>

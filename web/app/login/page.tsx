@@ -18,6 +18,8 @@ declare global {
   }
 }
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -25,8 +27,6 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const googleBtnRef = useRef<HTMLDivElement>(null)
-
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
   function initGoogle() {
     if (!window.google || !googleBtnRef.current) return
@@ -54,7 +54,6 @@ export default function LoginPage() {
       if (!res.ok) {
         const data = await res.json()
         setError(data.detail || 'Google sign-in failed')
-        setLoading(false)
         return
       }
       const data = await res.json()
@@ -62,6 +61,7 @@ export default function LoginPage() {
       router.push('/chat')
     } catch {
       setError('Could not connect to server')
+    } finally {
       setLoading(false)
     }
   }
