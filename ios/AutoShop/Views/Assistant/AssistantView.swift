@@ -88,6 +88,21 @@ final class AgentChatViewModel: ObservableObject {
             errorMessage = error.localizedDescription
         }
     }
+
+    func sendWithImages(text: String, imageUrls: [String], agentId: String) async {
+        let optimistic = ChatHistoryItem(role: "user", content: text.isEmpty ? "[Photos attached]" : text)
+        messages.append(optimistic)
+        isSending = true
+        defer { isSending = false }
+        do {
+            let req = ChatRequest(message: text.isEmpty ? "See attached photos" : text, imageUrls: imageUrls)
+            _ = try await APIClient.shared.sendChatMessage(req, agentId: agentId)
+            messages = try await APIClient.shared.chatHistory(agentId: agentId)
+        } catch {
+            messages.removeLast()
+            errorMessage = error.localizedDescription
+        }
+    }
 }
 
 // MARK: - Chat View
@@ -290,19 +305,6 @@ struct BubbleShape: Shape {
         }
 
         return path
-    }
-}
-
-// MARK: - Technician Input Bar (stub — replaced in Task 10)
-
-struct TechnicianInputBar: View {
-    let agent: Agent
-    @ObservedObject var vm: AgentChatViewModel
-    @Binding var isExpanded: Bool
-
-    var body: some View {
-        Text("Media bar coming in Task 10")
-            .padding()
     }
 }
 
