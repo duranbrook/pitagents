@@ -26,6 +26,7 @@ def test_google_login_existing_user_returns_token(client, mock_db):
         mock_verify.return_value = {
             "sub": "google-sub-12345",
             "email": "owner@shop.com",
+            "email_verified": True,
         }
         resp = client.post("/auth/google", json={"id_token": "fake-google-id-token"})
 
@@ -43,6 +44,7 @@ def test_google_login_unknown_email_returns_401(client, mock_db):
         mock_verify.return_value = {
             "sub": "google-sub-unknown",
             "email": "nobody@example.com",
+            "email_verified": True,
         }
         resp = client.post("/auth/google", json={"id_token": "fake-google-id-token"})
 
@@ -54,4 +56,16 @@ def test_google_login_invalid_token_returns_401(client, mock_db):
         mock_verify.side_effect = ValueError("bad token")
         resp = client.post("/auth/google", json={"id_token": "invalid-token"})
 
+    assert resp.status_code == 401
+
+
+def test_google_login_unverified_email_returns_401(client, mock_db):
+    """Google token with unverified email returns 401."""
+    mock_idinfo = {
+        "sub": "google-sub-123",
+        "email": "owner@shop.com",
+        "email_verified": False,
+    }
+    with patch("src.api.auth.id_token.verify_oauth2_token", return_value=mock_idinfo):
+        resp = client.post("/auth/google", json={"id_token": "fake-token"})
     assert resp.status_code == 401

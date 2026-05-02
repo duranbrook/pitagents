@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+from google.auth import exceptions as google_auth_exceptions
 from src.config import settings
 from src.db.base import get_db
 from src.models.user import User
@@ -98,11 +99,15 @@ async def google_login(
             google_requests.Request(),
             settings.GOOGLE_CLIENT_ID or None,
         )
-    except ValueError:
+    except (ValueError, google_auth_exceptions.GoogleAuthError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
 
-    google_sub = idinfo["sub"]
+    google_sub = idinfo.get("sub")
+    if not google_sub:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
     email = idinfo.get("email", "")
+    if not idinfo.get("email_verified"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Google email not verified")
 
     result = await db.execute(select(User).where(User.google_id == google_sub))
     user = result.scalar_one_or_none()
