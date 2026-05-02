@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { AppBackground } from './AppBackground'
 import { SettingsPanel } from './settings/SettingsPanel'
 import { VoiceControlWidget } from './VoiceControlWidget'
-import { pravatarUrl } from '@/lib/avatar'
+import { PersonAvatar } from '@/lib/avatar'
 
 const NAV_ITEMS = [
   { href: '/dashboard',  label: 'Home',      icon: <HomeIcon />,      exact: true },
@@ -54,10 +54,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         style={{
           position: 'relative',
           zIndex: 10,
-          background: 'rgba(0,0,0,0.35)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderBottom: '1px solid rgba(255,255,255,0.09)',
+          background: '#ffffff',
+          borderBottom: '1px solid #e5e7eb',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}
@@ -70,7 +68,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <span className="text-white text-xs font-bold">A</span>
           </div>
-          <span className="text-white text-sm font-bold tracking-tight">AutoShop</span>
+          <span className="text-sm font-bold tracking-tight" style={{ color: '#111827' }}>AutoShop</span>
         </div>
 
         {/* Nav items */}
@@ -83,8 +81,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="flex items-center gap-1 px-2 h-12 text-[12px] font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0"
               style={
                 active
-                  ? { color: '#fff', borderBottomColor: 'var(--accent)' }
-                  : { color: 'rgba(255,255,255,0.48)', borderBottomColor: 'transparent' }
+                  ? { color: '#111827', borderBottomColor: 'var(--accent)' }
+                  : { color: '#6b7280', borderBottomColor: 'transparent' }
               }
             >
               {item.icon}
@@ -99,16 +97,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => setSettingsPanelOpen(v => !v)}
             style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'block' }}
+            aria-label="Settings"
           >
-            <img
-              src={pravatarUrl(email || 'default', 40)}
-              alt="Settings"
-              style={{
-                width: 32, height: 32, borderRadius: '50%', objectFit: 'cover',
-                border: '2px solid rgba(217,119,6,0.5)',
-                display: 'block',
-              }}
-            />
+            <PersonAvatar email={email} size={32} />
           </button>
         </div>
       </nav>

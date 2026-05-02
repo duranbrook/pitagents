@@ -7,7 +7,7 @@ import { Suspense } from 'react'
 import { AppShell } from '@/components/AppShell'
 import { getCustomers, createCustomer, getVehicles, createVehicle } from '@/lib/api'
 import type { Customer, Vehicle } from '@/lib/types'
-import { pravatarUrl } from '@/lib/avatar'
+import { PersonAvatar } from '@/lib/avatar'
 
 function CustomersPageInner() {
   const queryClient = useQueryClient()
@@ -116,11 +116,7 @@ function CustomersPageInner() {
                     : 'hover:bg-gray-800'
                 }`}
               >
-                <img
-                  src={pravatarUrl(c.customer_id, 36)}
-                  alt={c.name}
-                  style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(255,255,255,0.13)', flexShrink: 0 }}
-                />
+                <PersonAvatar email={c.email || c.customer_id} size={36} />
                 <p className="text-xs font-medium text-white truncate">{c.name}</p>
               </button>
             ))}
@@ -141,11 +137,7 @@ function CustomersPageInner() {
           ) : (
             <div className="overflow-y-auto flex-1 p-6">
               <div className="flex items-center gap-4 mb-8">
-                <img
-                  src={pravatarUrl(selected.customer_id, 46)}
-                  alt={selected.name}
-                  style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(255,255,255,0.13)', flexShrink: 0 }}
-                />
+                <PersonAvatar email={selected.email || selected.customer_id} size={46} />
                 <div className="flex-1 min-w-0">
                   <h1 className="text-xl font-semibold text-white truncate">{selected.name}</h1>
                   <p className="text-sm text-gray-400 mt-0.5 truncate">
