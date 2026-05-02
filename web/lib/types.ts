@@ -217,7 +217,7 @@ export interface ShopSettings {
 export interface ShopSettingsUpdate {
   nav_pins?: string[]
   stripe_publishable_key?: string
-  stripe_secret_key?: string
+  stripe_secret_key_encrypted?: string
   mitchell1_enabled?: boolean
   synchrony_enabled?: boolean
   synchrony_dealer_id?: string

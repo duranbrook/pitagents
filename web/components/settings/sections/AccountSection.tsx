@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getMe, updateProfile, updatePassword } from '@/lib/api'
 
@@ -59,6 +59,13 @@ export function AccountSection() {
   const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' })
   const [pwdMsg, setPwdMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
+  const clearProfileTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const clearPwdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (clearProfileTimer.current) clearTimeout(clearProfileTimer.current)
+    if (clearPwdTimer.current) clearTimeout(clearPwdTimer.current)
+  }, [])
+
   useEffect(() => {
     if (user) setName(user.name ?? '')
   }, [user])
@@ -68,7 +75,8 @@ export function AccountSection() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['me'] })
       setProfileMsg({ type: 'ok', text: 'Saved' })
-      setTimeout(() => setProfileMsg(null), 2500)
+      if (clearProfileTimer.current) clearTimeout(clearProfileTimer.current)
+      clearProfileTimer.current = setTimeout(() => setProfileMsg(null), 2500)
     },
     onError: (e: Error) => setProfileMsg({ type: 'err', text: e.message }),
   })
@@ -82,7 +90,8 @@ export function AccountSection() {
     onSuccess: () => {
       setPwd({ current: '', next: '', confirm: '' })
       setPwdMsg({ type: 'ok', text: 'Password changed' })
-      setTimeout(() => setPwdMsg(null), 2500)
+      if (clearPwdTimer.current) clearTimeout(clearPwdTimer.current)
+      clearPwdTimer.current = setTimeout(() => setPwdMsg(null), 2500)
     },
     onError: (e: Error) => setPwdMsg({ type: 'err', text: e.message }),
   })

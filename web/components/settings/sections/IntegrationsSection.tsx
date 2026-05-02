@@ -140,7 +140,7 @@ export function IntegrationsSection() {
           type="button"
           onClick={() => save.mutate({
             stripe_publishable_key: stripe.pub || undefined,
-            stripe_secret_key: stripe.secret || undefined,
+            stripe_secret_key_encrypted: stripe.secret || undefined,
           })}
           style={saveBtn(save.isPending)} disabled={save.isPending}
         >
