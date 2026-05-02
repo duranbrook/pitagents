@@ -176,10 +176,10 @@ SS1 = "d8d8d8d8-0000-0000-0000-000000000001"
 # Helpers
 # ---------------------------------------------------------------------------
 
-def ts(days_ago: int = 0, hour: int = 9, minute: int = 0) -> str:
-    """Return an ISO-8601 UTC timestamp relative to 2026-05-01."""
+def ts(days_ago: int = 0, hour: int = 9, minute: int = 0) -> datetime:
+    """Return a UTC datetime relative to 2026-05-01."""
     base = datetime(2026, 5, 1, hour, minute, 0, tzinfo=timezone.utc)
-    return (base - timedelta(days=days_ago)).isoformat()
+    return base - timedelta(days=days_ago)
 
 
 def dt(days_offset: int = 0, hour: int = 9, minute: int = 0) -> datetime:
@@ -243,8 +243,8 @@ async def seed_shop_and_users(conn: asyncpg.Connection) -> None:
         ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, address = EXCLUDED.address
     """, SHOP_ID)
 
-    # Bcrypt hash of "testpass" — same one auth.py uses
-    hashed = "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"
+    # Bcrypt hash of "testpass"
+    hashed = "$2b$12$wqw07EbXIM9iKhSh/vZm4Os2eyFeY.hY7cFMAQcBmMhAvhc/nRQqi"
 
     await conn.execute("""
         INSERT INTO users (id, shop_id, email, hashed_password, role, name, preferences)
