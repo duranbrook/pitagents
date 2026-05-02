@@ -37,6 +37,7 @@
 		AA11223344556677AABBCCD3 /* TranscribeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD3 /* TranscribeClient.swift */; };
 		AA11223344556677AABBCCD4 /* VideoRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD4 /* VideoRecorderView.swift */; };
 		AA11223344556677AABBCCD5 /* ReportCardBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD5 /* ReportCardBubble.swift */; };
+		AA11223344556677AABBCCD6 /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11223344556677AABBCCD6 /* CameraCaptureView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +73,7 @@
 		BB11223344556677AABBCCD3 /* TranscribeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscribeClient.swift; sourceTree = "<group>"; };
 		BB11223344556677AABBCCD4 /* VideoRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRecorderView.swift; sourceTree = "<group>"; };
 		BB11223344556677AABBCCD5 /* ReportCardBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportCardBubble.swift; sourceTree = "<group>"; };
+		BB11223344556677AABBCCD6 /* CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -181,6 +183,7 @@
 				BB11223344556677AABBCCD2 /* VINScannerView.swift */,
 				BB11223344556677AABBCCD4 /* VideoRecorderView.swift */,
 				BB11223344556677AABBCCD5 /* ReportCardBubble.swift */,
+				BB11223344556677AABBCCD6 /* CameraCaptureView.swift */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -317,6 +320,7 @@
 				AA11223344556677AABBCCD3 /* TranscribeClient.swift in Sources */,
 				AA11223344556677AABBCCD4 /* VideoRecorderView.swift in Sources */,
 				AA11223344556677AABBCCD5 /* ReportCardBubble.swift in Sources */,
+				AA11223344556677AABBCCD6 /* CameraCaptureView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

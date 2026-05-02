@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import PhotosUI
 
 struct TechnicianInputBar: View {
     let agent: Agent
@@ -11,7 +12,9 @@ struct TechnicianInputBar: View {
     @FocusState private var inputFocused: Bool
     @State private var showPhotoSource = false
     @State private var showVINScanner = false
-    @State private var showPhotoPicker = false
+    @State private var showCameraCapture = false
+    @State private var showLibraryPicker = false
+    @State private var selectedLibraryItem: PhotosPickerItem?
     @State private var showVideoRecorder = false
     @State private var isRecordingVoice = false
     @State private var isTranscribing = false
@@ -30,6 +33,37 @@ struct TechnicianInputBar: View {
             }
         }
         .background(Color(UIColor.systemBackground))
+        .sheet(isPresented: $showVINScanner) {
+            VINScannerView { image in
+                attachedPhotos.append(AttachedPhoto(image: image, isVIN: true))
+                withAnimation { isExpanded = true }
+            }
+        }
+        .sheet(isPresented: $showCameraCapture) {
+            CameraCaptureView { image in
+                attachedPhotos.append(AttachedPhoto(image: image, isVIN: false))
+                withAnimation { isExpanded = true }
+            }
+        }
+        .sheet(isPresented: $showVideoRecorder) {
+            VideoRecorderView { url in
+                Task { await uploadVideo(at: url) }
+            }
+        }
+        .photosPicker(isPresented: $showLibraryPicker, selection: $selectedLibraryItem, matching: .images)
+        .onChange(of: selectedLibraryItem) { _, item in
+            guard let item else { return }
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    await MainActor.run {
+                        attachedPhotos.append(AttachedPhoto(image: image, isVIN: false))
+                        withAnimation { isExpanded = true }
+                    }
+                }
+                await MainActor.run { selectedLibraryItem = nil }
+            }
+        }
     }
 
     // MARK: - Compact
@@ -129,16 +163,10 @@ struct TechnicianInputBar: View {
                 .clipShape(Circle())
         }
         .confirmationDialog("Add Photo", isPresented: $showPhotoSource, titleVisibility: .hidden) {
-            Button("Take Photo") { showPhotoPicker = true }
+            Button("Take Photo") { showCameraCapture = true }
             Button("Scan VIN") { showVINScanner = true }
-            Button("Choose from Library") { showPhotoPicker = true }
+            Button("Choose from Library") { showLibraryPicker = true }
             Button("Cancel", role: .cancel) {}
-        }
-        .sheet(isPresented: $showVINScanner) {
-            VINScannerView { image in
-                attachedPhotos.append(AttachedPhoto(image: image, isVIN: true))
-                withAnimation { isExpanded = true }
-            }
         }
     }
 
@@ -149,11 +177,6 @@ struct TechnicianInputBar: View {
                 .frame(width: 36, height: 36)
                 .background(Color(.secondarySystemBackground))
                 .clipShape(Circle())
-        }
-        .sheet(isPresented: $showVideoRecorder) {
-            VideoRecorderView { url in
-                Task { await uploadVideo(at: url) }
-            }
         }
     }
 
