@@ -97,6 +97,7 @@ class AgentResponse(BaseModel):
     system_prompt: str
     tools: list[str]
     sort_order: int
+    persona_name: Optional[str] = None
 
 
 class AgentCreate(BaseModel):
@@ -107,6 +108,7 @@ class AgentCreate(BaseModel):
     system_prompt: str
     tools: list[str] = []
     sort_order: int = 99
+    persona_name: Optional[str] = None
 
 
 class AgentUpdate(BaseModel):
@@ -117,6 +119,7 @@ class AgentUpdate(BaseModel):
     system_prompt: Optional[str] = None
     tools: Optional[list[str]] = None
     sort_order: Optional[int] = None
+    persona_name: Optional[str] = None
 
 
 def _to_response(a: ShopAgent) -> AgentResponse:
@@ -129,6 +132,7 @@ def _to_response(a: ShopAgent) -> AgentResponse:
         system_prompt=a.system_prompt,
         tools=a.tools or [],
         sort_order=a.sort_order,
+        persona_name=a.persona_name,
     )
 
 

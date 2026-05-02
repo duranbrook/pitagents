@@ -17,6 +17,7 @@ class ShopAgent(Base):
     system_prompt = Column(String, nullable=False)
     tools = Column(JSON, nullable=False, default=list)
     sort_order = Column(Integer, nullable=False, default=0)
+    persona_name = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False,
                         default=lambda: datetime.now(timezone.utc))
 
