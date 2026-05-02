@@ -23,8 +23,8 @@ If genuinely unsure which tool to use, ask one brief clarifying question.`
 export function VoiceControlWidget() {
   const router = useRouter()
   const context = useVoiceContext()
-  const { data: agents = [] } = useQuery({ queryKey: ['agents'], queryFn: fetchAgents })
-  const agentNames = useMemo(() => agents.map(a => a.name), [agents])
+  const { data: agents } = useQuery({ queryKey: ['agents'], queryFn: fetchAgents })
+  const agentNames = useMemo(() => agents?.map(a => a.name) ?? [], [agents])
 
   const tools = useMemo(() => createVoiceTools({
     navigate: path => router.push(path),
