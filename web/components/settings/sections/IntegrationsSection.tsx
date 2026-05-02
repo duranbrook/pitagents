@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getShopSettings, updateShopSettings } from '@/lib/api'
 import type { ShopSettingsUpdate } from '@/lib/types'
@@ -17,10 +17,12 @@ const fieldStyle: React.CSSProperties = {
   outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace',
 }
 
-const saveBtnStyle: React.CSSProperties = {
+const saveBtn = (pending = false): React.CSSProperties => ({
   background: 'var(--accent)', color: '#000', border: 'none',
-  borderRadius: 6, padding: '6px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-}
+  borderRadius: 6, padding: '6px 14px', fontSize: 11, fontWeight: 700,
+  cursor: pending ? 'not-allowed' : 'pointer',
+  opacity: pending ? 0.6 : 1,
+})
 
 function StatusBadge({ connected }: { connected: boolean }) {
   return (
@@ -79,16 +81,28 @@ export function IntegrationsSection() {
   const [wisetack, setWisetack] = useState({ enabled: null as boolean | null, merchant_id: '' })
   const [msg, setMsg] = useState<string | null>(null)
 
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (clearTimer.current) clearTimeout(clearTimer.current) }, [])
+
   const save = useMutation({
     mutationFn: (data: ShopSettingsUpdate) => updateShopSettings(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['shop-settings'] })
+      // Reset all local state so server-refetched values take over
+      setStripe({ pub: '', secret: '' })
+      setCarmd('')
+      setMitchell(null)
+      setQb(null)
+      setSynchrony({ enabled: null, dealer_id: '' })
+      setWisetack({ enabled: null, merchant_id: '' })
       setMsg('Saved')
-      setTimeout(() => setMsg(null), 2500)
+      if (clearTimer.current) clearTimeout(clearTimer.current)
+      clearTimer.current = setTimeout(() => setMsg(null), 2500)
     },
     onError: (e: Error) => {
       setMsg(`Error: ${e.message}`)
-      setTimeout(() => setMsg(null), 3000)
+      if (clearTimer.current) clearTimeout(clearTimer.current)
+      clearTimer.current = setTimeout(() => setMsg(null), 3000)
     },
   })
 
@@ -128,7 +142,7 @@ export function IntegrationsSection() {
             stripe_publishable_key: stripe.pub || undefined,
             stripe_secret_key: stripe.secret || undefined,
           })}
-          style={saveBtnStyle}
+          style={saveBtn(save.isPending)} disabled={save.isPending}
         >
           Save
         </button>
@@ -148,15 +162,16 @@ export function IntegrationsSection() {
         <button
           type="button"
           onClick={() => save.mutate({ carmd_api_key: carmd || undefined })}
-          style={saveBtnStyle}
+          style={saveBtn(save.isPending)} disabled={save.isPending}
         >
           Save
         </button>
       </IntegrationCard>
 
       <IntegrationCard title="Mitchell1" connected={settings.mitchell1_enabled}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 10 }}>
+        <label htmlFor="mitchell1-enabled" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 10 }}>
           <input
+            id="mitchell1-enabled"
             type="checkbox"
             checked={mitchell ?? settings.mitchell1_enabled}
             onChange={e => setMitchell(e.target.checked)}
@@ -166,15 +181,16 @@ export function IntegrationsSection() {
         <button
           type="button"
           onClick={() => save.mutate({ mitchell1_enabled: mitchell ?? settings.mitchell1_enabled })}
-          style={saveBtnStyle}
+          style={saveBtn(save.isPending)} disabled={save.isPending}
         >
           Save
         </button>
       </IntegrationCard>
 
       <IntegrationCard title="QuickBooks" connected={settings.quickbooks_enabled}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 10 }}>
+        <label htmlFor="qb-enabled" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 10 }}>
           <input
+            id="qb-enabled"
             type="checkbox"
             checked={qb ?? settings.quickbooks_enabled}
             onChange={e => setQb(e.target.checked)}
@@ -184,15 +200,16 @@ export function IntegrationsSection() {
         <button
           type="button"
           onClick={() => save.mutate({ quickbooks_enabled: qb ?? settings.quickbooks_enabled })}
-          style={saveBtnStyle}
+          style={saveBtn(save.isPending)} disabled={save.isPending}
         >
           Save
         </button>
       </IntegrationCard>
 
       <IntegrationCard title="Synchrony Financing" connected={settings.synchrony_enabled}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
+        <label htmlFor="synchrony-enabled" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
           <input
+            id="synchrony-enabled"
             type="checkbox"
             checked={synchrony.enabled ?? settings.synchrony_enabled}
             onChange={e => setSynchrony(s => ({ ...s, enabled: e.target.checked }))}
@@ -215,15 +232,16 @@ export function IntegrationsSection() {
             synchrony_enabled: synchrony.enabled ?? settings.synchrony_enabled,
             synchrony_dealer_id: synchrony.dealer_id || undefined,
           })}
-          style={saveBtnStyle}
+          style={saveBtn(save.isPending)} disabled={save.isPending}
         >
           Save
         </button>
       </IntegrationCard>
 
       <IntegrationCard title="Wisetack Financing" connected={settings.wisetack_enabled}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
+        <label htmlFor="wisetack-enabled" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
           <input
+            id="wisetack-enabled"
             type="checkbox"
             checked={wisetack.enabled ?? settings.wisetack_enabled}
             onChange={e => setWisetack(s => ({ ...s, enabled: e.target.checked }))}
@@ -246,7 +264,7 @@ export function IntegrationsSection() {
             wisetack_enabled: wisetack.enabled ?? settings.wisetack_enabled,
             wisetack_merchant_id: wisetack.merchant_id || undefined,
           })}
-          style={saveBtnStyle}
+          style={saveBtn(save.isPending)} disabled={save.isPending}
         >
           Save
         </button>
