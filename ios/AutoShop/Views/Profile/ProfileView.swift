@@ -11,12 +11,6 @@ struct ProfileView: View {
             }
 
             Section {
-                NavigationLink("Inspection Recorder") {
-                    RecordingView(shopId: appState.shopId)
-                }
-            }
-
-            Section {
                 Button("Log Out", role: .destructive) {
                     appState.logout()
                 }
