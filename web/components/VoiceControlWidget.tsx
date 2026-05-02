@@ -37,17 +37,19 @@ export function VoiceControlWidget() {
     agentNames,
   }), [context, router, agentNames])
 
-  const controller = useVoiceControl({
+  const voiceOptions = useMemo(() => ({
     auth: { sessionEndpoint: '/api/session' },
     tools,
     instructions: INSTRUCTIONS,
     model: 'gpt-4o-realtime-preview',
-    activationMode: 'vad',
-    outputMode: 'tool-only',
-    toolChoice: 'auto',
+    activationMode: 'vad' as const,
+    outputMode: 'tool-only' as const,
+    toolChoice: 'auto' as const,
     postToolResponse: false,
     autoConnect: true,
-  })
+  }), [tools])
+
+  const controller = useVoiceControl(voiceOptions)
 
   const { status, connect, disconnect } = controller
   const isListening = status === 'listening'
