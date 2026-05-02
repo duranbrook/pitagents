@@ -8,6 +8,7 @@ struct TechnicianInputBar: View {
 
     @State private var inputText = ""
     @State private var attachedPhotos: [AttachedPhoto] = []
+    @FocusState private var inputFocused: Bool
     @State private var showPhotoSource = false
     @State private var showVINScanner = false
     @State private var showPhotoPicker = false
@@ -53,6 +54,8 @@ struct TechnicianInputBar: View {
             .padding(.vertical, 8)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 20))
+            .focused($inputFocused)
+            .onTapGesture { inputFocused = true }
             .onChange(of: inputText) { _, text in
                 if !text.isEmpty { withAnimation { isExpanded = true } }
             }
@@ -77,6 +80,7 @@ struct TechnicianInputBar: View {
             TextEditor(text: $inputText)
                 .font(.body)
                 .padding(12)
+                .focused($inputFocused)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 16)

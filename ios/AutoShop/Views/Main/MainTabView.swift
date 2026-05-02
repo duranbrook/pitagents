@@ -42,7 +42,7 @@ struct MainTabView: View {
                 subtitle: "Inspection & quotes",
                 systemImage: "wrench.and.screwdriver"
             )
-            AgentChatView(agent: techAgent)
+            AgentChatView(agent: techAgent, showMediaControls: true)
         }
     }
 

@@ -264,6 +264,7 @@ struct AgentChatView: View {
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .focused($inputFocused)
+                .onTapGesture { inputFocused = true }
 
             Button {
                 guard !inputText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
