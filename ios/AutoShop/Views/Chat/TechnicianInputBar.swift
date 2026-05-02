@@ -134,7 +134,7 @@ struct TechnicianInputBar: View {
                 .padding(.horizontal, 14)
 
             if !attachedPhotos.isEmpty {
-                PhotoTrayView(photos: $attachedPhotos)
+                PhotoTrayView(photos: $attachedPhotos, onAddMore: { showPhotoSource = true })
                     .padding(.horizontal, 14)
             }
 

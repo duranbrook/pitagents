@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PhotoTrayView: View {
     @Binding var photos: [AttachedPhoto]
+    var onAddMore: (() -> Void)? = nil
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -61,9 +62,11 @@ struct PhotoTrayView: View {
     }
 
     private var addMoreButton: some View {
-        RoundedRectangle(cornerRadius: 10)
-            .strokeBorder(Color(.separator), lineWidth: 1.5)
-            .frame(width: 60, height: 60)
-            .overlay(Image(systemName: "plus").foregroundStyle(.secondary))
+        Button { onAddMore?() } label: {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color(.separator), lineWidth: 1.5)
+                .frame(width: 60, height: 60)
+                .overlay(Image(systemName: "plus").foregroundStyle(.secondary))
+        }
     }
 }
