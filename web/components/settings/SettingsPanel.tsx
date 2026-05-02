@@ -127,7 +127,7 @@ export function SettingsPanel({ onClose, onLogout }: Props) {
           {active === 'appearance' && <AppearanceSection />}
           {!['account', 'shop', 'appearance'].includes(active) && (
             <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
-              {active} section coming soon
+              {SECTIONS.find(s => s.id === active)?.label ?? active} section coming soon
             </div>
           )}
         </div>

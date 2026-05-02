@@ -39,6 +39,7 @@ export function AppearanceSection() {
         {ACCENT_PRESETS.map(p => (
           <button
             key={p.value}
+            type="button"
             onClick={() => { setAccent(p.value); setCustom(p.value) }}
             title={p.label}
             style={{
@@ -72,6 +73,7 @@ export function AppearanceSection() {
           }}
         />
         <button
+          type="button"
           onClick={applyCustom}
           style={{
             background: 'var(--accent)', color: '#000', border: 'none',
@@ -89,6 +91,7 @@ export function AppearanceSection() {
         {BG_THEMES.map(t => (
           <button
             key={t.id}
+            type="button"
             onClick={() => setTheme(t.id)}
             style={{
               flex: 1, padding: '8px 4px', borderRadius: 8, cursor: 'pointer',

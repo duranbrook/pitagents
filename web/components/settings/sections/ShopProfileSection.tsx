@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getShopProfile, updateShopProfile } from '@/lib/api'
 
@@ -22,6 +22,8 @@ export function ShopProfileSection() {
 
   const [form, setForm] = useState({ name: '', address: '', labor_rate: '' })
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (clearTimer.current) clearTimeout(clearTimer.current) }, [])
 
   useEffect(() => {
     if (shop) {
@@ -41,8 +43,9 @@ export function ShopProfileSection() {
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['shop-profile'] })
+      if (clearTimer.current) clearTimeout(clearTimer.current)
       setMsg({ type: 'ok', text: 'Saved' })
-      setTimeout(() => setMsg(null), 2500)
+      clearTimer.current = setTimeout(() => setMsg(null), 2500)
     },
     onError: (e: Error) => setMsg({ type: 'err', text: e.message }),
   })
@@ -50,8 +53,9 @@ export function ShopProfileSection() {
   function field(key: keyof typeof form, label: string, placeholder?: string) {
     return (
       <div style={{ marginBottom: 12 }}>
-        <label style={labelStyle}>{label}</label>
+        <label htmlFor={`shop-${key}`} style={labelStyle}>{label}</label>
         <input
+          id={`shop-${key}`}
           value={form[key]}
           onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
           style={fieldStyle}
@@ -62,7 +66,18 @@ export function ShopProfileSection() {
   }
 
   return (
-    <form onSubmit={e => { e.preventDefault(); save.mutate() }}>
+    <form onSubmit={e => {
+      e.preventDefault()
+      if (!form.name.trim()) {
+        setMsg({ type: 'err', text: 'Shop name is required' })
+        return
+      }
+      if (form.labor_rate && isNaN(parseFloat(form.labor_rate))) {
+        setMsg({ type: 'err', text: 'Labor rate must be a valid number' })
+        return
+      }
+      save.mutate()
+    }}>
       {field('name', 'Shop name', 'AutoShop')}
       {field('address', 'Address', '123 Main St')}
       {field('labor_rate', 'Labor rate ($/hr)', '120.00')}
