@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct VideoRecorderView: View {
     let onRecord: (URL) -> Void
@@ -45,6 +46,12 @@ struct VideoCamera: UIViewControllerRepresentable {
             picker.dismiss(animated: true)
         }
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            if let device = AVCaptureDevice.default(for: .video),
+               device.hasTorch, device.isTorchActive {
+                try? device.lockForConfiguration()
+                device.torchMode = .off
+                device.unlockForConfiguration()
+            }
             picker.dismiss(animated: true)
         }
     }
