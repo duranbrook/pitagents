@@ -376,7 +376,14 @@ struct AttachedPhoto: Identifiable {
 
     var base64DataUrl: String? {
         guard !isVideo else { return nil }
-        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
+        let maxDimension: CGFloat = 1024
+        let scale = min(maxDimension / image.size.width, maxDimension / image.size.height, 1)
+        let newSize = scale < 1
+            ? CGSize(width: image.size.width * scale, height: image.size.height * scale)
+            : image.size
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let resized = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: newSize)) }
+        guard let data = resized.jpegData(compressionQuality: 0.5) else { return nil }
         return "data:image/jpeg;base64,\(data.base64EncodedString())"
     }
 }
