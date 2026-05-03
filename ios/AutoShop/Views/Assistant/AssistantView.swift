@@ -171,9 +171,11 @@ struct AgentChatView: View {
             messageList
                 .frame(maxHeight: isExpanded ? 120 : .infinity)
                 .onTapGesture {
-                    if isExpanded {
-                        withAnimation(.spring(response: 0.3)) { isExpanded = false }
-                    }
+                    withAnimation(.spring(response: 0.3)) { isExpanded = false }
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil, from: nil, for: nil
+                    )
                 }
             Divider()
             if showMediaControls {
@@ -251,6 +253,7 @@ struct AgentChatView: View {
                 }
                 .padding(.vertical, 8)
             }
+            .scrollDismissesKeyboard(.interactively)
             .onChange(of: vm.messages.count) { _ in
                 withAnimation { proxy.scrollTo(vm.messages.last?.id ?? "__typing__", anchor: .bottom) }
             }

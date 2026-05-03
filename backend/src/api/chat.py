@@ -98,6 +98,23 @@ async def _load_history(user_id: uuid.UUID, agent_id: str, db: AsyncSession) -> 
     return [{"role": r.role, "content": r.content} for r in rows]
 
 
+def _strip_base64_images(content: list[dict]) -> list[dict]:
+    """Replace inline base64 image data with a placeholder before persisting.
+
+    History re-sent to Anthropic on every turn; storing full base64 blobs causes
+    the payload to grow unboundedly until the API returns 413.
+    """
+    result = []
+    for block in content:
+        if block.get("type") == "image":
+            src = block.get("source", {})
+            if src.get("type") == "base64":
+                result.append({"type": "text", "text": "[image]"})
+                continue
+        result.append(block)
+    return result
+
+
 async def _save_messages(
     user_id: uuid.UUID,
     agent_id: str,
@@ -110,7 +127,7 @@ async def _save_messages(
         user_id=user_id,
         agent_id=agent_id,
         role="user",
-        content=user_content,
+        content=_strip_base64_images(user_content),
     ))
     assistant_msg = final_messages[-1]
     db.add(ChatMessage(

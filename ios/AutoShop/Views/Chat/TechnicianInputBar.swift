@@ -158,6 +158,15 @@ struct TechnicianInputBar: View {
                         .stroke(Color.accentColor, lineWidth: 1.5)
                         .background(Color(.systemBackground).clipShape(RoundedRectangle(cornerRadius: 16)))
                 )
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            inputFocused = false
+                            withAnimation(.spring(response: 0.3)) { isExpanded = false }
+                        }
+                    }
+                }
                 .padding(.horizontal, 14)
                 .padding(.bottom, 8)
 
