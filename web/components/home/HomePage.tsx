@@ -168,101 +168,82 @@ export function HomePage() {
         ))}
       </div>
 
-      {/* PRODUCT SECTION */}
-      <section id="product" style={{ padding: '96px 64px', background: '#fff' }}>
+      {/* PROBLEM SECTION */}
+      <section id="product" style={{ padding: '80px 64px', background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#d97706', textTransform: 'uppercase', marginBottom: 12 }}>Product</div>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: '#0f172a', letterSpacing: -1, lineHeight: 1.1, marginBottom: 14 }}>Built for every role<br />in your shop</h2>
-          <p style={{ fontSize: 16, color: '#64748b', maxWidth: 480, lineHeight: 1.65, marginBottom: 56 }}>From the owner&apos;s chair to the technician&apos;s bay — everyone gets the right AI at the right moment.</p>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#dc2626', textTransform: 'uppercase', marginBottom: 12 }}>The Problem</div>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: '#0f172a', letterSpacing: -1, lineHeight: 1.15, marginBottom: 14 }}>
+            Auto shops run on skill.<br />They shouldn&apos;t run on software juggling.
+          </h2>
+          <p style={{ fontSize: 15, color: '#64748b', maxWidth: 560, lineHeight: 1.65, marginBottom: 52 }}>
+            Every day, technicians, owners, and car owners lose time and records to tools that weren&apos;t built for them — or weren&apos;t built to work together.
+          </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, alignItems: 'start' }}>
 
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
-              <div style={{ padding: '24px 24px 0', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 150 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-                  {[{ n: '$24k', l: 'Monthly Rev' }, { n: '47', l: 'Jobs Done' }, { n: '98%', l: 'Satisfaction' }].map(s => (
-                    <div key={s.l} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 10 }}>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>{s.n}</div>
-                      <div style={{ fontSize: 9, color: '#94a3b8' }}>{s.l}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div style={{ padding: '22px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>📊</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Owner Intelligence</div>
-                </div>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65 }}>Ask any question about your shop — revenue, team performance, job status — and get instant answers. AI agents with full visibility across every department.</p>
-              </div>
-            </div>
-
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
-              <div style={{ padding: '24px 24px 16px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 150 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ fontSize: 10, padding: '7px 10px', borderRadius: 8, background: '#fff7ed', color: '#b45309', alignSelf: 'flex-end', maxWidth: '90%' }}>Customer says the brakes squeal at low speed.</div>
-                  <div style={{ fontSize: 10, padding: '7px 10px', borderRadius: 8, background: '#fff', border: '1px solid #e2e8f0', color: '#0f172a', maxWidth: '90%' }}>Likely glazed pads or worn rotors. Check pad thickness — if under 3mm, recommend replacement. I&apos;ll draft the repair note.</div>
-                </div>
-              </div>
-              <div style={{ padding: '22px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🔧</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>AI Technician Assistant</div>
-                </div>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65 }}>Every technician gets a dedicated AI co-pilot. It guides inspections, drafts repair notes, looks up parts, and handles the paperwork — so they can stay under the hood.</p>
-              </div>
-            </div>
-
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
-              <div style={{ padding: '16px 24px 0', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 150 }}>
+            {/* Technician */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: '#d97706', marginBottom: 14 }}>🔧 The Technician</div>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
-                  { shop: 'City Auto Center', repair: 'Brake pad replacement + rotor resurface', date: 'Mar 2026' },
-                  { shop: 'QuickLube Express', repair: 'Oil change + tire rotation', date: 'Jan 2026' },
-                  { shop: 'Downtown Motors', repair: 'AC recharge + cabin filter', date: 'Nov 2025' },
-                ].map(r => (
-                  <div key={r.shop} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 7, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: '#0f172a' }}>{r.shop}</div>
-                      <div style={{ fontSize: 9, color: '#64748b', marginTop: 1 }}>{r.repair}</div>
-                    </div>
-                    <div style={{ fontSize: 9, color: '#94a3b8' }}>{r.date}</div>
-                  </div>
+                  'After every job: 20+ minutes of manual write-ups, repair notes, and part lookups',
+                  'Estimates built by hand — every time, from scratch',
+                  'Time spent on paperwork is time not spent on cars',
+                ].map(point => (
+                  <li key={point} style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, display: 'flex', gap: 10 }}>
+                    <span style={{ color: '#cbd5e1', flexShrink: 0 }}>—</span>
+                    <span>{point}</span>
+                  </li>
                 ))}
-              </div>
-              <div style={{ padding: '22px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fdf4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🚗</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Consumer Vehicle History</div>
-                </div>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65 }}>Customers see their complete repair history across every shop they&apos;ve ever visited. One timeline. Every vehicle. Every repair — no more lost records.</p>
+              </ul>
+            </div>
+
+            {/* Owner */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: '#2563eb', marginBottom: 14 }}>👥 The Shop Owner</div>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  'Running the shop means managing multiple disconnected tools — scheduling, invoicing, parts, payroll',
+                  'Every new tool has a learning curve — and you still have to stitch the answers together yourself',
+                  'Switching tools means retraining the whole team',
+                ].map(point => (
+                  <li key={point} style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, display: 'flex', gap: 10 }}>
+                    <span style={{ color: '#cbd5e1', flexShrink: 0 }}>—</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+              <div style={{ marginTop: 16, fontSize: 12, color: '#6b7280', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', lineHeight: 1.55 }}>
+                PitAgents works as a chat interface — just ask. But if you prefer a traditional dashboard, that&apos;s still there.
               </div>
             </div>
 
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
-              <div style={{ padding: '32px 24px 0', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center', textAlign: 'center', width: '100%' }}>
-                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#b45309' }}>Shop Owner</div>
-                  <div style={{ fontSize: 14, color: '#cbd5e1' }}>⇄</div>
-                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#b45309' }}>Technician</div>
-                  <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 }}>
-                    <span style={{ fontSize: 9, color: '#94a3b8' }}>connected via</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706' }}>AutoShop Platform</span>
-                  </div>
-                  <div style={{ gridColumn: '2', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#475569' }}>Consumer</div>
-                </div>
-              </div>
-              <div style={{ padding: '22px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🔗</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Connected Ecosystem</div>
-                </div>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65 }}>Shops, technicians, and customers all on one platform. Records, updates, and repair history flow seamlessly between every party in the repair lifecycle.</p>
-              </div>
+            {/* Car owner */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: '#16a34a', marginBottom: 14 }}>🚗 The Car Owner</div>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  'Every time you switch shops, your history starts over — the new shop knows nothing',
+                  "Buy a used car? You have no idea what the previous owner actually maintained — or skipped",
+                  "Even as the current owner, it's easy to forget what's been done and when",
+                  'When you sell the car, all your maintenance records disappear with it',
+                ].map(point => (
+                  <li key={point} style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, display: 'flex', gap: 10 }}>
+                    <span style={{ color: '#cbd5e1', flexShrink: 0 }}>—</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
           </div>
         </div>
       </section>
+
+      {/* CONNECTOR */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px 0', background: '#f8fafc' }}>
+        <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16, fontWeight: 700 }}>↓</div>
+      </div>
 
       {/* WHY SECTION */}
       <section style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '96px 64px' }}>
