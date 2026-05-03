@@ -22,6 +22,12 @@ struct TechnicianInputBar: View {
     @AppStorage("voiceMode") private var voiceMode = "hold"
     @State private var audioRecorder: AVAudioRecorder?
     @State private var recordingURL: URL?
+    @State private var editorHeight: CGFloat = 140
+    @GestureState private var dragDelta: CGFloat = 0
+
+    private var currentEditorHeight: CGFloat {
+        max(60, min(420, editorHeight - dragDelta))
+    }
 
     var body: some View {
         Group {
@@ -39,9 +45,11 @@ struct TechnicianInputBar: View {
             }
         }
         .sheet(isPresented: $showCameraCapture) {
-            CameraCaptureView { image in
-                attachedPhotos.append(AttachedPhoto(image: image, isVIN: false))
-                withAnimation { isExpanded = true }
+            CameraCaptureView { images in
+                for image in images {
+                    attachedPhotos.append(AttachedPhoto(image: image))
+                }
+                if !images.isEmpty { withAnimation { isExpanded = true } }
             }
         }
         .sheet(isPresented: $showVideoRecorder) {
@@ -97,7 +105,7 @@ struct TechnicianInputBar: View {
     // MARK: - Expanded
 
     private var expandedView: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
             HStack {
                 if transcribeHint {
                     HStack(spacing: 4) {
@@ -119,22 +127,43 @@ struct TechnicianInputBar: View {
             }
             .padding(.horizontal, 14)
             .padding(.top, 8)
+            .padding(.bottom, 4)
+
+            // Drag handle — pull up to expand, pull down to shrink
+            HStack {
+                Spacer()
+                Capsule()
+                    .fill(Color(.systemGray3))
+                    .frame(width: 36, height: 5)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .frame(height: 22)
+            .gesture(
+                DragGesture()
+                    .updating($dragDelta) { value, state, _ in state = value.translation.height }
+                    .onEnded { value in
+                        editorHeight = max(60, min(420, editorHeight - value.translation.height))
+                    }
+            )
 
             TextEditor(text: $inputText)
                 .font(.body)
                 .padding(12)
                 .focused($inputFocused)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, minHeight: currentEditorHeight, maxHeight: currentEditorHeight)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.accentColor, lineWidth: 1.5)
                         .background(Color(.systemBackground).clipShape(RoundedRectangle(cornerRadius: 16)))
                 )
                 .padding(.horizontal, 14)
+                .padding(.bottom, 8)
 
             if !attachedPhotos.isEmpty {
                 PhotoTrayView(photos: $attachedPhotos, onAddMore: { showPhotoSource = true })
                     .padding(.horizontal, 14)
+                    .padding(.bottom, 8)
             }
 
             HStack(spacing: 8) {
@@ -263,9 +292,9 @@ struct TechnicianInputBar: View {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("voice_\(UUID().uuidString).m4a")
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-            AVSampleRateKey: 44100,
+            AVSampleRateKey: 16000,
             AVNumberOfChannelsKey: 1,
-            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
+            AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue,
         ]
         do {
             try AVAudioSession.sharedInstance().setCategory(.record, mode: .default, options: [])
