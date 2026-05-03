@@ -23,12 +23,6 @@ struct TechnicianInputBar: View {
     @State private var audioRecorder: AVAudioRecorder?
     @State private var recordingURL: URL?
     @State private var scannedVINs: [String] = []
-    @State private var editorHeight: CGFloat = 140
-    @GestureState private var dragDelta: CGFloat = 0
-
-    private var currentEditorHeight: CGFloat {
-        max(60, min(420, editorHeight - dragDelta))
-    }
 
     var body: some View {
         Group {
@@ -130,24 +124,6 @@ struct TechnicianInputBar: View {
             .padding(.top, 8)
             .padding(.bottom, 4)
 
-            // Drag handle — pull up to expand, pull down to shrink
-            HStack {
-                Spacer()
-                Capsule()
-                    .fill(Color(.systemGray3))
-                    .frame(width: 36, height: 5)
-                Spacer()
-            }
-            .contentShape(Rectangle())
-            .frame(height: 22)
-            .gesture(
-                DragGesture()
-                    .updating($dragDelta) { value, state, _ in state = value.translation.height }
-                    .onEnded { value in
-                        editorHeight = max(60, min(420, editorHeight - value.translation.height))
-                    }
-            )
-
             if !scannedVINs.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -176,7 +152,7 @@ struct TechnicianInputBar: View {
                 .font(.body)
                 .padding(12)
                 .focused($inputFocused)
-                .frame(maxWidth: .infinity, minHeight: currentEditorHeight, maxHeight: currentEditorHeight)
+                .frame(maxWidth: .infinity, minHeight: 120, maxHeight: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.accentColor, lineWidth: 1.5)
