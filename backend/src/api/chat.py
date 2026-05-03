@@ -102,10 +102,7 @@ def _sanitize_content(content) -> list[dict] | str:
     result = []
     for block in content:
         if isinstance(block, dict) and block.get("type") == "image":
-            src = block.get("source", {})
-            if src.get("type") == "base64":
-                result.append({"type": "text", "text": "[image]"})
-                continue
+            continue
         result.append(block)
     return result
 
