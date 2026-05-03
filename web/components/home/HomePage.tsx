@@ -179,7 +179,7 @@ export function HomePage() {
             Every day, technicians, owners, and car owners lose time and records to tools that weren&apos;t built for them — or weren&apos;t built to work together.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
 
             {/* Technician */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24 }}>
@@ -213,9 +213,6 @@ export function HomePage() {
                   </li>
                 ))}
               </ul>
-              <div style={{ marginTop: 16, fontSize: 12, color: '#6b7280', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', lineHeight: 1.55 }}>
-                PitAgents works as a chat interface — just ask. But if you prefer a traditional dashboard, that&apos;s still there.
-              </div>
             </div>
 
             {/* Car owner */}
