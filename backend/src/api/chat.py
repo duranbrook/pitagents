@@ -88,6 +88,28 @@ def _build_user_content(message: str, image_urls: list[str]) -> list[dict]:
     return content
 
 
+def _sanitize_content(content) -> list[dict] | str:
+    """Strip base64 image data from a message content block at load time.
+
+    Old rows pre-dating the save-time stripping still have full base64 blobs.
+    Stripping here ensures the Anthropic payload is always lean regardless of
+    what's in the DB.
+    """
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return content
+    result = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "image":
+            src = block.get("source", {})
+            if src.get("type") == "base64":
+                result.append({"type": "text", "text": "[image]"})
+                continue
+        result.append(block)
+    return result
+
+
 async def _load_history(user_id: uuid.UUID, agent_id: str, db: AsyncSession) -> list[dict]:
     result = await db.execute(
         select(ChatMessage)
@@ -95,7 +117,7 @@ async def _load_history(user_id: uuid.UUID, agent_id: str, db: AsyncSession) -> 
         .order_by(ChatMessage.created_at)
     )
     rows = result.scalars().all()
-    return [{"role": r.role, "content": r.content} for r in rows]
+    return [{"role": r.role, "content": _sanitize_content(r.content)} for r in rows]
 
 
 def _strip_base64_images(content: list[dict]) -> list[dict]:
