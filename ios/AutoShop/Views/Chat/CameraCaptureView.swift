@@ -5,18 +5,16 @@ struct CameraCaptureView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        CameraController(onCapture: { image in
-            onCapture(image)
-            dismiss()
-        })
-        .ignoresSafeArea()
+        CameraController(onCapture: onCapture, onCancel: { dismiss() })
+            .ignoresSafeArea()
     }
 }
 
 private struct CameraController: UIViewControllerRepresentable {
     let onCapture: (UIImage) -> Void
+    let onCancel: () -> Void
 
-    func makeCoordinator() -> Coordinator { Coordinator(onCapture: onCapture) }
+    func makeCoordinator() -> Coordinator { Coordinator(onCapture: onCapture, onCancel: onCancel) }
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
@@ -31,16 +29,21 @@ private struct CameraController: UIViewControllerRepresentable {
 
     class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         let onCapture: (UIImage) -> Void
-        init(onCapture: @escaping (UIImage) -> Void) { self.onCapture = onCapture }
+        let onCancel: () -> Void
+        init(onCapture: @escaping (UIImage) -> Void, onCancel: @escaping () -> Void) {
+            self.onCapture = onCapture
+            self.onCancel = onCancel
+        }
 
         func imagePickerController(_ picker: UIImagePickerController,
                                    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             if let image = info[.originalImage] as? UIImage { onCapture(image) }
-            picker.dismiss(animated: true)
+            // Don't dismiss — picker returns to "Retake / Use Photo" preview.
+            // User taps Retake to shoot another, or Cancel to close.
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true)
+            onCancel()
         }
     }
 }
