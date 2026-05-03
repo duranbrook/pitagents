@@ -160,6 +160,12 @@ struct AgentChatView: View {
     @State private var inputText = ""
     @State private var isExpanded = false
     @FocusState private var inputFocused: Bool
+    @State private var chatAreaHeight: CGFloat = 120
+    @GestureState private var chatDragDelta: CGFloat = 0
+
+    private var liveChatAreaHeight: CGFloat {
+        max(60, min(350, chatAreaHeight + chatDragDelta))
+    }
 
     init(agent: Agent, showMediaControls: Bool = false) {
         self.agent = agent
@@ -169,8 +175,12 @@ struct AgentChatView: View {
     var body: some View {
         VStack(spacing: 0) {
             messageList
-                .frame(maxHeight: isExpanded ? 120 : .infinity)
-            Divider()
+                .frame(maxHeight: isExpanded ? liveChatAreaHeight : .infinity)
+            if isExpanded {
+                chatResizeHandle
+            } else {
+                Divider()
+            }
             if showMediaControls {
                 TechnicianInputBar(agent: agent, vm: vm, isExpanded: $isExpanded)
             } else {
@@ -204,6 +214,29 @@ struct AgentChatView: View {
                 withAnimation(.spring(response: 0.3)) { isExpanded = false }
             }
         }
+    }
+
+    private var chatResizeHandle: some View {
+        HStack {
+            Spacer()
+            Capsule()
+                .fill(Color(.systemGray3))
+                .frame(width: 36, height: 5)
+            Spacer()
+        }
+        .frame(height: 18)
+        .background(Color(UIColor.systemBackground))
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color(.separator)).frame(height: 0.5)
+        }
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture()
+                .updating($chatDragDelta) { value, state, _ in state = value.translation.height }
+                .onEnded { value in
+                    chatAreaHeight = max(60, min(350, chatAreaHeight + value.translation.height))
+                }
+        )
     }
 
     private var agentNavTitle: some View {

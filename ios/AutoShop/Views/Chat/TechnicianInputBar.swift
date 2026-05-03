@@ -22,6 +22,8 @@ struct TechnicianInputBar: View {
     @AppStorage("voiceMode") private var voiceMode = "hold"
     @State private var audioRecorder: AVAudioRecorder?
     @State private var recordingURL: URL?
+    @State private var silenceTimer: Timer?
+    @State private var silenceStart: Date?
     @State private var editorHeight: CGFloat = 140
     @GestureState private var dragDelta: CGFloat = 0
 
@@ -299,14 +301,40 @@ struct TechnicianInputBar: View {
         do {
             try AVAudioSession.sharedInstance().setCategory(.record, mode: .default, options: [])
             try AVAudioSession.sharedInstance().setActive(true)
-            audioRecorder = try AVAudioRecorder(url: url, settings: settings)
-            audioRecorder?.record()
+            let recorder = try AVAudioRecorder(url: url, settings: settings)
+            recorder.isMeteringEnabled = true
+            recorder.record()
+            audioRecorder = recorder
             recordingURL = url
             isRecordingVoice = true
+            silenceStart = nil
             withAnimation { isExpanded = true }
+            startSilenceDetection(recorder: recorder)
         } catch {
             vm.errorMessage = "Microphone unavailable: \(error.localizedDescription)"
         }
+    }
+
+    private func startSilenceDetection(recorder: AVAudioRecorder) {
+        silenceTimer?.invalidate()
+        let timer = Timer(timeInterval: 0.25, repeats: true) { t in
+            guard recorder.isRecording else { t.invalidate(); return }
+            recorder.updateMeters()
+            let power = recorder.averagePower(forChannel: 0)
+            DispatchQueue.main.async {
+                if power < -45 {
+                    if silenceStart == nil { silenceStart = Date() }
+                    else if Date().timeIntervalSince(silenceStart!) >= 2.5 {
+                        t.invalidate()
+                        stopAndTranscribe()
+                    }
+                } else {
+                    silenceStart = nil
+                }
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        silenceTimer = timer
     }
 
     private func addVideo(at url: URL) async {
@@ -326,6 +354,9 @@ struct TechnicianInputBar: View {
     }
 
     private func stopAndTranscribe() {
+        silenceTimer?.invalidate()
+        silenceTimer = nil
+        silenceStart = nil
         audioRecorder?.stop()
         audioRecorder = nil
         isRecordingVoice = false
