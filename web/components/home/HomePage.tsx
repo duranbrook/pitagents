@@ -285,7 +285,7 @@ export function HomePage() {
               </div>
               <div style={{ padding: '14px 16px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 160, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 6 }}>
                 <div style={{ display: 'flex', gap: 5, marginBottom: 2 }}>
-                  {(['Service Advisor', 'Bookkeeper', 'Manager'] as const).map(name => (
+                  {['Service Advisor', 'Bookkeeper', 'Manager'].map(name => (
                     <span key={name} style={{
                       fontSize: 8, fontWeight: 700, padding: '3px 8px', borderRadius: 99,
                       ...(name === 'Bookkeeper'
