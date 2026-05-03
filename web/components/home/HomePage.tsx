@@ -241,9 +241,9 @@ export function HomePage() {
             <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
               <div style={{ padding: '32px 24px 0', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center', textAlign: 'center', width: '100%' }}>
-                  <div style={{ background: '#fff7ed', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#b45309' }}>Shop Owner</div>
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#b45309' }}>Shop Owner</div>
                   <div style={{ fontSize: 14, color: '#cbd5e1' }}>⇄</div>
-                  <div style={{ background: '#fff7ed', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#b45309' }}>Technician</div>
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#b45309' }}>Technician</div>
                   <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 }}>
                     <span style={{ fontSize: 9, color: '#94a3b8' }}>connected via</span>
                     <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706' }}>AutoShop Platform</span>
