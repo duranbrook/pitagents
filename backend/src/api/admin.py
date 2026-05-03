@@ -43,6 +43,33 @@ async def run_seed(x_admin_secret: str = Header(default="")):
     return {"status": "ok", "output": output}
 
 
+@router.post("/add-owner")
+async def add_owner_user(
+    email: str,
+    name: str = "Owner",
+    x_admin_secret: str = Header(default=""),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create an owner user under the first shop (for onboarding real accounts)."""
+    _check_secret(x_admin_secret)
+    import uuid as _uuid
+    shop_row = await db.execute(text("SELECT id FROM shops LIMIT 1"))
+    shop = shop_row.fetchone()
+    if not shop:
+        raise HTTPException(status_code=404, detail="No shop found")
+    shop_id = shop[0]
+    existing = await db.execute(text("SELECT user_id FROM users WHERE email = :e"), {"e": email})
+    if existing.fetchone():
+        return {"status": "already_exists", "email": email}
+    user_id = str(_uuid.uuid4())
+    await db.execute(
+        text("INSERT INTO users (user_id, shop_id, email, role, name) VALUES (:id, :sid, :email, 'owner', :name)"),
+        {"id": user_id, "sid": str(shop_id), "email": email, "name": name},
+    )
+    await db.commit()
+    return {"status": "created", "user_id": user_id, "email": email}
+
+
 @router.post("/fix-passwords")
 async def fix_test_passwords(
     x_admin_secret: str = Header(default=""),
