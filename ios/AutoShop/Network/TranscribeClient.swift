@@ -5,20 +5,13 @@ enum TranscribeClient {
         guard let url = URL(string: SessionAPI.baseURL + "/transcribe") else {
             throw APIError.invalidURL
         }
-        let boundary = UUID().uuidString
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
-        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        req.setValue("audio/x-m4a", forHTTPHeaderField: "Content-Type")
         if let token = KeychainStore.shared.load() {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"voice.m4a\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: audio/m4a\r\n\r\n".data(using: .utf8)!)
-        body.append(audioData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        req.httpBody = body
+        req.httpBody = audioData
 
         let (data, response) = try await URLSession.shared.data(for: req)
         guard let http = response as? HTTPURLResponse else {
