@@ -58,12 +58,12 @@ async def add_owner_user(
     if not shop:
         raise HTTPException(status_code=404, detail="No shop found")
     shop_id = shop[0]
-    existing = await db.execute(text("SELECT user_id FROM users WHERE email = :e"), {"e": email})
+    existing = await db.execute(text("SELECT id FROM users WHERE email = :e"), {"e": email})
     if existing.fetchone():
         return {"status": "already_exists", "email": email}
     user_id = str(_uuid.uuid4())
     await db.execute(
-        text("INSERT INTO users (user_id, shop_id, email, role, name) VALUES (:id, :sid, :email, 'owner', :name)"),
+        text("INSERT INTO users (id, shop_id, email, role, name) VALUES (:id, :sid, :email, 'owner', :name)"),
         {"id": user_id, "sid": str(shop_id), "email": email, "name": name},
     )
     await db.commit()
