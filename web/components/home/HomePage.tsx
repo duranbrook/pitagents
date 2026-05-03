@@ -245,6 +245,102 @@ export function HomePage() {
         <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16, fontWeight: 700 }}>↓</div>
       </div>
 
+      {/* SOLUTION SECTION */}
+      <section style={{ padding: '80px 64px', background: '#f8fafc' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: '#d97706', textTransform: 'uppercase', marginBottom: 12 }}>The Solution</div>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: '#0f172a', letterSpacing: -1, lineHeight: 1.15, marginBottom: 14 }}>
+            One tool. Three problems solved.
+          </h2>
+          <p style={{ fontSize: 15, color: '#64748b', maxWidth: 560, lineHeight: 1.65, marginBottom: 52 }}>
+            PitAgents puts an AI on every role — technician, shop owner, and car owner — each one built for exactly the job they need to do.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+
+            {/* Pillar 1 — AI Technician */}
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, lineHeight: 1.5, background: '#fff7ed', color: '#92400e', borderBottom: '1px solid #fed7aa' }}>
+                Handles the write-ups so your technician can stay on the car.
+              </div>
+              <div style={{ padding: '14px 16px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 160, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 6 }}>
+                <div style={{ fontSize: 10, padding: '6px 10px', borderRadius: 8, background: '#fff7ed', color: '#92400e', alignSelf: 'flex-end', maxWidth: '92%', lineHeight: 1.45 }}>Brakes squeal at low speed — 2021 Camry</div>
+                <div style={{ fontSize: 10, padding: '6px 10px', borderRadius: 8, background: '#fff', border: '1px solid #fed7aa', color: '#0f172a', maxWidth: '92%', lineHeight: 1.45 }}>Likely glazed pads. Under 3mm → recommend replacement. Drafting repair note now.</div>
+                <div style={{ fontSize: 10, padding: '6px 10px', borderRadius: 8, background: '#fff7ed', color: '#92400e', alignSelf: 'flex-end', maxWidth: '92%', lineHeight: 1.45 }}>Add a rotor inspection line</div>
+                <div style={{ fontSize: 10, padding: '6px 10px', borderRadius: 8, background: '#fff', border: '1px solid #fed7aa', color: '#0f172a', maxWidth: '92%', lineHeight: 1.45 }}>Done. Ready to send to the customer.</div>
+              </div>
+              <div style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 7, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>🔧</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>AI Technician Assistant</div>
+                </div>
+                <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>Guides inspections, drafts repair notes, looks up parts, handles paperwork — so techs stay under the hood, not behind a desk.</p>
+              </div>
+            </div>
+
+            {/* Pillar 2 — Owner AI Crew */}
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, lineHeight: 1.5, background: '#eff6ff', color: '#1e3a5f', borderBottom: '1px solid #bfdbfe' }}>
+                Replace the tool stack with one conversation.
+              </div>
+              <div style={{ padding: '14px 16px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 160, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 5, marginBottom: 2 }}>
+                  {(['Service Advisor', 'Bookkeeper', 'Manager'] as const).map(name => (
+                    <span key={name} style={{
+                      fontSize: 8, fontWeight: 700, padding: '3px 8px', borderRadius: 99,
+                      ...(name === 'Bookkeeper'
+                        ? { background: '#1d4ed8', color: '#fff' }
+                        : { background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' }),
+                    }}>{name}</span>
+                  ))}
+                </div>
+                <div style={{ fontSize: 10, padding: '6px 10px', borderRadius: 8, background: '#eff6ff', color: '#1d4ed8', alignSelf: 'flex-end', maxWidth: '92%', lineHeight: 1.45 }}>Revenue this week vs last?</div>
+                <div style={{ fontSize: 10, padding: '6px 10px', borderRadius: 8, background: '#fff', border: '1px solid #bfdbfe', color: '#0f172a', maxWidth: '92%', lineHeight: 1.45 }}>$18,400 across 34 jobs — up 22% vs last week&apos;s $15,080. Brake jobs drove most of the gain.</div>
+              </div>
+              <div style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 7, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>👥</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>Owner AI Crew</div>
+                </div>
+                <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>A crew of specialists for service, books, and ops. Ask any question in plain language. Dashboard still available when you want it.</p>
+              </div>
+            </div>
+
+            {/* Pillar 3 — Vehicle History */}
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, lineHeight: 1.5, background: '#f0fdf4', color: '#14532d', borderBottom: '1px solid #bbf7d0' }}>
+                The car&apos;s full history — current owner, previous owners, every shop.
+              </div>
+              <div style={{ padding: '14px 16px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 160, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 6 }}>
+                <div style={{ fontSize: 10, padding: '6px 10px', borderRadius: 8, background: '#f0fdf4', color: '#166534', alignSelf: 'flex-end', maxWidth: '92%', lineHeight: 1.45 }}>What&apos;s been done on my Civic — including before I bought it?</div>
+                <div style={{ fontSize: 10, padding: '6px 10px', borderRadius: 8, background: '#fff', border: '1px solid #bbf7d0', color: '#0f172a', maxWidth: '92%', lineHeight: 1.45 }}>Full history across all owners and 3 shops:</div>
+                {[
+                  { label: 'City Auto — Brake replacement', date: 'Mar 2026', price: '$480', muted: false },
+                  { label: 'Previous owner — Oil change', date: 'Jun 2024', price: '$65', muted: true },
+                ].map(row => (
+                  <div key={row.label} style={{ fontSize: 9, padding: '5px 8px', borderRadius: 6, background: '#fff', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 600, color: row.muted ? '#94a3b8' : '#0f172a' }}>{row.label}</span>
+                    <span style={{ display: 'flex', gap: 6 }}>
+                      <span style={{ color: '#94a3b8' }}>{row.date}</span>
+                      <span style={{ color: '#166534', fontWeight: 700 }}>{row.price}</span>
+                    </span>
+                  </div>
+                ))}
+                <div style={{ fontSize: 8, color: '#94a3b8', padding: '2px 4px' }}>🔒 Your view only — shops cannot see each other&apos;s records</div>
+              </div>
+              <div style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 7, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>🚗</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>Your Vehicle History</div>
+                </div>
+                <p style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>Every repair, every price, current and previous owners — all in one place. Follows the car forever. Know exactly what&apos;s been done, and what hasn&apos;t.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* WHY SECTION */}
       <section style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '96px 64px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
