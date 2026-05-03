@@ -17,7 +17,7 @@ struct PhotoTrayView: View {
 
     private func photoThumb(index: Int) -> some View {
         let photo = photos[index]
-        return ZStack(alignment: .bottomTrailing) {
+        return ZStack(alignment: .topTrailing) {
             Image(uiImage: photo.image)
                 .resizable()
                 .scaledToFill()
@@ -31,38 +31,50 @@ struct PhotoTrayView: View {
                             lineWidth: 2.5
                         )
                 )
+                .overlay(alignment: .bottomTrailing) {
+                    if photo.isVideo {
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(.white.shadow(.drop(radius: 1)))
+                            .padding(4)
+                    } else if photo.isVIN {
+                        Text("VIN")
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(Color.orange)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                            .padding(3)
+                    } else if photo.isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.white, Color.accentColor)
+                            .padding(3)
+                    }
+                }
+                .onTapGesture { photos[index].isSelected.toggle() }
+                .contextMenu {
+                    Button {
+                        photos[index].isVIN = true
+                        for j in photos.indices where j != index { photos[j].isVIN = false }
+                    } label: { Label("Mark as VIN photo", systemImage: "barcode.viewfinder") }
 
-            if photo.isVideo {
-                Image(systemName: "play.circle.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(.white.shadow(.drop(radius: 1)))
-                    .padding(4)
-            } else if photo.isVIN {
-                Text("VIN")
-                    .font(.system(size: 9, weight: .black))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(Color.orange)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                    .padding(3)
-            } else if photo.isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.white, Color.accentColor)
-                    .padding(3)
-            }
-        }
-        .onTapGesture { photos[index].isSelected.toggle() }
-        .contextMenu {
+                    Button(role: .destructive) {
+                        photos.remove(at: index)
+                    } label: { Label("Remove", systemImage: "trash") }
+                }
+
+            // Delete badge — top-right corner
             Button {
-                photos[index].isVIN = true
-                for j in photos.indices where j != index { photos[j].isVIN = false }
-            } label: { Label("Mark as VIN photo", systemImage: "barcode.viewfinder") }
-
-            Button(role: .destructive) {
                 photos.remove(at: index)
-            } label: { Label("Remove", systemImage: "trash") }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.white, Color(.systemGray))
+                    .background(Color(.systemBackground).clipShape(Circle()))
+            }
+            .offset(x: 6, y: -6)
         }
     }
 
