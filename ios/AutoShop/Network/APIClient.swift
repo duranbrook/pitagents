@@ -100,7 +100,7 @@ final class APIClient {
         try await get("/quotes/\(id)")
     }
 
-    func uploadVideo(data: Data, filename: String) async throws -> VideoUploadResponse {
+    func uploadVideo(data: Data, filename: String, mimeType: String = "video/quicktime") async throws -> VideoUploadResponse {
         guard let url = URL(string: baseURL + "/upload/video") else { throw APIError.invalidURL }
         let boundary = UUID().uuidString
         var req = URLRequest(url: url)
@@ -111,7 +111,7 @@ final class APIClient {
         var body = Data()
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: video/mp4\r\n\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
         body.append(data)
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
         req.httpBody = body

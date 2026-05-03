@@ -19,7 +19,6 @@ struct TechnicianInputBar: View {
     @State private var isRecordingVoice = false
     @State private var isTranscribing = false
     @State private var transcribeHint = false
-    @State private var isUploadingVideo = false
     @AppStorage("voiceMode") private var voiceMode = "hold"
     @State private var audioRecorder: AVAudioRecorder?
     @State private var recordingURL: URL?
@@ -47,7 +46,7 @@ struct TechnicianInputBar: View {
         }
         .sheet(isPresented: $showVideoRecorder) {
             VideoRecorderView { url in
-                Task { await uploadVideo(at: url) }
+                Task { await addVideo(at: url) }
             }
         }
         .photosPicker(isPresented: $showLibraryPicker, selection: $selectedLibraryItem, matching: .images)
@@ -230,11 +229,30 @@ struct TechnicianInputBar: View {
 
     private func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespaces)
-        let imageUrls = attachedPhotos.filter(\.isSelected).compactMap { $0.base64DataUrl }
+        let selected = attachedPhotos.filter(\.isSelected)
+        let imageUrls = selected.filter { !$0.isVideo }.compactMap { $0.base64DataUrl }
+        let videoAttachments = selected.filter(\.isVideo)
         inputText = ""
         attachedPhotos = []
         transcribeHint = false
-        Task { await vm.sendWithImages(text: text, imageUrls: imageUrls, agentId: agent.id) }
+        Task {
+            var messageText = text
+            for video in videoAttachments {
+                guard let videoURL = video.videoURL else { continue }
+                do {
+                    let data = try Data(contentsOf: videoURL)
+                    let mimeType = videoURL.pathExtension.lowercased() == "mp4" ? "video/mp4" : "video/quicktime"
+                    let response = try await APIClient.shared.uploadVideo(data: data, filename: videoURL.lastPathComponent, mimeType: mimeType)
+                    let note = "[Video: \(response.videoUrl)]"
+                    messageText = messageText.isEmpty ? note : "\(messageText)\n\(note)"
+                } catch {
+                    await MainActor.run { vm.errorMessage = "Video upload failed: \(error.localizedDescription)" }
+                    return
+                }
+            }
+            let finalText = messageText.isEmpty ? (videoAttachments.isEmpty ? "" : "See attached") : messageText
+            await vm.sendWithImages(text: finalText, imageUrls: imageUrls, agentId: agent.id)
+        }
     }
 
     private func startVoiceRecording() {
@@ -262,19 +280,19 @@ struct TechnicianInputBar: View {
         }
     }
 
-    private func uploadVideo(at url: URL) async {
-        isUploadingVideo = true
-        defer { isUploadingVideo = false }
-        do {
-            let data = try Data(contentsOf: url)
-            let response = try await APIClient.shared.uploadVideo(data: data, filename: url.lastPathComponent)
-            await MainActor.run {
-                let note = "[Video attached: \(response.videoUrl)]"
-                inputText = inputText.isEmpty ? note : "\(inputText)\n\(note)"
-                withAnimation { isExpanded = true }
+    private func addVideo(at url: URL) async {
+        let asset = AVURLAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 200, height: 200)
+        let time = CMTime(seconds: 0, preferredTimescale: 600)
+        generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { _, cgImage, _, result, _ in
+            guard result == .succeeded, let cgImage else { return }
+            let thumbnail = UIImage(cgImage: cgImage)
+            Task { @MainActor in
+                self.attachedPhotos.append(AttachedPhoto(image: thumbnail, videoURL: url))
+                withAnimation { self.isExpanded = true }
             }
-        } catch {
-            vm.errorMessage = "Video upload failed: \(error.localizedDescription)"
         }
     }
 
@@ -307,8 +325,12 @@ struct AttachedPhoto: Identifiable {
     let image: UIImage
     var isVIN: Bool = false
     var isSelected: Bool = true
+    var videoURL: URL? = nil
+
+    var isVideo: Bool { videoURL != nil }
 
     var base64DataUrl: String? {
+        guard !isVideo else { return nil }
         guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
         return "data:image/jpeg;base64,\(data.base64EncodedString())"
     }

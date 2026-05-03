@@ -32,7 +32,12 @@ struct PhotoTrayView: View {
                         )
                 )
 
-            if photo.isVIN {
+            if photo.isVideo {
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(.white.shadow(.drop(radius: 1)))
+                    .padding(4)
+            } else if photo.isVIN {
                 Text("VIN")
                     .font(.system(size: 9, weight: .black))
                     .foregroundStyle(.white)
