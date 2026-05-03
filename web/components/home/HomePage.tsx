@@ -23,7 +23,7 @@ export function HomePage() {
         zIndex: 100,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontWeight: 800, fontSize: 15, color: '#0f172a', letterSpacing: -0.3 }}>
-          <div style={{ width: 30, height: 30, background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 14, boxShadow: '0 2px 8px rgba(37,99,235,0.3)' }}>A</div>
+          <div style={{ width: 30, height: 30, background: 'linear-gradient(135deg, #d97706, #b45309)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 14, boxShadow: '0 2px 8px rgba(217,119,6,0.3)' }}>A</div>
           AutoShop
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
@@ -33,9 +33,9 @@ export function HomePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/login" style={{ fontSize: 13.5, color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Sign In</Link>
           <Link href="/demo" style={{
-            background: '#2563eb', color: '#fff', padding: '8px 18px',
+            background: '#d97706', color: '#fff', padding: '8px 18px',
             borderRadius: 8, fontSize: 13.5, fontWeight: 600,
-            boxShadow: '0 1px 4px rgba(37,99,235,0.25)', textDecoration: 'none',
+            boxShadow: '0 1px 4px rgba(217,119,6,0.25)', textDecoration: 'none',
           }}>Request Demo</Link>
         </div>
       </nav>
@@ -51,7 +51,7 @@ export function HomePage() {
         <div style={{
           position: 'absolute', top: -120, left: '50%', transform: 'translateX(-50%)',
           width: 700, height: 700,
-          background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(217,119,6,0.08) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
@@ -70,7 +70,7 @@ export function HomePage() {
           Give your shop{' '}
           <em style={{
             fontStyle: 'normal',
-            background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+            background: 'linear-gradient(135deg, #d97706, #f59e0b)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -82,9 +82,9 @@ export function HomePage() {
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 60 }}>
           <Link href="/demo" style={{
-            background: '#2563eb', color: '#fff', padding: '13px 28px',
+            background: '#d97706', color: '#fff', padding: '13px 28px',
             borderRadius: 9, fontSize: 15, fontWeight: 700,
-            boxShadow: '0 4px 14px rgba(37,99,235,0.35)', textDecoration: 'none',
+            boxShadow: '0 4px 14px rgba(217,119,6,0.35)', textDecoration: 'none',
           }}>Request a Demo</Link>
           <Link href="/login" style={{
             color: '#475569', fontSize: 15, fontWeight: 500,
@@ -124,7 +124,7 @@ export function HomePage() {
                   fontWeight: item.active ? 600 : 400,
                   marginBottom: 2,
                 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: 3, background: item.active ? '#2563eb' : 'rgba(255,255,255,0.15)' }} />
+                  <div style={{ width: 14, height: 14, borderRadius: 3, background: item.active ? '#d97706' : 'rgba(255,255,255,0.15)' }} />
                   {item.label}
                 </div>
               ))}
@@ -146,7 +146,7 @@ export function HomePage() {
               <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 14px', border: '1px solid #f1f5f9' }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>Ask your AI →</div>
                 <div style={{ fontSize: 10, color: '#475569', padding: '6px 10px', background: '#fff', borderRadius: 6, border: '1px solid #f1f5f9', marginBottom: 6 }}>What&apos;s our top repair this week?</div>
-                <div style={{ fontSize: 10, color: '#fff', padding: '6px 10px', background: '#2563eb', borderRadius: 6, display: 'inline-block' }}>Brake service — 7 jobs, $3,220 revenue. Up 18% vs last week.</div>
+                <div style={{ fontSize: 10, color: '#fff', padding: '6px 10px', background: '#d97706', borderRadius: 6, display: 'inline-block' }}>Brake service — 7 jobs, $3,220 revenue. Up 18% vs last week.</div>
               </div>
             </div>
           </div>
@@ -162,7 +162,7 @@ export function HomePage() {
           { val: '$0', label: 'For your customers' },
         ].map(m => (
           <div key={m.label} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 36, fontWeight: 900, color: '#60a5fa', letterSpacing: -1 }}>{m.val}</div>
+            <div style={{ fontSize: 36, fontWeight: 900, color: '#fb923c', letterSpacing: -1 }}>{m.val}</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 4, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>{m.label}</div>
           </div>
         ))}
@@ -171,7 +171,7 @@ export function HomePage() {
       {/* PRODUCT SECTION */}
       <section id="product" style={{ padding: '96px 64px', background: '#fff' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#2563eb', textTransform: 'uppercase', marginBottom: 12 }}>Product</div>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#d97706', textTransform: 'uppercase', marginBottom: 12 }}>Product</div>
           <h2 style={{ fontSize: 40, fontWeight: 900, color: '#0f172a', letterSpacing: -1, lineHeight: 1.1, marginBottom: 14 }}>Built for every role<br />in your shop</h2>
           <p style={{ fontSize: 16, color: '#64748b', maxWidth: 480, lineHeight: 1.65, marginBottom: 56 }}>From the owner&apos;s chair to the technician&apos;s bay — everyone gets the right AI at the right moment.</p>
 
@@ -190,7 +190,7 @@ export function HomePage() {
               </div>
               <div style={{ padding: '22px 24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>📊</div>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>📊</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Owner Intelligence</div>
                 </div>
                 <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65 }}>Ask any question about your shop — revenue, team performance, job status — and get instant answers. AI agents with full visibility across every department.</p>
@@ -200,7 +200,7 @@ export function HomePage() {
             <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
               <div style={{ padding: '24px 24px 16px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 150 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ fontSize: 10, padding: '7px 10px', borderRadius: 8, background: '#eff6ff', color: '#1d4ed8', alignSelf: 'flex-end', maxWidth: '90%' }}>Customer says the brakes squeal at low speed.</div>
+                  <div style={{ fontSize: 10, padding: '7px 10px', borderRadius: 8, background: '#fff7ed', color: '#b45309', alignSelf: 'flex-end', maxWidth: '90%' }}>Customer says the brakes squeal at low speed.</div>
                   <div style={{ fontSize: 10, padding: '7px 10px', borderRadius: 8, background: '#fff', border: '1px solid #e2e8f0', color: '#0f172a', maxWidth: '90%' }}>Likely glazed pads or worn rotors. Check pad thickness — if under 3mm, recommend replacement. I&apos;ll draft the repair note.</div>
                 </div>
               </div>
@@ -241,12 +241,12 @@ export function HomePage() {
             <div style={{ border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
               <div style={{ padding: '32px 24px 0', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', minHeight: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center', textAlign: 'center', width: '100%' }}>
-                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#1d4ed8' }}>Shop Owner</div>
+                  <div style={{ background: '#fff7ed', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#b45309' }}>Shop Owner</div>
                   <div style={{ fontSize: 14, color: '#cbd5e1' }}>⇄</div>
-                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#1d4ed8' }}>Technician</div>
+                  <div style={{ background: '#fff7ed', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#b45309' }}>Technician</div>
                   <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 }}>
                     <span style={{ fontSize: 9, color: '#94a3b8' }}>connected via</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#2563eb' }}>AutoShop Platform</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706' }}>AutoShop Platform</span>
                   </div>
                   <div style={{ gridColumn: '2', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, fontSize: 9, fontWeight: 600, color: '#475569' }}>Consumer</div>
                 </div>
@@ -267,7 +267,7 @@ export function HomePage() {
       {/* WHY SECTION */}
       <section style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '96px 64px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#60a5fa', textTransform: 'uppercase', marginBottom: 12 }}>Why AutoShop</div>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#fb923c', textTransform: 'uppercase', marginBottom: 12 }}>Why AutoShop</div>
           <h2 style={{ fontSize: 40, fontWeight: 900, color: '#f8fafc', letterSpacing: -1, lineHeight: 1.1, marginBottom: 12 }}>AI that works for the<br />whole automotive world</h2>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', maxWidth: 480, lineHeight: 1.65, marginBottom: 48 }}>Two transformations. One platform.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -276,7 +276,7 @@ export function HomePage() {
               { num: '02', title: 'Connect every consumer', body: "For the first time, customers can access their complete repair history across every shop they've used. One timeline. Every vehicle. Every repair." },
             ].map(card => (
               <div key={card.num} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 36 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#3b82f6', letterSpacing: 2, marginBottom: 16 }}>{card.num}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', letterSpacing: 2, marginBottom: 16 }}>{card.num}</div>
                 <h3 style={{ fontSize: 22, fontWeight: 800, color: '#f1f5f9', marginBottom: 12, letterSpacing: -0.3 }}>{card.title}</h3>
                 <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.75 }}>{card.body}</p>
               </div>
@@ -293,7 +293,7 @@ export function HomePage() {
             AutoShop cut our inspection write-up time in half. My technicians actually enjoy using it — and customers love seeing their full vehicle history in one place.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#2563eb,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14 }}>M</div>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#d97706,#f59e0b)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14 }}>M</div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Marcus T.</div>
               <div style={{ fontSize: 12, color: '#94a3b8' }}>Owner, City Auto Center</div>
@@ -305,13 +305,13 @@ export function HomePage() {
       {/* PRICING */}
       <section id="pricing" style={{ padding: '96px 64px', background: '#fff' }}>
         <div style={{ maxWidth: 980, margin: '0 auto' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#2563eb', textTransform: 'uppercase', marginBottom: 12 }}>Pricing</div>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#d97706', textTransform: 'uppercase', marginBottom: 12 }}>Pricing</div>
           <h2 style={{ fontSize: 40, fontWeight: 900, color: '#0f172a', letterSpacing: -1, lineHeight: 1.1, marginBottom: 14 }}>Simple, transparent pricing</h2>
           <p style={{ fontSize: 16, color: '#64748b', lineHeight: 1.65 }}>Start at $39/month. Scale when you&apos;re ready.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 56 }}>
 
-            <div style={{ border: '2px solid #2563eb', borderRadius: 20, padding: 36, boxShadow: '0 4px 24px rgba(37,99,235,0.1)' }}>
-              <div style={{ display: 'inline-block', background: '#eff6ff', color: '#2563eb', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 99, marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' as const }}>Starter</div>
+            <div style={{ border: '2px solid #d97706', borderRadius: 20, padding: 36, boxShadow: '0 4px 24px rgba(217,119,6,0.1)' }}>
+              <div style={{ display: 'inline-block', background: '#fff7ed', color: '#d97706', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 99, marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' as const }}>Starter</div>
               <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>Single Shop</div>
               <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28, lineHeight: 1.5 }}>Everything you need to run one location with AI.</p>
               <div style={{ fontSize: 52, fontWeight: 900, color: '#0f172a', letterSpacing: -2, lineHeight: 1, marginBottom: 4 }}>
@@ -320,14 +320,14 @@ export function HomePage() {
               <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: '24px 0' }} />
               {['1 shop location', 'Up to 5 staff accounts', 'AI Technician Assistant', 'Owner Intelligence Dashboard', 'Consumer vehicle history'].map(f => (
                 <div key={f} style={{ fontSize: 13, color: '#475569', padding: '6px 0', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <span style={{ color: '#2563eb', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                  <span style={{ color: '#d97706', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
                 </div>
               ))}
               <Link href="/login" style={{
                 display: 'block', width: '100%', marginTop: 32, padding: '13px',
                 borderRadius: 10, fontSize: 14, fontWeight: 700, textAlign: 'center',
-                background: '#2563eb', color: '#fff',
-                boxShadow: '0 2px 8px rgba(37,99,235,0.3)', textDecoration: 'none',
+                background: '#d97706', color: '#fff',
+                boxShadow: '0 2px 8px rgba(217,119,6,0.3)', textDecoration: 'none',
               }}>Get started</Link>
             </div>
 
@@ -335,11 +335,11 @@ export function HomePage() {
               <div style={{ display: 'inline-block', background: '#f8fafc', color: '#64748b', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 99, marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' as const }}>Enterprise</div>
               <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>Multi-Location</div>
               <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28, lineHeight: 1.5 }}>Custom pricing for groups, chains, and dealerships.</p>
-              <div style={{ fontSize: 32, fontWeight: 900, color: '#2563eb', letterSpacing: -0.5, lineHeight: 1, marginBottom: 4 }}>Let&apos;s talk</div>
+              <div style={{ fontSize: 32, fontWeight: 900, color: '#d97706', letterSpacing: -0.5, lineHeight: 1, marginBottom: 4 }}>Let&apos;s talk</div>
               <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: '24px 0' }} />
               {['Multiple shop locations', 'Unlimited staff accounts', 'Everything in Starter', 'Priority support & onboarding', 'Custom integrations (DMS, fleet)'].map(f => (
                 <div key={f} style={{ fontSize: 13, color: '#475569', padding: '6px 0', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <span style={{ color: '#2563eb', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                  <span style={{ color: '#d97706', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
                 </div>
               ))}
               <Link href="/demo" style={{
@@ -357,7 +357,7 @@ export function HomePage() {
       {/* FOOTER */}
       <footer style={{ background: '#0f172a', padding: '40px 64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 14, color: '#fff' }}>
-          <div style={{ width: 24, height: 24, background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 11 }}>A</div>
+          <div style={{ width: 24, height: 24, background: 'linear-gradient(135deg,#d97706,#b45309)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 11 }}>A</div>
           AutoShop
         </div>
         <div style={{ display: 'flex', gap: 24 }}>
