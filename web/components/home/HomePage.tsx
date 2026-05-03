@@ -28,7 +28,7 @@ export function HomePage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
           <a href="#product" style={{ fontSize: 13.5, color: '#64748b', textDecoration: 'none', fontWeight: 500 }}>Product</a>
-          <a href="#pricing" style={{ fontSize: 13.5, color: '#64748b', textDecoration: 'none', fontWeight: 500 }}>Pricing</a>
+          <Link href="/pricing" style={{ fontSize: 13.5, color: '#64748b', textDecoration: 'none', fontWeight: 500 }}>Pricing</Link>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/login" style={{ fontSize: 13.5, color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Sign In</Link>
@@ -159,7 +159,7 @@ export function HomePage() {
           { val: '2×', label: 'Faster inspections' },
           { val: '40% less admin', label: 'Per technician daily' },
           { val: '100%', label: 'Repair history coverage' },
-          { val: '$0', label: 'For your customers' },
+          { val: 'Free', label: 'For your customers' },
         ].map(m => (
           <div key={m.label} style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 36, fontWeight: 900, color: '#fb923c', letterSpacing: -1 }}>{m.val}</div>
@@ -372,58 +372,6 @@ export function HomePage() {
               <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Marcus T.</div>
               <div style={{ fontSize: 12, color: '#94a3b8' }}>Owner, City Auto Center</div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PRICING */}
-      <section id="pricing" style={{ padding: '96px 64px', background: '#fff' }}>
-        <div style={{ maxWidth: 980, margin: '0 auto' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#d97706', textTransform: 'uppercase', marginBottom: 12 }}>Pricing</div>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: '#0f172a', letterSpacing: -1, lineHeight: 1.1, marginBottom: 14 }}>Simple, transparent pricing</h2>
-          <p style={{ fontSize: 16, color: '#64748b', lineHeight: 1.65 }}>Start at $39/month. Scale when you&apos;re ready.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 56 }}>
-
-            <div style={{ border: '2px solid #d97706', borderRadius: 20, padding: 36, boxShadow: '0 4px 24px rgba(217,119,6,0.1)' }}>
-              <div style={{ display: 'inline-block', background: '#fff7ed', color: '#d97706', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 99, marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' as const }}>Starter</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>Single Shop</div>
-              <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28, lineHeight: 1.5 }}>Everything you need to run one location with AI.</p>
-              <div style={{ fontSize: 52, fontWeight: 900, color: '#0f172a', letterSpacing: -2, lineHeight: 1, marginBottom: 4 }}>
-                <sup style={{ fontSize: 24, letterSpacing: 0, verticalAlign: 'super' }}>$</sup>39<sub style={{ fontSize: 14, fontWeight: 400, color: '#94a3b8', letterSpacing: 0, verticalAlign: 'baseline' }}>/month</sub>
-              </div>
-              <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: '24px 0' }} />
-              {['1 shop location', 'Up to 5 staff accounts', 'AI Technician Assistant', 'Owner Intelligence Dashboard', 'Consumer vehicle history'].map(f => (
-                <div key={f} style={{ fontSize: 13, color: '#475569', padding: '6px 0', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <span style={{ color: '#d97706', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
-                </div>
-              ))}
-              <Link href="/login" style={{
-                display: 'block', width: '100%', marginTop: 32, padding: '13px',
-                borderRadius: 10, fontSize: 14, fontWeight: 700, textAlign: 'center',
-                background: '#d97706', color: '#fff',
-                boxShadow: '0 2px 8px rgba(217,119,6,0.3)', textDecoration: 'none',
-              }}>Get started</Link>
-            </div>
-
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: 20, padding: 36 }}>
-              <div style={{ display: 'inline-block', background: '#f8fafc', color: '#64748b', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 99, marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' as const }}>Enterprise</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>Multi-Location</div>
-              <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28, lineHeight: 1.5 }}>Custom pricing for groups, chains, and dealerships.</p>
-              <div style={{ fontSize: 32, fontWeight: 900, color: '#d97706', letterSpacing: -0.5, lineHeight: 1, marginBottom: 4 }}>Let&apos;s talk</div>
-              <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: '24px 0' }} />
-              {['Multiple shop locations', 'Unlimited staff accounts', 'Everything in Starter', 'Priority support & onboarding', 'Custom integrations (DMS, fleet)'].map(f => (
-                <div key={f} style={{ fontSize: 13, color: '#475569', padding: '6px 0', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <span style={{ color: '#d97706', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
-                </div>
-              ))}
-              <Link href="/demo" style={{
-                display: 'block', width: '100%', marginTop: 32, padding: '13px',
-                borderRadius: 10, fontSize: 14, fontWeight: 700, textAlign: 'center',
-                background: '#fff', color: '#0f172a',
-                border: '1.5px solid #e2e8f0', textDecoration: 'none',
-              }}>Request a Demo →</Link>
-            </div>
-
           </div>
         </div>
       </section>
