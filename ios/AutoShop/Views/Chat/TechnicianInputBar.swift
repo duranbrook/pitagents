@@ -22,8 +22,7 @@ struct TechnicianInputBar: View {
     @AppStorage("voiceMode") private var voiceMode = "hold"
     @State private var audioRecorder: AVAudioRecorder?
     @State private var recordingURL: URL?
-    @State private var silenceTimer: Timer?
-    @State private var silenceStart: Date?
+    @State private var scannedVINs: [String] = []
     @State private var editorHeight: CGFloat = 140
     @GestureState private var dragDelta: CGFloat = 0
 
@@ -42,7 +41,7 @@ struct TechnicianInputBar: View {
         .background(Color(UIColor.systemBackground))
         .sheet(isPresented: $showVINScanner) {
             VINScannerView { vinString in
-                inputText = inputText.isEmpty ? "VIN: \(vinString)" : "\(inputText)\nVIN: \(vinString)"
+                if !scannedVINs.contains(vinString) { scannedVINs.append(vinString) }
                 withAnimation { isExpanded = true }
             }
         }
@@ -148,6 +147,30 @@ struct TechnicianInputBar: View {
                         editorHeight = max(60, min(420, editorHeight - value.translation.height))
                     }
             )
+
+            if !scannedVINs.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(scannedVINs, id: \.self) { vin in
+                            HStack(spacing: 5) {
+                                Text("VIN").font(.system(size: 10, weight: .black)).foregroundStyle(.white)
+                                Text(vin).font(.system(size: 12, weight: .medium)).foregroundStyle(.white)
+                                Button {
+                                    scannedVINs.removeAll { $0 == vin }
+                                } label: {
+                                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
+                                }
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.orange)
+                            .clipShape(Capsule())
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                }
+                .padding(.bottom, 6)
+            }
 
             TextEditor(text: $inputText)
                 .font(.body)
@@ -255,7 +278,7 @@ struct TechnicianInputBar: View {
     // MARK: - Logic
 
     private var canSend: Bool {
-        !vm.isSending && (!inputText.trimmingCharacters(in: .whitespaces).isEmpty || !attachedPhotos.isEmpty)
+        !vm.isSending && (!inputText.trimmingCharacters(in: .whitespaces).isEmpty || !attachedPhotos.isEmpty || !scannedVINs.isEmpty)
     }
 
     private func sendMessage() {
@@ -263,11 +286,17 @@ struct TechnicianInputBar: View {
         let selected = attachedPhotos.filter(\.isSelected)
         let imageUrls = selected.filter { !$0.isVideo }.compactMap { $0.base64DataUrl }
         let videoAttachments = selected.filter(\.isVideo)
+        let vins = scannedVINs
         inputText = ""
         attachedPhotos = []
+        scannedVINs = []
         transcribeHint = false
         Task {
             var messageText = text
+            if !vins.isEmpty {
+                let vinLines = vins.map { "VIN: \($0)" }.joined(separator: "\n")
+                messageText = messageText.isEmpty ? vinLines : "\(vinLines)\n\(messageText)"
+            }
             for video in videoAttachments {
                 guard let videoURL = video.videoURL else { continue }
                 do {
@@ -301,40 +330,14 @@ struct TechnicianInputBar: View {
         do {
             try AVAudioSession.sharedInstance().setCategory(.record, mode: .default, options: [])
             try AVAudioSession.sharedInstance().setActive(true)
-            let recorder = try AVAudioRecorder(url: url, settings: settings)
-            recorder.isMeteringEnabled = true
-            recorder.record()
-            audioRecorder = recorder
+            audioRecorder = try AVAudioRecorder(url: url, settings: settings)
+            audioRecorder?.record()
             recordingURL = url
             isRecordingVoice = true
-            silenceStart = nil
             withAnimation { isExpanded = true }
-            startSilenceDetection(recorder: recorder)
         } catch {
             vm.errorMessage = "Microphone unavailable: \(error.localizedDescription)"
         }
-    }
-
-    private func startSilenceDetection(recorder: AVAudioRecorder) {
-        silenceTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.25, repeats: true) { t in
-            guard recorder.isRecording else { t.invalidate(); return }
-            recorder.updateMeters()
-            let power = recorder.averagePower(forChannel: 0)
-            DispatchQueue.main.async {
-                if power < -45 {
-                    if silenceStart == nil { silenceStart = Date() }
-                    else if Date().timeIntervalSince(silenceStart!) >= 2.5 {
-                        t.invalidate()
-                        stopAndTranscribe()
-                    }
-                } else {
-                    silenceStart = nil
-                }
-            }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        silenceTimer = timer
     }
 
     private func addVideo(at url: URL) async {
@@ -354,9 +357,6 @@ struct TechnicianInputBar: View {
     }
 
     private func stopAndTranscribe() {
-        silenceTimer?.invalidate()
-        silenceTimer = nil
-        silenceStart = nil
         audioRecorder?.stop()
         audioRecorder = nil
         isRecordingVoice = false
@@ -368,7 +368,7 @@ struct TechnicianInputBar: View {
                 let audioData = try Data(contentsOf: url)
                 let transcribed = try await TranscribeClient.transcribe(audioData: audioData)
                 await MainActor.run {
-                    inputText = transcribed
+                    inputText = inputText.isEmpty ? transcribed : "\(inputText) \(transcribed)"
                     transcribeHint = true
                 }
             } catch {
