@@ -25,19 +25,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Frosted glass panel — used on sidebar + detail content areas */
+/* Panel — used on sidebar + detail content areas */
 .glass-panel {
-  background: rgba(0, 0, 0, 0.38);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-/* Lighter glass for inner cards within a panel */
+/* Card — inner cards within a panel */
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 0.625rem;
 }
 

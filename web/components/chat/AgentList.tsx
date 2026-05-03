@@ -22,13 +22,13 @@ export function AgentList({ selectedId, onSelect, lastMessages }: Props) {
       style={{ width: 208, borderRadius: 0, borderTop: 'none', borderBottom: 'none', borderLeft: 'none' }}
     >
       <div className="px-4 pt-5 pb-3">
-        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
           Agents
         </p>
       </div>
       <div className="flex-1 overflow-y-auto px-2 space-y-0.5">
         {isLoading && (
-          <p className="text-[11px] px-2 py-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Loading…</p>
+          <p className="text-[11px] px-2 py-3 text-gray-400">Loading…</p>
         )}
         {agents.map(agent => (
           <AgentRow
@@ -40,13 +40,10 @@ export function AgentList({ selectedId, onSelect, lastMessages }: Props) {
           />
         ))}
       </div>
-      <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="p-3 border-t border-gray-100">
         <a
           href="/settings"
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-colors"
-          style={{ color: 'rgba(255,255,255,0.35)' }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'}
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] transition-colors text-gray-400 hover:text-gray-600"
         >
           ⚙ Settings
         </a>
@@ -96,7 +93,7 @@ function AgentRow({
         onMouseLeave={handleMouseLeave}
         className="w-full flex items-center gap-2.5 py-2 rounded-lg text-left transition-all"
         style={active ? {
-          background: `color-mix(in srgb, ${agent.accent_color} 12%, transparent)`,
+          background: `color-mix(in srgb, ${agent.accent_color} 10%, #fff)`,
           borderLeft: `2px solid ${agent.accent_color}`,
           paddingLeft: '8px',
           paddingRight: '10px',
@@ -104,22 +101,22 @@ function AgentRow({
           borderLeft: '2px solid transparent',
           paddingLeft: '8px',
           paddingRight: '10px',
-          background: hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
+          background: hovered ? '#f9fafb' : 'transparent',
         }}
       >
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold flex-shrink-0"
           style={{
-            background: active ? agent.accent_color : 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: active ? '#fff' : 'rgba(255,255,255,0.6)',
+            background: active ? agent.accent_color : '#f3f4f6',
+            border: '1px solid #e5e7eb',
+            color: active ? '#fff' : '#6b7280',
           }}
         >
           {agent.initials}
         </div>
         <div className="min-w-0">
-          <p className="text-[12px] font-medium text-white truncate">{agent.name}</p>
-          <p className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          <p className="text-[12px] font-medium text-gray-900 truncate">{agent.name}</p>
+          <p className="text-[10px] truncate text-gray-400">
             {lastMessage ?? agent.role_tagline}
           </p>
         </div>
@@ -133,12 +130,12 @@ function AgentRow({
             top: 0,
             marginLeft: '8px',
             zIndex: 50,
-            background: 'rgba(15,15,15,0.96)',
+            background: '#ffffff',
             border: `1px solid ${agent.accent_color}44`,
             borderRadius: '8px',
             padding: '10px 12px',
             width: '180px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
             pointerEvents: 'none',
           }}
         >
@@ -148,9 +145,9 @@ function AgentRow({
           </p>
           {capabilities.length > 0
             ? capabilities.map(cap => (
-                <p key={cap} className="text-[11px] text-white mb-1">· {cap}</p>
+                <p key={cap} className="text-[11px] text-gray-700 mb-1">· {cap}</p>
               ))
-            : <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>General assistance</p>
+            : <p className="text-[11px] text-gray-400">General assistance</p>
           }
         </div>
       )}

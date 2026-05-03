@@ -85,26 +85,27 @@ function CustomersPageInner() {
       <div className="flex h-full" style={{ padding: 16, gap: 12 }}>
         {/* Left panel: customer list — glass panel */}
         <div className="glass-panel flex-shrink-0 flex flex-col overflow-hidden" style={{ width: 256, borderRadius: 12 }}>
-          <div className="p-3 border-b border-gray-800 flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-white">Customers</span>
+          <div className="p-3 border-b border-gray-200 flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-gray-900">Customers</span>
             <button
               onClick={() => setShowAddCustomer(true)}
-              className="text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-500 transition-colors"
+              className="text-xs px-2 py-1 rounded transition-colors text-white"
+              style={{ background: 'var(--accent)' }}
             >
               + Add
             </button>
           </div>
-          <div className="p-2 border-b border-gray-800">
+          <div className="p-2 border-b border-gray-200">
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search…"
-              className="w-full bg-gray-800 text-gray-200 text-xs px-2 py-1.5 rounded outline-none placeholder-gray-500"
+              className="w-full bg-gray-100 text-gray-900 text-xs px-2 py-1.5 rounded outline-none placeholder-gray-400"
             />
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
             {isLoading && (
-              <p className="text-gray-500 text-xs px-2 py-3">Loading…</p>
+              <p className="text-gray-400 text-xs px-2 py-3">Loading…</p>
             )}
             {filtered.map(c => (
               <button
@@ -112,16 +113,16 @@ function CustomersPageInner() {
                 onClick={() => setSelectedId(c.customer_id)}
                 className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-left transition-colors ${
                   selectedId === c.customer_id
-                    ? 'bg-gray-700 border-l-2 border-indigo-500 pl-1.5'
-                    : 'hover:bg-gray-800'
+                    ? 'bg-orange-50 border-l-2 border-orange-500 pl-1.5'
+                    : 'hover:bg-gray-50'
                 }`}
               >
                 <PersonAvatar email={c.email || c.customer_id} size={36} />
-                <p className="text-xs font-medium text-white truncate">{c.name}</p>
+                <p className="text-xs font-medium text-gray-900 truncate">{c.name}</p>
               </button>
             ))}
             {!isLoading && filtered.length === 0 && (
-              <p className="text-gray-600 text-xs px-2 py-4 text-center">
+              <p className="text-gray-400 text-xs px-2 py-4 text-center">
                 {search ? 'No matches' : 'No customers yet'}
               </p>
             )}
@@ -139,53 +140,54 @@ function CustomersPageInner() {
               <div className="flex items-center gap-4 mb-8">
                 <PersonAvatar email={selected.email || selected.customer_id} size={46} />
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-xl font-semibold text-white truncate">{selected.name}</h1>
-                  <p className="text-sm text-gray-400 mt-0.5 truncate">
+                  <h1 className="text-xl font-semibold text-gray-900 truncate">{selected.name}</h1>
+                  <p className="text-sm text-gray-500 mt-0.5 truncate">
                     {[selected.email, selected.phone].filter(Boolean).join(' · ') || 'No contact info'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => router.push(`/inspect?customer=${selected.customer_id}`)}
-                    className="text-xs border border-gray-700 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors"
+                    className="text-xs border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     🔍 New Inspection
                   </button>
                   <button
                     onClick={() => setShowAddVehicle(true)}
-                    className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-500 transition-colors"
+                    className="text-xs text-white px-3 py-1.5 rounded-lg transition-colors"
+                    style={{ background: 'var(--accent)' }}
                   >
                     + Add Vehicle
                   </button>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-4">Vehicles</p>
+              <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-4">Vehicles</p>
               <div className="flex flex-wrap gap-4">
                 {vehicles.map(v => (
                   <button
                     key={v.vehicle_id}
                     onClick={() => router.push(`/reports?vehicle=${v.vehicle_id}`)}
-                    className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-600 rounded-xl p-4 text-left w-52 transition-colors"
+                    className="bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl p-4 text-left w-52 transition-colors"
                   >
                     <div className="text-2xl mb-2">🚗</div>
-                    <p className="text-white text-sm font-semibold leading-snug">
+                    <p className="text-gray-900 text-sm font-semibold leading-snug">
                       {v.year} {v.make} {v.model}
                     </p>
                     {(v.trim || v.color) && (
-                      <p className="text-gray-400 text-xs mt-0.5">
+                      <p className="text-gray-500 text-xs mt-0.5">
                         {[v.trim, v.color].filter(Boolean).join(' · ')}
                       </p>
                     )}
                     {v.vin && (
-                      <p className="text-gray-600 text-xs font-mono mt-1 truncate">{v.vin}</p>
+                      <p className="text-gray-400 text-xs font-mono mt-1 truncate">{v.vin}</p>
                     )}
-                    <p className="text-indigo-400 text-xs mt-3">View reports →</p>
+                    <p className="text-xs mt-3" style={{ color: 'var(--accent)' }}>View reports →</p>
                   </button>
                 ))}
                 <button
                   onClick={() => setShowAddVehicle(true)}
-                  className="border-2 border-dashed border-gray-700 rounded-xl p-4 w-52 flex flex-col items-center justify-center gap-2 hover:border-gray-500 text-gray-600 hover:text-gray-400 transition-colors"
+                  className="border-2 border-dashed border-gray-200 rounded-xl p-4 w-52 flex flex-col items-center justify-center gap-2 hover:border-gray-300 text-gray-400 hover:text-gray-500 transition-colors"
                 >
                   <span className="text-2xl">+</span>
                   <span className="text-xs">Add vehicle</span>
@@ -199,29 +201,29 @@ function CustomersPageInner() {
       {/* Add Customer modal */}
       {showAddCustomer && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-96 shadow-xl">
-            <h2 className="text-white font-semibold mb-4">New Customer</h2>
+          <div className="bg-white border border-gray-200 rounded-xl p-6 w-96 shadow-xl">
+            <h2 className="text-gray-900 font-semibold mb-4">New Customer</h2>
             <div className="space-y-3">
               <input
                 autoFocus
                 placeholder="Name *"
                 value={customerForm.name}
                 onChange={e => setCustomerForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full bg-gray-800 text-white text-sm px-3 py-2 rounded-lg outline-none placeholder-gray-500 border border-gray-700 focus:border-indigo-500"
+                className="w-full bg-gray-50 text-gray-900 text-sm px-3 py-2 rounded-lg outline-none placeholder-gray-400 border border-gray-200 focus:border-orange-400"
               />
               <input
                 placeholder="Email"
                 type="email"
                 value={customerForm.email}
                 onChange={e => setCustomerForm(f => ({ ...f, email: e.target.value }))}
-                className="w-full bg-gray-800 text-white text-sm px-3 py-2 rounded-lg outline-none placeholder-gray-500 border border-gray-700 focus:border-indigo-500"
+                className="w-full bg-gray-50 text-gray-900 text-sm px-3 py-2 rounded-lg outline-none placeholder-gray-400 border border-gray-200 focus:border-orange-400"
               />
               <input
                 placeholder="Phone"
                 type="tel"
                 value={customerForm.phone}
                 onChange={e => setCustomerForm(f => ({ ...f, phone: e.target.value }))}
-                className="w-full bg-gray-800 text-white text-sm px-3 py-2 rounded-lg outline-none placeholder-gray-500 border border-gray-700 focus:border-indigo-500"
+                className="w-full bg-gray-50 text-gray-900 text-sm px-3 py-2 rounded-lg outline-none placeholder-gray-400 border border-gray-200 focus:border-orange-400"
               />
             </div>
             {addCustomer.isError && (
@@ -230,7 +232,7 @@ function CustomersPageInner() {
             <div className="flex justify-end gap-2 mt-5">
               <button
                 onClick={() => setShowAddCustomer(false)}
-                className="text-sm text-gray-400 px-3 py-1.5 hover:text-gray-200"
+                className="text-sm text-gray-500 px-3 py-1.5 hover:text-gray-700"
               >
                 Cancel
               </button>
@@ -249,8 +251,8 @@ function CustomersPageInner() {
       {/* Add Vehicle modal */}
       {showAddVehicle && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-96 shadow-xl">
-            <h2 className="text-white font-semibold mb-4">New Vehicle</h2>
+          <div className="bg-white border border-gray-200 rounded-xl p-6 w-96 shadow-xl">
+            <h2 className="text-gray-900 font-semibold mb-4">New Vehicle</h2>
             <div className="space-y-3">
               {[
                 { key: 'year', placeholder: 'Year *', type: 'number' },
@@ -266,7 +268,7 @@ function CustomersPageInner() {
                   type={type}
                   value={vehicleForm[key as keyof typeof vehicleForm]}
                   onChange={e => setVehicleForm(f => ({ ...f, [key]: e.target.value }))}
-                  className="w-full bg-gray-800 text-white text-sm px-3 py-2 rounded-lg outline-none placeholder-gray-500 border border-gray-700 focus:border-indigo-500"
+                  className="w-full bg-gray-50 text-gray-900 text-sm px-3 py-2 rounded-lg outline-none placeholder-gray-400 border border-gray-200 focus:border-orange-400"
                 />
               ))}
             </div>
@@ -276,7 +278,7 @@ function CustomersPageInner() {
             <div className="flex justify-end gap-2 mt-5">
               <button
                 onClick={() => setShowAddVehicle(false)}
-                className="text-sm text-gray-400 px-3 py-1.5 hover:text-gray-200"
+                className="text-sm text-gray-500 px-3 py-1.5 hover:text-gray-700"
               >
                 Cancel
               </button>

@@ -181,11 +181,11 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
 
   return (
     <div className="flex h-full">
-      <div className="flex flex-col flex-1 min-w-0" style={{ background: '#030712' }}>
+      <div className="flex flex-col flex-1 min-w-0" style={{ background: '#ffffff' }}>
         {/* Header */}
         <div
           className="flex-shrink-0 px-5 py-3 flex items-center gap-2.5"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+          style={{ borderBottom: '1px solid #e5e7eb' }}
         >
           {agent?.accent_color && (
             <div
@@ -194,18 +194,18 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
             />
           )}
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="font-semibold text-sm text-white leading-tight">
+            <span className="font-semibold text-sm text-gray-900 leading-tight">
               {agent?.persona_name ?? agent?.name ?? agentId}
             </span>
             {agent?.role_tagline && (
-              <span className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <span className="text-[10px] leading-tight text-gray-400">
                 {agent.role_tagline}
               </span>
             )}
           </div>
           <span
             className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)' }}
+            style={{ background: '#f3f4f6', color: '#9ca3af' }}
           >
             AI
           </span>
@@ -215,28 +215,28 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {isEmpty && agentId === 'assistant' ? (
             <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>What would you like to do?</p>
+              <p className="text-sm text-gray-400">What would you like to do?</p>
               <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
                 {ASSISTANT_CAPABILITIES.map(cap => (
                   <button
                     key={cap.title}
                     onClick={() => handleSend(cap.prompt)}
                     className="flex flex-col items-start gap-1.5 p-4 rounded-xl text-left transition-all"
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+                    style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}
                     onMouseEnter={e => {
                       const el = e.currentTarget as HTMLElement
                       el.style.borderColor = 'var(--accent)'
-                      el.style.background = 'rgba(255,255,255,0.05)'
+                      el.style.background = '#fff7ed'
                     }}
                     onMouseLeave={e => {
                       const el = e.currentTarget as HTMLElement
-                      el.style.borderColor = 'rgba(255,255,255,0.08)'
-                      el.style.background = 'rgba(255,255,255,0.03)'
+                      el.style.borderColor = '#e5e7eb'
+                      el.style.background = '#f9fafb'
                     }}
                   >
                     <span className="text-xl">{cap.icon}</span>
-                    <span className="text-sm font-medium text-white">{cap.title}</span>
-                    <span className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>{cap.description}</span>
+                    <span className="text-sm font-medium text-gray-900">{cap.title}</span>
+                    <span className="text-xs leading-relaxed text-gray-500">{cap.description}</span>
                   </button>
                 ))}
               </div>
@@ -323,7 +323,7 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
         <div className="px-4 pb-4 pt-2">
           <div
             className="flex items-end gap-2 rounded-2xl px-3 py-2"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+            style={{ background: '#f3f4f6', border: '1px solid #e5e7eb' }}
           >
             <ImageAttach onImageUrl={setPendingImageUrl} disabled={sending} />
             <VoiceButton
@@ -337,9 +337,8 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
               onKeyDown={handleKeyDown}
               placeholder="Ask anything…"
               rows={1}
-              className="flex-1 bg-transparent text-sm resize-none focus:outline-none"
+              className="flex-1 bg-transparent text-sm resize-none focus:outline-none text-gray-900 placeholder-gray-400"
               style={{
-                color: 'rgba(255,255,255,0.85)',
                 caretColor: 'var(--accent)',
                 maxHeight: '120px',
               }}

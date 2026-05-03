@@ -25,11 +25,7 @@ function ToolPill({ toolCalls }: { toolCalls: ToolCallRecord[] }) {
       <button
         onClick={() => setOpen(o => !o)}
         className="inline-flex items-center gap-1 ml-2 px-1.5 py-0.5 rounded text-[10px] transition-colors"
-        style={{
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          color: 'rgba(255,255,255,0.4)',
-        }}
+        style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#9ca3af' }}
       >
         · {toolCalls.length} action{toolCalls.length !== 1 ? 's' : ''}
       </button>
@@ -39,11 +35,11 @@ function ToolPill({ toolCalls }: { toolCalls: ToolCallRecord[] }) {
             <div
               key={i}
               className="rounded-md p-2 text-xs font-mono"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}
             >
-              <p className="text-yellow-400/80 mb-1">{tc.name}</p>
-              <p style={{ color: 'rgba(255,255,255,0.35)' }}>in: {JSON.stringify(tc.input)}</p>
-              <p style={{ color: 'rgba(255,255,255,0.5)' }}>out: {JSON.stringify(tc.output)}</p>
+              <p className="text-amber-600 mb-1">{tc.name}</p>
+              <p className="text-gray-500">in: {JSON.stringify(tc.input)}</p>
+              <p className="text-gray-600">out: {JSON.stringify(tc.output)}</p>
             </div>
           ))}
         </div>
@@ -66,16 +62,16 @@ export function MessageBubble({ role, content, toolCalls, streaming, showHeader 
         <div className="flex flex-col items-end max-w-[72%]">
           {showHeader && (
             <div className="flex items-baseline gap-1.5 mb-1 justify-end">
-              {timeLabel && <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.25)' }}>{timeLabel}</span>}
-              <span className="text-[11px] font-semibold" style={{ color: 'rgba(255,255,255,0.45)' }}>You</span>
+              {timeLabel && <span className="text-[10px] text-gray-300">{timeLabel}</span>}
+              <span className="text-[11px] font-semibold text-gray-400">You</span>
             </div>
           )}
-          {hasImage && <div className="mb-1 text-xs italic" style={{ color: 'rgba(255,255,255,0.3)' }}>📎 photo attached</div>}
-          <p className="text-sm leading-relaxed text-right" style={{ color: 'rgba(255,255,255,0.55)' }}>{text}</p>
+          {hasImage && <div className="mb-1 text-xs italic text-gray-400">📎 photo attached</div>}
+          <p className="text-sm leading-relaxed text-right text-gray-700">{text}</p>
         </div>
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}
+          style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#9ca3af' }}
         >
           P
         </div>
@@ -87,25 +83,22 @@ export function MessageBubble({ role, content, toolCalls, streaming, showHeader 
     <div className="flex items-start gap-2.5 py-1">
       <div
         className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
+        style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#d97706' }}
       >
         A
       </div>
       <div className="flex-1 min-w-0">
         {showHeader && (
           <div className="flex items-baseline gap-1.5 mb-1">
-            <span className="text-[11px] font-semibold text-white">Assistant</span>
-            {timeLabel && <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.25)' }}>{timeLabel}</span>}
+            <span className="text-[11px] font-semibold text-gray-700">Assistant</span>
+            {timeLabel && <span className="text-[10px] text-gray-300">{timeLabel}</span>}
             {toolCalls && toolCalls.length > 0 && <ToolPill toolCalls={toolCalls} />}
           </div>
         )}
         {!showHeader && toolCalls && toolCalls.length > 0 && (
           <div className="mb-1"><ToolPill toolCalls={toolCalls} /></div>
         )}
-        <div
-          className="prose prose-invert prose-sm max-w-none text-sm"
-          style={{ color: 'rgba(255,255,255,0.85)' }}
-        >
+        <div className="prose prose-sm max-w-none text-sm text-gray-800">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {text}
           </ReactMarkdown>
