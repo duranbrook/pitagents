@@ -4,6 +4,8 @@ import SwiftUI
 
 struct QuoteDetailView: View {
     let quoteId: String
+    var presentedFromChat: Bool = false
+    @Environment(\.dismiss) private var dismiss
     @State private var quote: QuoteResponse?
     @State private var isLoading = true
     @State private var isFinalizing = false
@@ -26,7 +28,7 @@ struct QuoteDetailView: View {
                     .frame(maxHeight: .infinity)
             }
         }
-        .navigationTitle("Quote")
+        .navigationTitle("Review Quote")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarItems }
         .alert("Error", isPresented: Binding(
@@ -42,6 +44,20 @@ struct QuoteDetailView: View {
 
     @ToolbarContentBuilder
     private var toolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
+            if isEditing {
+                Button("Cancel", role: .cancel) { cancelEditing() }
+            } else if presentedFromChat {
+                Button {
+                    dismiss()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Chat")
+                    }
+                }
+            }
+        }
         if quote?.status == "draft" {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if isEditing {
@@ -57,11 +73,6 @@ struct QuoteDetailView: View {
                     .disabled(isSaving)
                 } else {
                     Button("Edit") { startEditing() }
-                }
-            }
-            if isEditing {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel", role: .cancel) { cancelEditing() }
                 }
             }
         }
