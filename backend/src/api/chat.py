@@ -211,7 +211,7 @@ async def send_message(
                 yield f"data: {json.dumps({'type': 'error', 'code': 'overloaded', 'message': 'The AI is overloaded right now. Please try again in a moment.'})}\n\n"
             else:
                 logger.exception("Agent stream error [agent=%s user=%s]", agent_id, user_id)
-                yield f"data: {json.dumps({'type': 'error', 'code': 'server_error', 'message': 'Something went wrong. Please try again.'})}\n\n"
+                yield f"data: {json.dumps({'type': 'error', 'code': 'server_error', 'message': f'{type(exc).__name__}: {exc}'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -269,7 +269,10 @@ async def send_message_sync(
         if isinstance(exc, _anthropic.APIStatusError) and exc.status_code == 529:
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="AI is overloaded. Please try again.")
         logger.exception("Agent sync error [agent=%s user=%s]", agent_id, user_id)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{type(exc).__name__}: {exc}",
+        )
 
     if final_messages:
         try:
