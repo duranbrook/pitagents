@@ -97,21 +97,22 @@ async def get_report_pdf(
     # Build s3_url → presigned_url mapping for all photo media files.
     # Findings store stable original S3 URLs; presigned URLs are generated fresh
     # here each render so the PDF renderer can actually download them.
-    media_result = await db.execute(
-        select(MediaFile)
-        .where(MediaFile.session_id == report.session_id)
-        .where(MediaFile.media_type == "photo")
-    )
     s3_to_presigned: dict[str, str] = {}
-    for mf in media_result.scalars().all():
-        if not mf.s3_url or mf.s3_url.startswith("local://"):
-            continue
-        try:
-            key = urlparse(mf.s3_url).path.lstrip("/")
-            s3_to_presigned[mf.s3_url] = await _storage.presigned_url(key, expires=3600)
-        except Exception:
-            logger.warning("Could not generate presigned URL for %s", mf.s3_url)
-            s3_to_presigned[mf.s3_url] = mf.s3_url
+    if report.session_id:
+        media_result = await db.execute(
+            select(MediaFile)
+            .where(MediaFile.session_id == report.session_id)
+            .where(MediaFile.media_type == "photo")
+        )
+        for mf in media_result.scalars().all():
+            if not mf.s3_url or mf.s3_url.startswith("local://"):
+                continue
+            try:
+                key = urlparse(mf.s3_url).path.lstrip("/")
+                s3_to_presigned[mf.s3_url] = await _storage.presigned_url(key, expires=3600)
+            except Exception:
+                logger.warning("Could not generate presigned URL for %s", mf.s3_url)
+                s3_to_presigned[mf.s3_url] = mf.s3_url
 
     # Convert each finding's photo_url from stable S3 URL → presigned for the PDF renderer.
     # Track which S3 URLs are assigned so the unassigned gallery excludes them.
@@ -227,11 +228,12 @@ async def consumer_view(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
     # Gather media URLs from the session
-    media_result = await db.execute(
-        select(MediaFile).where(MediaFile.session_id == report.session_id)
-    )
-    media_files = media_result.scalars().all()
-    media_urls = [m.s3_url for m in media_files if m.s3_url.startswith("http")]
+    media_urls: list[str] = []
+    if report.session_id:
+        media_result = await db.execute(
+            select(MediaFile).where(MediaFile.session_id == report.session_id)
+        )
+        media_urls = [m.s3_url for m in media_result.scalars().all() if m.s3_url.startswith("http")]
 
     return _to_consumer_view(report, media_urls)
 
