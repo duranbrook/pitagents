@@ -63,7 +63,7 @@ export function VoiceControlWidget() {
     outputMode: 'tool-only' as const,
     toolChoice: 'auto' as const,
     postToolResponse: false,
-    autoConnect: true,
+    autoConnect: false,
     audio: {
       input: {
         turnDetection: {
@@ -92,8 +92,9 @@ export function VoiceControlWidget() {
   }[status] ?? 'rgba(255,255,255,0.12)'
 
   function handleClick() {
-    if (status === 'error') { connect(); return }
-    if (isConnected) { disconnect(); return }
+    if (status === 'connecting') return
+    if (isConnected || status === 'error') { disconnect(); return }
+    connect()
   }
 
   return (
@@ -101,9 +102,8 @@ export function VoiceControlWidget() {
       onClick={handleClick}
       title={
         status === 'connecting' ? 'Connecting…'
-        : status === 'error' ? 'Voice error — click to retry'
-        : isListening ? 'Listening — click to turn off'
-        : status === 'processing' ? 'Processing…'
+        : status === 'error' ? 'Voice error — click to disconnect'
+        : isConnected ? 'Voice on — click to turn off'
         : 'Voice off — click to turn on'
       }
       className="w-7 h-7 rounded-full flex items-center justify-center transition-all select-none"
