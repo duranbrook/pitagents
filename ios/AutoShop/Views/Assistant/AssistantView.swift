@@ -118,6 +118,16 @@ final class AgentChatViewModel: ObservableObject {
 
     private let pageSize = 5
 
+    func clearHistory(agentId: String) async {
+        do {
+            try await APIClient.shared.clearChatHistory(agentId: agentId)
+            messages = []
+            hasOlderMessages = false
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func load(agentId: String) async {
         isLoading = true
         defer { isLoading = false }
@@ -181,6 +191,7 @@ struct AgentChatView: View {
     @StateObject private var vm = AgentChatViewModel()
     @State private var inputText = ""
     @State private var isExpanded = false
+    @State private var showClearConfirm = false
     @FocusState private var inputFocused: Bool
 
     init(agent: Agent, showMediaControls: Bool = false) {
@@ -209,8 +220,8 @@ struct AgentChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) { agentNavTitle }
-            if showMediaControls && isExpanded {
-                ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if showMediaControls && isExpanded {
                     Button {
                         withAnimation(.spring(response: 0.3)) { isExpanded = false }
                     } label: {
@@ -218,8 +229,23 @@ struct AgentChatView: View {
                             .foregroundStyle(Color.accentColor)
                             .font(.title3)
                     }
+                } else {
+                    Button {
+                        showClearConfirm = true
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 17))
+                    }
                 }
             }
+        }
+        .confirmationDialog("Start a new conversation?", isPresented: $showClearConfirm, titleVisibility: .visible) {
+            Button("New Conversation", role: .destructive) {
+                Task { await vm.clearHistory(agentId: agent.id) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will delete all messages with \(agent.displayName).")
         }
         .alert("Error", isPresented: Binding(
             get: { vm.errorMessage != nil },

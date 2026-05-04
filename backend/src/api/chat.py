@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, delete
 from datetime import datetime, timezone, timedelta
 from src.api.deps import get_current_user
 from src.db.base import get_db, AsyncSessionLocal
@@ -219,6 +219,22 @@ async def get_history(
         }
         for r in reversed(rows)
     ]
+
+
+@router.delete("/{agent_id}/history", status_code=204)
+async def clear_history(
+    agent_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user_id = uuid.UUID(current_user["sub"])
+    await db.execute(
+        delete(ChatMessage).where(
+            ChatMessage.user_id == user_id,
+            ChatMessage.agent_id == agent_id,
+        )
+    )
+    await db.commit()
 
 
 @router.post("/{agent_id}/message")

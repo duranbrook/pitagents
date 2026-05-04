@@ -107,6 +107,10 @@ final class APIClient {
         try await get("/agents")
     }
 
+    func clearChatHistory(agentId: String) async throws {
+        try await delete("/chat/\(agentId)/history")
+    }
+
     func fetchQuote(id: String) async throws -> QuoteResponse {
         try await get("/quotes/\(id)")
     }
