@@ -49,11 +49,19 @@ class EstimateUpdateRequest(BaseModel):
 
 @router.get("/reports")
 async def list_reports(
+    vehicle_id: str | None = None,
     current_user: dict = Depends(require_owner),
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
-    """List all reports (summary view)."""
-    result = await db.execute(select(Report).order_by(Report.created_at.desc()))
+    """List all reports (summary view), optionally filtered by vehicle_id."""
+    stmt = select(Report).order_by(Report.created_at.desc())
+    if vehicle_id:
+        try:
+            vid = uuid.UUID(vehicle_id)
+            stmt = stmt.where(Report.vehicle_id == vid)
+        except ValueError:
+            pass
+    result = await db.execute(stmt)
     reports = result.scalars().all()
     return [_to_list_item(r) for r in reports]
 

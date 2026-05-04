@@ -190,8 +190,8 @@ export const createVehicle = (
 
 // ── Reports ───────────────────────────────────────────────────────────────
 
-export const getAllReports = (): Promise<ReportSummary[]> =>
-  api.get('/reports').then(r => r.data)
+export const getAllReports = (vehicleId?: string | null): Promise<ReportSummary[]> =>
+  api.get('/reports', vehicleId ? { params: { vehicle_id: vehicleId } } : {}).then(r => r.data)
 
 // ── Sessions ──────────────────────────────────────────────────────────────
 

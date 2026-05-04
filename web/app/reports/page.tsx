@@ -245,8 +245,8 @@ function ReportsPageInner() {
   const pendingValueRef = useRef<string>('')
 
   const { data: reports = [], isLoading } = useQuery<ReportSummary[]>({
-    queryKey: ['reports'],
-    queryFn: getAllReports,
+    queryKey: ['reports', vehicleFilter],
+    queryFn: () => getAllReports(vehicleFilter),
   })
 
   const { data: detail, isLoading: detailLoading } = useQuery<ReportDetail>({
@@ -390,9 +390,7 @@ function ReportsPageInner() {
     }
   }, [detail, voice, patchAndSync])
 
-  const displayed = vehicleFilter
-    ? reports.filter(r => r.vehicle?.vehicle_id === vehicleFilter)
-    : reports
+  const displayed = reports
 
   return (
     <AppShell>
