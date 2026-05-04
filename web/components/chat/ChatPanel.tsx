@@ -51,6 +51,7 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
   const [ratings, setRatings] = useState<Record<string, 1 | -1>>({})
   const [quoteId, setQuoteId] = useState<string | null>(null)
   const [reportId, setReportId] = useState<string | null>(null)
+  const sendingRef = useRef(false)
   const voice = useVoiceContext()
 
   const [voiceMode] = useState<'hold' | 'toggle'>(() => {
@@ -114,7 +115,8 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
 
   async function handleSend(overrideText?: string) {
     const text = (overrideText ?? input).trim()
-    if (!text || sending) return
+    if (!text || sendingRef.current) return
+    sendingRef.current = true
     setInput('')
     setSendError('')
     setSending(true)
@@ -155,6 +157,7 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
       }
       if (!overrideText) setInput(text)
     } finally {
+      sendingRef.current = false
       setStreaming(null)
       setSending(false)
       setPendingImageUrl(undefined)
