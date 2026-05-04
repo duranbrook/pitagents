@@ -82,18 +82,34 @@ export function VoiceControlWidget() {
   const isListening = status === 'listening'
   const isConnected = status !== 'idle' && status !== 'error' && status !== 'connecting'
 
-  const ringColor = {
-    idle: 'rgba(255,255,255,0.12)',
-    connecting: 'var(--accent)',
-    ready: 'rgba(74,222,128,0.5)',
-    listening: 'rgba(74,222,128,0.9)',
-    processing: 'var(--accent)',
-    error: 'rgba(239,68,68,0.9)',
-  }[status] ?? 'rgba(255,255,255,0.12)'
+  const isOff = status === 'idle'
+  const isError = status === 'error'
+
+  const bgColor = isError
+    ? 'rgba(239,68,68,0.2)'
+    : isOff
+    ? 'rgba(255,255,255,0.1)'
+    : 'rgba(74,222,128,0.15)'
+
+  const ringColor = isError
+    ? 'rgba(239,68,68,0.8)'
+    : isOff
+    ? 'rgba(255,255,255,0.35)'
+    : status === 'connecting'
+    ? 'var(--accent)'
+    : status === 'listening'
+    ? 'rgba(74,222,128,0.9)'
+    : 'rgba(74,222,128,0.5)'
+
+  const iconStroke = isError
+    ? 'rgba(239,68,68,0.9)'
+    : isOff
+    ? 'rgba(255,255,255,0.65)'
+    : 'rgba(255,255,255,0.9)'
 
   function handleClick() {
     if (status === 'connecting') return
-    if (isConnected || status === 'error') { disconnect(); return }
+    if (isConnected || isError) { disconnect(); return }
     connect()
   }
 
@@ -102,18 +118,18 @@ export function VoiceControlWidget() {
       onClick={handleClick}
       title={
         status === 'connecting' ? 'Connecting…'
-        : status === 'error' ? 'Voice error — click to disconnect'
+        : isError ? 'Voice error — click to reset'
         : isConnected ? 'Voice on — click to turn off'
         : 'Voice off — click to turn on'
       }
-      className="w-7 h-7 rounded-full flex items-center justify-center transition-all select-none"
-      style={{ background: 'rgba(255,255,255,0.06)', boxShadow: `0 0 0 2px ${ringColor}` }}
+      className="w-7 h-7 rounded-full flex items-center justify-center transition-all select-none cursor-pointer"
+      style={{ background: bgColor, boxShadow: `0 0 0 1.5px ${ringColor}` }}
     >
       {status === 'connecting' ? (
         <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} />
       ) : (
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-          stroke={isConnected ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)'}
+          stroke={iconStroke}
           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
           <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
