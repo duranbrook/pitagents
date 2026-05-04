@@ -269,7 +269,7 @@ struct TechnicianInputBar: View {
     private func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespaces)
         let selected = attachedPhotos.filter(\.isSelected)
-        let imageUrls = selected.filter { !$0.isVideo }.compactMap { $0.base64DataUrl }
+        let photoAttachments = selected.filter { !$0.isVideo }
         let videoAttachments = selected.filter(\.isVideo)
         let vins = scannedVINs
         inputText = ""
@@ -278,10 +278,28 @@ struct TechnicianInputBar: View {
         transcribeHint = false
         Task {
             var messageText = text
+            var imageUrls: [String] = []
+
             if !vins.isEmpty {
                 let vinLines = vins.map { "VIN: \($0)" }.joined(separator: "\n")
                 messageText = messageText.isEmpty ? vinLines : "\(vinLines)\n\(messageText)"
             }
+
+            // Upload each photo to S3 — stable URL stored in finding's photo_url
+            for (i, photo) in photoAttachments.enumerated() {
+                guard let data = photo.jpegData else { continue }
+                do {
+                    let response = try await APIClient.shared.uploadPhoto(data: data, filename: "photo_\(i+1).jpg")
+                    let s3url = response.videoUrl
+                    imageUrls.append(s3url)
+                    let note = "[Photo \(i+1): \(s3url)]"
+                    messageText = messageText.isEmpty ? note : "\(messageText)\n\(note)"
+                } catch {
+                    await MainActor.run { vm.errorMessage = "Photo upload failed: \(error.localizedDescription)" }
+                    return
+                }
+            }
+
             for video in videoAttachments {
                 guard let videoURL = video.videoURL else { continue }
                 do {
@@ -295,7 +313,8 @@ struct TechnicianInputBar: View {
                     return
                 }
             }
-            let finalText = messageText.isEmpty ? (videoAttachments.isEmpty ? "" : "See attached") : messageText
+
+            let finalText = messageText.isEmpty ? "See attached" : messageText
             await vm.sendWithImages(text: finalText, imageUrls: imageUrls, agentId: agent.id)
         }
     }
@@ -374,7 +393,7 @@ struct AttachedPhoto: Identifiable {
 
     var isVideo: Bool { videoURL != nil }
 
-    var base64DataUrl: String? {
+    var jpegData: Data? {
         guard !isVideo else { return nil }
         let maxDimension: CGFloat = 1024
         let scale = min(maxDimension / image.size.width, maxDimension / image.size.height, 1)
@@ -383,8 +402,7 @@ struct AttachedPhoto: Identifiable {
             : image.size
         let renderer = UIGraphicsImageRenderer(size: newSize)
         let resized = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: newSize)) }
-        guard let data = resized.jpegData(compressionQuality: 0.5) else { return nil }
-        return "data:image/jpeg;base64,\(data.base64EncodedString())"
+        return resized.jpegData(compressionQuality: 0.7)
     }
 }
 

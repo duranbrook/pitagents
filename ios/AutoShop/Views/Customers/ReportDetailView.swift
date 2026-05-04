@@ -92,6 +92,12 @@ struct ReportDetailView: View {
         )) {
             Button("OK", role: .cancel) { vm.errorMessage = nil }
         } message: { Text(vm.errorMessage ?? "") }
+        .alert("Save Failed", isPresented: Binding(
+            get: { vm.saveError != nil },
+            set: { if !$0 { vm.saveError = nil } }
+        )) {
+            Button("OK", role: .cancel) { vm.saveError = nil }
+        } message: { Text(vm.saveError ?? "") }
         .task { await vm.load() }
     }
 
@@ -136,9 +142,10 @@ struct ReportDetailView: View {
                             // Header row
                             HStack {
                                 Text("Service").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
-                                Text("Labor").font(.caption).foregroundStyle(.secondary).frame(width: 54, alignment: .trailing)
-                                Text("Parts").font(.caption).foregroundStyle(.secondary).frame(width: 54, alignment: .trailing)
-                                Text("Total").font(.caption).foregroundStyle(.secondary).frame(width: 60, alignment: .trailing)
+                                Text("Hrs").font(.caption).foregroundStyle(.secondary).frame(width: 34, alignment: .trailing)
+                                Text("Labor").font(.caption).foregroundStyle(.secondary).frame(width: 50, alignment: .trailing)
+                                Text("Parts").font(.caption).foregroundStyle(.secondary).frame(width: 50, alignment: .trailing)
+                                Text("Total").font(.caption).foregroundStyle(.secondary).frame(width: 56, alignment: .trailing)
                             }
                             .padding(.bottom, 6)
                             Divider()
@@ -153,14 +160,15 @@ struct ReportDetailView: View {
                                     HStack(alignment: .top) {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(item.part).font(.subheadline).fontWeight(.medium)
-                                            Text("\(String(format: "%.1f", item.laborHours)) hrs @ \(String(format: "$%.2f", item.laborRate))/hr")
+                                            Text("$\(String(format: "%.0f", item.laborRate))/hr")
                                                 .font(.caption2)
                                                 .foregroundStyle(.tertiary)
                                         }
                                         .frame(maxWidth: .infinity, alignment: .leading)
-                                        Text(formatCurrency(item.laborCost)).font(.caption).frame(width: 54, alignment: .trailing)
-                                        Text(formatCurrency(item.partsCost)).font(.caption).frame(width: 54, alignment: .trailing)
-                                        Text(formatCurrency(item.total)).font(.subheadline.bold()).frame(width: 60, alignment: .trailing)
+                                        Text(String(format: "%.1f", item.laborHours)).font(.caption).frame(width: 34, alignment: .trailing)
+                                        Text(formatCurrency(item.laborCost)).font(.caption).frame(width: 50, alignment: .trailing)
+                                        Text(formatCurrency(item.partsCost)).font(.caption).frame(width: 50, alignment: .trailing)
+                                        Text(formatCurrency(item.total)).font(.subheadline.bold()).frame(width: 56, alignment: .trailing)
                                     }
                                     .padding(.vertical, 8)
                                     .contentShape(Rectangle())
@@ -250,7 +258,7 @@ struct ReportDetailView: View {
 
                 // Footer
                 if let createdAt = r.createdAt, let date = parseDate(createdAt) {
-                    Text("Report generated \(date.formatted(date: .abbreviated, time: .shortened))")
+                    Text("Report generated \(date.formatted(date: .abbreviated, time: .standard))")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                         .padding(.bottom, 8)

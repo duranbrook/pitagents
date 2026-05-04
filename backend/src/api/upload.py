@@ -48,6 +48,30 @@ async def upload_image(
     return UploadResponse(image_url=image_url)
 
 
+@router.post("/photo", response_model=VideoUploadResponse)
+async def upload_photo(
+    file: UploadFile = File(...),
+    _: dict = Depends(get_current_user),
+):
+    """Upload a photo to S3 and return a stable URL for use as photo_url in findings."""
+    if not file.content_type or file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported image type. Allowed: {', '.join(sorted(ALLOWED_IMAGE_TYPES))}",
+        )
+
+    data = await file.read()
+    if len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Image too large (max 5 MB)",
+        )
+
+    key = f"photos/{_uuid.uuid4()}.jpg"
+    photo_url = await storage.upload(data, key, file.content_type)
+    return VideoUploadResponse(video_url=photo_url)
+
+
 @router.post("/video", response_model=VideoUploadResponse)
 async def upload_video(
     file: UploadFile = File(...),

@@ -133,6 +133,27 @@ final class APIClient {
         try await put("/quotes/\(quoteId)/finalize", body: EmptyBody())
     }
 
+    func uploadPhoto(data: Data, filename: String) async throws -> VideoUploadResponse {
+        guard let url = URL(string: baseURL + "/upload/photo") else { throw APIError.invalidURL }
+        let boundary = UUID().uuidString
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        injectAuth(&req)
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(data)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        req.httpBody = body
+
+        let (respData, response) = try await URLSession.shared.data(for: req)
+        try validate(data: respData, response: response)
+        return try decode(VideoUploadResponse.self, from: respData)
+    }
+
     func uploadVideo(data: Data, filename: String, mimeType: String = "video/quicktime") async throws -> VideoUploadResponse {
         guard let url = URL(string: baseURL + "/upload/video") else { throw APIError.invalidURL }
         let boundary = UUID().uuidString
