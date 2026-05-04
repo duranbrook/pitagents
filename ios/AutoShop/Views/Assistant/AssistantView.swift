@@ -111,14 +111,32 @@ struct AgentRow: View {
 final class AgentChatViewModel: ObservableObject {
     @Published var messages: [ChatHistoryItem] = []
     @Published var isLoading = false
+    @Published var isLoadingOlder = false
+    @Published var hasOlderMessages = true
     @Published var isSending = false
     @Published var errorMessage: String?
+
+    private let pageSize = 20
 
     func load(agentId: String) async {
         isLoading = true
         defer { isLoading = false }
-        do { messages = try await APIClient.shared.chatHistory(agentId: agentId) }
-        catch { errorMessage = error.localizedDescription }
+        do {
+            let page = try await APIClient.shared.chatHistory(agentId: agentId, limit: pageSize)
+            messages = page
+            hasOlderMessages = page.count == pageSize
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    func loadOlder(agentId: String) async {
+        guard !isLoadingOlder, hasOlderMessages, let oldest = messages.first else { return }
+        isLoadingOlder = true
+        defer { isLoadingOlder = false }
+        do {
+            let page = try await APIClient.shared.chatHistory(agentId: agentId, limit: pageSize, before: oldest.createdAt)
+            messages = page + messages
+            hasOlderMessages = page.count == pageSize
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func send(text: String, agentId: String) async {
@@ -128,7 +146,9 @@ final class AgentChatViewModel: ObservableObject {
         defer { isSending = false }
         do {
             _ = try await APIClient.shared.sendChatMessage(ChatRequest(message: text, imageUrls: []), agentId: agentId)
-            messages = try await APIClient.shared.chatHistory(agentId: agentId)
+            let page = try await APIClient.shared.chatHistory(agentId: agentId, limit: pageSize)
+            messages = page
+            hasOlderMessages = page.count == pageSize
         } catch {
             messages.removeLast()
             errorMessage = error.localizedDescription
@@ -143,7 +163,9 @@ final class AgentChatViewModel: ObservableObject {
         do {
             let req = ChatRequest(message: text.isEmpty ? "See attached photos" : text, imageUrls: imageUrls)
             _ = try await APIClient.shared.sendChatMessage(req, agentId: agentId)
-            messages = try await APIClient.shared.chatHistory(agentId: agentId)
+            let page = try await APIClient.shared.chatHistory(agentId: agentId, limit: pageSize)
+            messages = page
+            hasOlderMessages = page.count == pageSize
         } catch {
             messages.removeLast()
             errorMessage = error.localizedDescription
@@ -232,6 +254,11 @@ struct AgentChatView: View {
                 LazyVStack(spacing: 2) {
                     if vm.isLoading && vm.messages.isEmpty {
                         ProgressView().padding(.top, 60)
+                    } else if vm.hasOlderMessages {
+                        ProgressView()
+                            .padding(.vertical, 8)
+                            .onAppear { Task { await vm.loadOlder(agentId: agent.id) } }
+                            .id("__load_older__")
                     }
                     ForEach(Array(vm.messages.enumerated()), id: \.element.id) { idx, msg in
                         ChatBubble(item: msg, agent: agent, showAvatar: shouldShowAvatar(at: idx))

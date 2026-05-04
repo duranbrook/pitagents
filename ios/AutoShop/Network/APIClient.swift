@@ -84,8 +84,10 @@ final class APIClient {
 
     // MARK: - Chat
 
-    func chatHistory(agentId: String = "assistant") async throws -> [ChatHistoryItem] {
-        try await get("/chat/\(agentId)/history")
+    func chatHistory(agentId: String = "assistant", limit: Int = 20, before: String? = nil) async throws -> [ChatHistoryItem] {
+        var path = "/chat/\(agentId)/history?limit=\(limit)"
+        if let before { path += "&before=\(before)" }
+        return try await get(path)
     }
 
     func sendChatMessage(_ body: ChatRequest, agentId: String = "assistant") async throws -> ChatResponse {

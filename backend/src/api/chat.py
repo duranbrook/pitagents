@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, desc
+from datetime import datetime
 from src.api.deps import get_current_user
 from src.db.base import get_db, AsyncSessionLocal
 from src.models.chat_message import ChatMessage
@@ -108,13 +109,16 @@ def _sanitize_content(content) -> list[dict] | str:
 
 
 async def _load_history(user_id: uuid.UUID, agent_id: str, db: AsyncSession) -> list[dict]:
+    """Load the most recent 40 turns for the LangGraph context window."""
     result = await db.execute(
         select(ChatMessage)
         .where(ChatMessage.user_id == user_id, ChatMessage.agent_id == agent_id)
-        .order_by(ChatMessage.created_at)
+        .order_by(desc(ChatMessage.created_at))
+        .limit(40)
     )
     rows = result.scalars().all()
-    return [{"role": r.role, "content": _sanitize_content(r.content)} for r in rows]
+    # Reverse so oldest is first (chronological order for the model)
+    return [{"role": r.role, "content": _sanitize_content(r.content)} for r in reversed(rows)]
 
 
 def _strip_base64_images(content: list[dict]) -> list[dict]:
@@ -162,6 +166,8 @@ async def _save_messages(
 @router.get("/{agent_id}/history")
 async def get_history(
     agent_id: str,
+    limit: int = 20,
+    before: str | None = None,   # ISO-8601 cursor: return messages older than this timestamp
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -169,22 +175,35 @@ async def get_history(
     graph = await _get_agent_graph(agent_id, shop_id, db)
     if not graph:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
+
     user_id = uuid.UUID(current_user["sub"])
-    result = await db.execute(
+    limit = max(1, min(limit, 100))
+
+    query = (
         select(ChatMessage)
         .where(ChatMessage.user_id == user_id, ChatMessage.agent_id == agent_id)
-        .order_by(ChatMessage.created_at)
+        .order_by(desc(ChatMessage.created_at))
+        .limit(limit)
     )
+    if before:
+        try:
+            cursor_dt = datetime.fromisoformat(before.replace("Z", "+00:00"))
+            query = query.where(ChatMessage.created_at < cursor_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid 'before' timestamp")
+
+    result = await db.execute(query)
     rows = result.scalars().all()
+    # Return in chronological order (oldest first) so the client can prepend
     return [
         {
             "id": str(r.id),
             "role": r.role,
-            "content": r.content,
+            "content": _sanitize_content(r.content),
             "tool_calls": r.tool_calls,
             "created_at": r.created_at.isoformat() if r.created_at else None,
         }
-        for r in rows
+        for r in reversed(rows)
     ]
 
 
