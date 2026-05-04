@@ -193,10 +193,12 @@ async def get_history(
     )
     if before:
         try:
-            cursor_dt = datetime.fromisoformat(before.replace("Z", "+00:00"))
+            # Restore + that may have arrived as a space if the client failed to encode it
+            normalised = before.replace(" ", "+").replace("Z", "+00:00")
+            cursor_dt = datetime.fromisoformat(normalised)
             query = query.where(ChatMessage.created_at < cursor_dt)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid 'before' timestamp")
+            raise HTTPException(status_code=400, detail=f"Invalid 'before' timestamp: {before!r}")
 
     result = await db.execute(query)
     rows = result.scalars().all()

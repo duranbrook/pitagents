@@ -88,7 +88,12 @@ final class APIClient {
 
     func chatHistory(agentId: String = "assistant", limit: Int = 5, before: String? = nil) async throws -> [ChatHistoryItem] {
         var path = "/chat/\(agentId)/history?limit=\(limit)"
-        if let before, let encoded = before.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+        if let before {
+            // + in ISO timestamps (e.g. +00:00) must be percent-encoded; urlQueryAllowed
+            // treats + as valid so we do the substitution manually after encoding.
+            var cs = CharacterSet.urlQueryAllowed
+            cs.remove("+")
+            let encoded = before.addingPercentEncoding(withAllowedCharacters: cs) ?? before
             path += "&before=\(encoded)"
         }
         return try await get(path)
