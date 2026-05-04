@@ -74,6 +74,17 @@ SHOP_TOOL_SCHEMAS = [
             "required": ["vehicle_id"],
         },
     },
+    {
+        "name": "get_reports_by_vehicle",
+        "description": "Get all inspection reports for a specific vehicle, ordered newest first. Use this to pull a customer's report history by vehicle.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "vehicle_id": {"type": "string", "description": "UUID of the vehicle"}
+            },
+            "required": ["vehicle_id"],
+        },
+    },
 ]
 
 
@@ -181,4 +192,31 @@ async def find_sessions_by_vehicle(db: AsyncSession, vehicle_id: str) -> list[di
             "created_at": s.created_at.isoformat() if s.created_at else None,
         }
         for s in sessions
+    ]
+
+
+async def get_reports_by_vehicle(db: AsyncSession, vehicle_id: str) -> list[dict]:
+    try:
+        vid = uuid.UUID(vehicle_id)
+    except ValueError:
+        return [{"error": f"Invalid vehicle_id: {vehicle_id}"}]
+    result = await db.execute(
+        select(Report)
+        .where(Report.vehicle_id == vid)
+        .order_by(Report.created_at.desc())
+    )
+    reports = result.scalars().all()
+    if not reports:
+        return [{"message": f"No reports found for vehicle {vehicle_id}"}]
+    return [
+        {
+            "id": str(r.id),
+            "summary": r.summary,
+            "findings": r.findings,
+            "estimate_total": float(r.estimate_total) if r.estimate_total else None,
+            "status": r.status,
+            "share_token": str(r.share_token),
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in reports
     ]
