@@ -10,6 +10,7 @@ const plans = [
     price: '$10',
     priceSub: '/month',
     highlight: false,
+    comingSoon: false,
     features: [
       '1 user account',
       '1 shop location',
@@ -30,6 +31,7 @@ const plans = [
     price: '$39',
     priceSub: '/month',
     highlight: true,
+    comingSoon: true,
     features: [
       '1 shop location',
       'Up to 5 staff accounts',
@@ -52,6 +54,7 @@ const plans = [
     price: "Let's talk",
     priceSub: '',
     highlight: false,
+    comingSoon: false,
     features: [
       'Multiple shop locations',
       'Unlimited staff accounts',
@@ -114,7 +117,7 @@ export default function PricingPage() {
       </div>
 
       {/* PLANS GRID */}
-      <div style={{ maxWidth: 1040, margin: '0 auto', padding: '0 40px 96px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, alignItems: 'start' }}>
+      <div style={{ maxWidth: 1040, margin: '0 auto', padding: '0 40px 96px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
         {plans.map(plan => (
           <div
             key={plan.badge}
@@ -125,6 +128,8 @@ export default function PricingPage() {
               padding: 36,
               boxShadow: plan.highlight ? '0 4px 24px rgba(217,119,6,0.1)' : 'none',
               position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             {plan.highlight && (
@@ -138,25 +143,43 @@ export default function PricingPage() {
             <div style={{ display: 'inline-block', background: plan.badgeBg, color: plan.badgeColor, fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: 99, marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' }}>{plan.badge}</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>{plan.name}</div>
             <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28, lineHeight: 1.5 }}>{plan.desc}</p>
-            <div style={{ fontSize: plan.price.startsWith('$') ? 52 : 28, fontWeight: 900, color: plan.highlight ? '#d97706' : '#0f172a', letterSpacing: -1, lineHeight: 1, marginBottom: 4 }}>
-              {plan.price.startsWith('$') && <sup style={{ fontSize: 24, letterSpacing: 0, verticalAlign: 'super' }}>$</sup>}
-              {plan.price.startsWith('$') ? plan.price.slice(1) : plan.price}
-              {plan.priceSub && <sub style={{ fontSize: 14, fontWeight: 400, color: '#94a3b8', letterSpacing: 0, verticalAlign: 'baseline' }}>{plan.priceSub}</sub>}
-            </div>
-            <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: '24px 0' }} />
-            {plan.features.map(f => (
-              <div key={f} style={{ fontSize: 13, color: '#475569', padding: '6px 0', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <span style={{ color: '#d97706', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+
+            {plan.comingSoon ? (
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#d97706', letterSpacing: -0.5, lineHeight: 1, marginBottom: 4 }}>Coming soon</div>
+            ) : (
+              <div style={{ fontSize: plan.price.startsWith('$') ? 52 : 28, fontWeight: 900, color: plan.highlight ? '#d97706' : '#0f172a', letterSpacing: -1, lineHeight: 1, marginBottom: 4 }}>
+                {plan.price.startsWith('$') && <sup style={{ fontSize: 24, letterSpacing: 0, verticalAlign: 'super' }}>$</sup>}
+                {plan.price.startsWith('$') ? plan.price.slice(1) : plan.price}
+                {plan.priceSub && <sub style={{ fontSize: 14, fontWeight: 400, color: '#94a3b8', letterSpacing: 0, verticalAlign: 'baseline' }}>{plan.priceSub}</sub>}
               </div>
-            ))}
-            <Link href={plan.ctaHref} style={{
-              display: 'block', width: '100%', marginTop: 32, padding: '13px',
-              borderRadius: 10, fontSize: 14, fontWeight: 700, textAlign: 'center',
-              background: plan.ctaBg, color: plan.ctaColor,
-              border: plan.ctaBorder,
-              boxShadow: plan.highlight ? '0 2px 8px rgba(217,119,6,0.3)' : 'none',
-              textDecoration: 'none',
-            }}>{plan.cta}</Link>
+            )}
+
+            <hr style={{ border: 'none', borderTop: '1px solid #f1f5f9', margin: '24px 0' }} />
+            <div style={{ flex: 1 }}>
+              {plan.features.map(f => (
+                <div key={f} style={{ fontSize: 13, color: '#475569', padding: '6px 0', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <span style={{ color: '#d97706', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                </div>
+              ))}
+            </div>
+
+            {plan.comingSoon ? (
+              <div style={{
+                display: 'block', width: '100%', marginTop: 32, padding: '13px',
+                borderRadius: 10, fontSize: 14, fontWeight: 700, textAlign: 'center',
+                background: '#f1f5f9', color: '#94a3b8',
+                border: '1.5px solid #e2e8f0', cursor: 'default',
+              }}>Coming soon</div>
+            ) : (
+              <Link href={plan.ctaHref} style={{
+                display: 'block', width: '100%', marginTop: 32, padding: '13px',
+                borderRadius: 10, fontSize: 14, fontWeight: 700, textAlign: 'center',
+                background: plan.ctaBg, color: plan.ctaColor,
+                border: plan.ctaBorder,
+                boxShadow: plan.highlight ? '0 2px 8px rgba(217,119,6,0.3)' : 'none',
+                textDecoration: 'none',
+              }}>{plan.cta}</Link>
+            )}
           </div>
         ))}
       </div>
