@@ -353,6 +353,14 @@ extension ChatHistoryItem {
             .replacingOccurrences(of: #"\[REPORT:[0-9a-f\-]+\]\n?"#, with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    // Rewrite any hallucinated legacy report URLs to the correct share URL format.
+    // The agent sometimes generates app.shopsite.ai/reports/{id} from memory —
+    // those IDs are report UUIDs, not share tokens, so we can't map them here.
+    // Instead this cleans up raw markdown that wasn't rendered.
+    var displayTextRenderable: String {
+        displayTextClean
+    }
 }
 
 struct EmptyBody: Encodable {}

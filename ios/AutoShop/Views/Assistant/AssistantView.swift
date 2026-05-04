@@ -387,6 +387,18 @@ struct ChatBubble: View {
 
     private var isUser: Bool { item.role == "user" }
 
+    private func bubbleText() -> Text {
+        let raw = item.displayTextClean
+        if raw.isEmpty { return Text("…") }
+        if let attr = try? AttributedString(
+            markdown: raw,
+            options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        ) {
+            return Text(attr)
+        }
+        return Text(raw)
+    }
+
     var body: some View {
         HStack(alignment: .bottom, spacing: 6) {
             if isUser {
@@ -403,7 +415,8 @@ struct ChatBubble: View {
                 }
             }
 
-            Text(item.displayTextClean.isEmpty ? "…" : item.displayTextClean)
+            bubbleText()
+                .tint(isUser ? .white : .accentColor)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(isUser ? Color.accentColor : Color(.secondarySystemBackground))
