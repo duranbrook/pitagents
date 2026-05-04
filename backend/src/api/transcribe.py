@@ -1,7 +1,6 @@
-import asyncio
 import logging
 
-from deepgram import AsyncDeepgramClient
+import httpx
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from pydantic import BaseModel
 from src.api.deps import get_current_user
@@ -21,7 +20,10 @@ ALLOWED_MIMETYPES = {
     "audio/x-m4a",
 }
 
-_client = AsyncDeepgramClient(api_key=settings.DEEPGRAM_API_KEY.get_secret_value())
+DEEPGRAM_URL = (
+    "https://api.deepgram.com/v1/listen"
+    "?model=nova-2&smart_format=true&punctuate=true&language=en-US"
+)
 
 
 class TranscribeResponse(BaseModel):
@@ -51,32 +53,39 @@ async def transcribe_audio(
             detail=f"Unsupported media type: {content_type}",
         )
 
+    api_key = settings.DEEPGRAM_API_KEY.get_secret_value()
+    timeout = httpx.Timeout(connect=5.0, read=20.0, write=10.0, pool=5.0)
+
     try:
-        response = await asyncio.wait_for(
-            _client.listen.v1.media.transcribe_file(
-                request=audio_bytes,
-                model="nova-2",
-                smart_format=True,
-                punctuate=True,
-                language="en-US",
-            ),
-            timeout=20,
-        )
-    except asyncio.TimeoutError:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(
+                DEEPGRAM_URL,
+                content=audio_bytes,
+                headers={
+                    "Authorization": f"Token {api_key}",
+                    "Content-Type": content_type,
+                },
+            )
+    except httpx.TimeoutException:
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Transcription timed out — try a shorter recording",
         )
     except Exception as exc:
-        logger.exception("Deepgram transcription failed")
+        logger.exception("Deepgram request failed")
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+
+    if resp.status_code != 200:
+        logger.error("Deepgram error %s: %s", resp.status_code, resp.text[:200])
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Transcription failed: {exc}",
-        ) from exc
+            detail=f"Transcription failed ({resp.status_code})",
+        )
 
     try:
-        transcript = response.results.channels[0].alternatives[0].transcript
-    except (IndexError, AttributeError):
+        data = resp.json()
+        transcript = data["results"]["channels"][0]["alternatives"][0]["transcript"]
+    except (KeyError, IndexError):
         transcript = ""
 
     return TranscribeResponse(transcript=transcript)
