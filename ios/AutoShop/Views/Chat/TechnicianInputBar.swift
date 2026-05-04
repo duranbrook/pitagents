@@ -181,18 +181,32 @@ struct TechnicianInputBar: View {
                 videoButton
                 micButton
                 Spacer()
-                Button {
-                    sendMessage()
-                } label: {
-                    Text("Send")
-                        .fontWeight(.semibold)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 24)
-                        .background(canSend ? Color.accentColor : Color(.systemGray4))
-                        .foregroundStyle(.white)
-                        .clipShape(Capsule())
+                if vm.isSending {
+                    Button {
+                        vm.cancelSending()
+                    } label: {
+                        Text("Stop")
+                            .fontWeight(.semibold)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 24)
+                            .background(Color.red)
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
+                    }
+                } else {
+                    Button {
+                        sendMessage()
+                    } label: {
+                        Text("Send")
+                            .fontWeight(.semibold)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 24)
+                            .background(canSend ? Color.accentColor : Color(.systemGray4))
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
+                    }
+                    .disabled(!canSend)
                 }
-                .disabled(!canSend)
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 16)
@@ -252,12 +266,24 @@ struct TechnicianInputBar: View {
     }
 
     private var sendButton: some View {
-        Button { sendMessage() } label: {
-            Image(systemName: "arrow.up.circle.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(canSend ? Color.accentColor : Color(.systemGray3))
+        Group {
+            if vm.isSending {
+                Button {
+                    vm.cancelSending()
+                } label: {
+                    Image(systemName: "stop.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(Color.red)
+                }
+            } else {
+                Button { sendMessage() } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(canSend ? Color.accentColor : Color(.systemGray3))
+                }
+                .disabled(!canSend)
+            }
         }
-        .disabled(!canSend)
     }
 
     // MARK: - Logic
@@ -315,7 +341,7 @@ struct TechnicianInputBar: View {
             }
 
             let finalText = messageText.isEmpty ? "See attached" : messageText
-            await vm.sendWithImages(text: finalText, imageUrls: imageUrls, agentId: agent.id)
+            vm.sendWithImages(text: finalText, imageUrls: imageUrls, agentId: agent.id)
         }
     }
 

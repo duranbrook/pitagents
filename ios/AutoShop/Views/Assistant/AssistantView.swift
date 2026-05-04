@@ -117,6 +117,12 @@ final class AgentChatViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let pageSize = 5
+    private var _sendingTask: Task<Void, Never>?
+
+    func cancelSending() {
+        _sendingTask?.cancel()
+        _sendingTask = nil
+    }
 
     func clearHistory(agentId: String) async {
         do {
@@ -149,36 +155,46 @@ final class AgentChatViewModel: ObservableObject {
         } catch { errorMessage = error.localizedDescription }
     }
 
-    func send(text: String, agentId: String) async {
+    func send(text: String, agentId: String) {
         let optimistic = ChatHistoryItem(role: "user", content: text)
         messages.append(optimistic)
         isSending = true
-        defer { isSending = false }
-        do {
-            _ = try await APIClient.shared.sendChatMessage(ChatRequest(message: text, imageUrls: []), agentId: agentId)
-            let page = try await APIClient.shared.chatHistory(agentId: agentId, limit: pageSize)
-            messages = page
-            hasOlderMessages = page.count == pageSize
-        } catch {
-            messages.removeLast()
-            errorMessage = error.localizedDescription
+        _sendingTask = Task {
+            defer { isSending = false }
+            do {
+                _ = try await APIClient.shared.sendChatMessage(ChatRequest(message: text, imageUrls: []), agentId: agentId)
+                try Task.checkCancellation()
+                let page = try await APIClient.shared.chatHistory(agentId: agentId, limit: pageSize)
+                messages = page
+                hasOlderMessages = page.count == pageSize
+            } catch is CancellationError {
+                messages.removeLast()
+            } catch {
+                messages.removeLast()
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
-    func sendWithImages(text: String, imageUrls: [String], agentId: String) async {
+    func sendWithImages(text: String, imageUrls: [String], agentId: String) {
         let optimistic = ChatHistoryItem(role: "user", content: text.isEmpty ? "[Photos attached]" : text)
         messages.append(optimistic)
         isSending = true
-        defer { isSending = false }
-        do {
-            let req = ChatRequest(message: text.isEmpty ? "See attached photos" : text, imageUrls: imageUrls)
-            _ = try await APIClient.shared.sendChatMessage(req, agentId: agentId)
-            let page = try await APIClient.shared.chatHistory(agentId: agentId, limit: pageSize)
-            messages = page
-            hasOlderMessages = page.count == pageSize
-        } catch {
-            messages.removeLast()
-            errorMessage = error.localizedDescription
+        _sendingTask = Task {
+            defer { isSending = false }
+            do {
+                let req = ChatRequest(message: text.isEmpty ? "See attached photos" : text, imageUrls: imageUrls)
+                _ = try await APIClient.shared.sendChatMessage(req, agentId: agentId)
+                try Task.checkCancellation()
+                let page = try await APIClient.shared.chatHistory(agentId: agentId, limit: pageSize)
+                messages = page
+                hasOlderMessages = page.count == pageSize
+            } catch is CancellationError {
+                messages.removeLast()
+            } catch {
+                messages.removeLast()
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }
@@ -327,17 +343,27 @@ struct AgentChatView: View {
                 .focused($inputFocused)
                 .onTapGesture { inputFocused = true }
 
-            Button {
-                guard !inputText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                let text = inputText
-                inputText = ""
-                Task { await vm.send(text: text, agentId: agent.id) }
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(inputText.isEmpty || vm.isSending ? Color(.systemGray3) : Color.accentColor)
+            if vm.isSending {
+                Button {
+                    vm.cancelSending()
+                } label: {
+                    Image(systemName: "stop.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(Color.red)
+                }
+            } else {
+                Button {
+                    guard !inputText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                    let text = inputText
+                    inputText = ""
+                    vm.send(text: text, agentId: agent.id)
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(inputText.isEmpty ? Color(.systemGray3) : Color.accentColor)
+                }
+                .disabled(inputText.isEmpty)
             }
-            .disabled(inputText.isEmpty || vm.isSending)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
