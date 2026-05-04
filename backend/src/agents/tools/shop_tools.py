@@ -169,7 +169,7 @@ async def get_customer_vehicles(db: AsyncSession, customer_id: str) -> list[dict
 async def find_sessions_by_vehicle(db: AsyncSession, vehicle_id: str) -> list[dict]:
     result = await db.execute(
         select(InspectionSession)
-        .where(InspectionSession.vehicle["vehicle_id"].astext == vehicle_id)
+        .where(InspectionSession.vehicle["vehicle_id"].as_string() == vehicle_id)
         .order_by(InspectionSession.created_at.desc())
     )
     sessions = result.scalars().all()
