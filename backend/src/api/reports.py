@@ -233,7 +233,7 @@ async def consumer_view(
         media_result = await db.execute(
             select(MediaFile).where(MediaFile.session_id == report.session_id)
         )
-        media_urls = [m.s3_url for m in media_result.scalars().all() if m.s3_url.startswith("http")]
+        media_urls = [m.s3_url for m in media_result.scalars().all() if m.s3_url and m.s3_url.startswith("http")]
 
     return _to_consumer_view(report, media_urls)
 
