@@ -256,9 +256,12 @@ async def _get_report_or_404(report_id: str, db: AsyncSession) -> Report:
 
 
 def _to_list_item(r: Report) -> dict:
+    vehicle = dict(r.vehicle or {})
+    if r.vehicle_id:
+        vehicle["vehicle_id"] = str(r.vehicle_id)
     return {
         "id": str(r.id),
-        "vehicle": r.vehicle or {},
+        "vehicle": vehicle,
         "summary": r.summary or "",
         "total": float(r.estimate_total or 0),
         "share_token": str(r.share_token),
