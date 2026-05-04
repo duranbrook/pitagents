@@ -392,9 +392,6 @@ function ReportsPageInner() {
 
   const displayed = reports
 
-  // DEBUG — remove after fixing
-  console.log('[reports] vehicleFilter:', vehicleFilter, '| fetched:', reports.length, '| sample vehicle_ids:', reports.slice(0, 3).map(r => r.vehicle?.vehicle_id))
-
   return (
     <AppShell>
       <div className="flex h-full" style={{ padding: 16, gap: 12 }}>
@@ -414,12 +411,7 @@ function ReportsPageInner() {
               </Link>
             )}
           </div>
-          {/* DEBUG: remove after fixing */}
-          {vehicleFilter && (
-            <div className="text-[10px] px-2 py-1 bg-yellow-50 border-b border-yellow-200 text-yellow-700 font-mono break-all">
-              filter: {vehicleFilter.slice(0, 8)}… | fetched: {reports.length}
-            </div>
-          )}
+
           <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
             {isLoading && (
               <p className="text-xs px-2 py-3 text-gray-400">Loading…</p>

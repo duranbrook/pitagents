@@ -294,9 +294,8 @@ struct TechnicianInputBar: View {
 
     private func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespaces)
-        let selected = attachedPhotos.filter(\.isSelected)
-        let photoAttachments = selected.filter { !$0.isVideo }
-        let videoAttachments = selected.filter(\.isVideo)
+        let photoAttachments = attachedPhotos.filter { !$0.isVideo }
+        let videoAttachments = attachedPhotos.filter(\.isVideo)
         let vins = scannedVINs
         inputText = ""
         attachedPhotos = []

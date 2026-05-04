@@ -548,13 +548,13 @@ async def seed_invoices(conn: asyncpg.Connection) -> None:
     rows = [
         (INV1, SHOP_ID, JC1, "INV-2026-001", C1, V1,
          "paid", inv1_lines, 472.48, 0.0600, 487.50, 487.50,
-         "2026-04-30", ts(3, 16, 0)),
+         date(2026, 4, 30), ts(3, 16, 0)),
         (INV2, SHOP_ID, JC2, "INV-2026-002", C2, V2,
          "pending", inv2_lines, 594.96, 0.0600, 1240.00, 0.0,
-         "2026-05-05", ts(1, 15, 0)),
+         date(2026, 5, 5), ts(1, 15, 0)),
         (INV3, SHOP_ID, JC4, "INV-2026-003", C4, V4,
          "paid", inv3_lines, 133.98, 0.0600, 198.50, 198.50,
-         "2026-04-26", ts(5, 17, 0)),
+         date(2026, 4, 26), ts(5, 17, 0)),
     ]
     await conn.executemany("""
         INSERT INTO invoices
@@ -631,7 +631,7 @@ async def seed_inspection_sessions(conn: asyncpg.Connection) -> None:
 async def seed_media_files(conn: asyncpg.Connection) -> None:
     print("Seeding media files...")
     await conn.executemany("""
-        INSERT INTO media_files (id, session_id, media_type, tag, s3_url, filename)
+        INSERT INTO media_files (id, session_id, type, tag, s3_url, filename)
         VALUES ($1,$2,$3,$4,$5,$6)
     """, [
         (MF1, IS1, "photo", "vin",
@@ -878,13 +878,13 @@ async def seed_expenses(conn: asyncpg.Connection) -> None:
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
     """, [
         (EX1, SHOP_ID, "Shop supplies — rags, gloves, penetrating oil",
-         47.32, "Misc", "Home Depot", "2026-04-28", False),
+         47.32, "Misc", "Home Depot", date(2026, 4, 28), False),
         (EX2, SHOP_ID, "Brake parts — PO-2026-039 (pads + rotors × 2)",
-         180.00, "Parts", "AutoZone", "2026-04-25", False),
+         180.00, "Parts", "AutoZone", date(2026, 4, 25), False),
         (EX3, SHOP_ID, "April electricity & water",
-         312.18, "Utilities", "Austin Energy", "2026-04-01", True),
+         312.18, "Utilities", "Austin Energy", date(2026, 4, 1), True),
         (EX4, SHOP_ID, "Alignment rack — annual calibration service",
-         225.00, "Equipment", "Hunter Engineering", "2026-03-15", True),
+         225.00, "Equipment", "Hunter Engineering", date(2026, 3, 15), True),
     ])
 
 
