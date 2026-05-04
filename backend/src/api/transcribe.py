@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from deepgram import AsyncDeepgramClient
@@ -51,12 +52,20 @@ async def transcribe_audio(
         )
 
     try:
-        response = await _client.listen.v1.media.transcribe_file(
-            request=audio_bytes,
-            model="nova-3",
-            smart_format=True,
-            punctuate=True,
-            language="en-US",
+        response = await asyncio.wait_for(
+            _client.listen.v1.media.transcribe_file(
+                request=audio_bytes,
+                model="nova-2",
+                smart_format=True,
+                punctuate=True,
+                language="en-US",
+            ),
+            timeout=20,
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Transcription timed out — try a shorter recording",
         )
     except Exception as exc:
         logger.exception("Deepgram transcription failed")
