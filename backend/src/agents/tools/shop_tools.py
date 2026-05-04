@@ -215,7 +215,7 @@ async def get_reports_by_vehicle(db: AsyncSession, vehicle_id: str) -> list[dict
             "findings": r.findings,
             "estimate_total": float(r.estimate_total) if r.estimate_total else None,
             "status": r.status,
-            "share_token": str(r.share_token),
+            "report_url": f"https://pitagents.vercel.app/r/{r.share_token}",
             "created_at": r.created_at.isoformat() if r.created_at else None,
         }
         for r in reports

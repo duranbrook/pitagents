@@ -12,6 +12,7 @@ interface Props {
   streaming?: boolean
   showHeader?: boolean
   timestamp?: string
+  onReportLink?: (token: string) => void
 }
 
 function extractText(content: ContentBlock[]): string {
@@ -48,7 +49,7 @@ function ToolPill({ toolCalls }: { toolCalls: ToolCallRecord[] }) {
   )
 }
 
-export function MessageBubble({ role, content, toolCalls, streaming, showHeader = true, timestamp }: Props) {
+export function MessageBubble({ role, content, toolCalls, streaming, showHeader = true, timestamp, onReportLink }: Props) {
   const text = extractText(content)
   const hasImage = content.some(b => b.type === 'image')
   const isUser = role === 'user'
@@ -99,7 +100,28 @@ export function MessageBubble({ role, content, toolCalls, streaming, showHeader 
           <div className="mb-1"><ToolPill toolCalls={toolCalls} /></div>
         )}
         <div className="prose prose-sm max-w-none text-sm text-gray-800">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              a: ({ href, children }) => {
+                if (href && onReportLink) {
+                  const m = href.match(/\/r\/([0-9a-f-]{36})/i)
+                  if (m) {
+                    return (
+                      <button
+                        onClick={() => onReportLink(m[1])}
+                        className="underline cursor-pointer"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        {children}
+                      </button>
+                    )
+                  }
+                }
+                return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+              },
+            }}
+          >
             {text}
           </ReactMarkdown>
           {streaming && <span className="inline-block w-1.5 h-3.5 bg-current ml-0.5 animate-pulse align-middle opacity-70" />}

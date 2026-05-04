@@ -51,6 +51,7 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
   const [ratings, setRatings] = useState<Record<string, 1 | -1>>({})
   const [quoteId, setQuoteId] = useState<string | null>(null)
   const [reportId, setReportId] = useState<string | null>(null)
+  const [drawerToken, setDrawerToken] = useState<string | null>(null)
   const sendingRef = useRef(false)
   const voice = useVoiceContext()
 
@@ -254,6 +255,7 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
                     toolCalls={msg.tool_calls}
                     showHeader={msg.showHeader}
                     timestamp={msg.created_at}
+                    onReportLink={setDrawerToken}
                   />
                   {msg.role === 'assistant' && (
                     <div className="flex gap-2 pl-9 pb-0.5">
@@ -290,6 +292,7 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
                   toolCalls={streaming.toolCalls.length > 0 ? streaming.toolCalls : null}
                   streaming
                   showHeader
+                  onReportLink={setDrawerToken}
                 />
               )}
             </>
@@ -361,6 +364,50 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
       </div>
 
       {agentId === 'assistant' && <QuoteSummary quoteId={quoteId} />}
+
+      {/* Report slide-in drawer */}
+      {drawerToken && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            style={{ background: 'rgba(0,0,0,0.25)' }}
+            onClick={() => setDrawerToken(null)}
+          />
+          <div
+            className="fixed top-0 right-0 h-full z-50 flex flex-col"
+            style={{
+              width: 480,
+              background: '#fff',
+              boxShadow: '-4px 0 32px rgba(0,0,0,0.12)',
+              animation: 'slideInRight 0.25s ease',
+            }}
+          >
+            <div
+              className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+              style={{ borderBottom: '1px solid #e5e7eb' }}
+            >
+              <span className="text-sm font-semibold text-gray-900">Inspection Report</span>
+              <button
+                onClick={() => setDrawerToken(null)}
+                className="text-gray-400 hover:text-gray-700 text-lg leading-none px-1"
+              >
+                ✕
+              </button>
+            </div>
+            <iframe
+              src={`/r/${drawerToken}`}
+              className="flex-1 border-none"
+              title="Inspection Report"
+            />
+          </div>
+          <style>{`
+            @keyframes slideInRight {
+              from { transform: translateX(100%); }
+              to   { transform: translateX(0); }
+            }
+          `}</style>
+        </>
+      )}
     </div>
   )
 }
