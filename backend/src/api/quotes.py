@@ -48,6 +48,7 @@ class QuoteResponse(BaseModel):
     total: float
     line_items: list[dict]
     session_id: str | None = None
+    report_id: str | None = None
     created_at: str | None = None
 
 
@@ -204,7 +205,13 @@ async def get_quote(
     if quote is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quote not found")
 
-    return _quote_to_response(quote)
+    resp = _quote_to_response(quote)
+    if quote.session_id:
+        report_r = await db.execute(select(Report).where(Report.session_id == quote.session_id))
+        report = report_r.scalar_one_or_none()
+        if report:
+            resp.report_id = str(report.id)
+    return resp
 
 
 @router.get("/quotes/{quote_id}/pdf")

@@ -3,17 +3,23 @@ import SwiftUI
 struct ReportCardBubble: View {
     let quoteId: String
     @State private var quote: QuoteResponse?
-    @State private var showEditor = false
+    @State private var showDetail = false
+
+    var isInspectionReport: Bool { quote?.reportId != nil }
 
     var body: some View {
-        Button { showEditor = true } label: {
+        Button { showDetail = true } label: {
             linkCard
         }
         .buttonStyle(.plain)
         .task { await load() }
-        .fullScreenCover(isPresented: $showEditor) {
+        .fullScreenCover(isPresented: $showDetail) {
             NavigationStack {
-                QuoteDetailView(quoteId: quoteId, presentedFromChat: true)
+                if let reportId = quote?.reportId {
+                    ReportDetailView(reportId: reportId, vehicleLabel: "Inspection Report", presentedFromChat: true)
+                } else {
+                    QuoteDetailView(quoteId: quoteId, presentedFromChat: true)
+                }
             }
             .onDisappear { Task { await load() } }
         }
@@ -24,9 +30,9 @@ struct ReportCardBubble: View {
             // Icon
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.accentColor)
+                    .fill(isInspectionReport ? Color.indigo : Color.accentColor)
                     .frame(width: 44, height: 44)
-                Image(systemName: "doc.text.fill")
+                Image(systemName: isInspectionReport ? "clipboard.fill" : "doc.text.fill")
                     .font(.system(size: 18))
                     .foregroundStyle(.white)
             }
@@ -34,19 +40,25 @@ struct ReportCardBubble: View {
             // Info
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text("Auto-Quote")
+                    Text(isInspectionReport ? "Inspection Report" : "Auto-Quote")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
-                    if let status = quote?.status {
+                    if !isInspectionReport, let status = quote?.status {
                         statusPill(status)
                     }
                 }
                 if let q = quote {
-                    Text("\(q.lineItems.count) item\(q.lineItems.count == 1 ? "" : "s") · \(String(format: "$%.2f", q.total))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if isInspectionReport {
+                        Text("Tap to view findings and estimate")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("\(q.lineItems.count) item\(q.lineItems.count == 1 ? "" : "s") · \(String(format: "$%.2f", q.total))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 } else {
-                    Text("Tap to review and edit")
+                    Text("Tap to review")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

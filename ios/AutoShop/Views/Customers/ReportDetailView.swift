@@ -43,16 +43,19 @@ final class ReportDetailViewModel: ObservableObject {
 struct ReportDetailView: View {
     let reportId: String
     let vehicleLabel: String
+    var presentedFromChat: Bool = false
 
     @StateObject private var vm: ReportDetailViewModel
+    @Environment(\.dismiss) private var dismiss
     @State private var editingItem: ReportEstimateItem? = nil
     @State private var editHours: String = ""
     @State private var editRate: String = ""
     @State private var editParts: String = ""
 
-    init(reportId: String, vehicleLabel: String) {
+    init(reportId: String, vehicleLabel: String, presentedFromChat: Bool = false) {
         self.reportId = reportId
         self.vehicleLabel = vehicleLabel
+        self.presentedFromChat = presentedFromChat
         _vm = StateObject(wrappedValue: ReportDetailViewModel(reportId: reportId))
     }
 
@@ -69,6 +72,20 @@ struct ReportDetailView: View {
         }
         .navigationTitle(vehicleLabel)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if presentedFromChat {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                            Text("Chat")
+                        }
+                    }
+                }
+            }
+        }
         .alert("Error", isPresented: Binding(
             get: { vm.errorMessage != nil },
             set: { if !$0 { vm.errorMessage = nil } }

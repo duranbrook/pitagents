@@ -119,6 +119,7 @@ struct QuoteResponse: Decodable, Identifiable {
     let total: Double
     let lineItems: [QuoteLineItem]
     let sessionId: String?
+    let reportId: String?
     let createdAt: String?
     var id: String { quoteId }
     enum CodingKeys: String, CodingKey {
@@ -126,6 +127,7 @@ struct QuoteResponse: Decodable, Identifiable {
         case status, total
         case lineItems = "line_items"
         case sessionId = "session_id"
+        case reportId = "report_id"
         case createdAt = "created_at"
     }
 }
