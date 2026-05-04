@@ -1325,7 +1325,8 @@ class VoiceControlControllerImpl implements VoiceControlController {
     }
 
     if (event.type === "error") {
-      const error = event.error as { message?: string } | undefined;
+      const error = event.error as { type?: string; code?: string; message?: string; param?: string } | undefined;
+      console.error('[voice] server error event', { type: error?.type, code: error?.code, message: error?.message, param: error?.param });
       this.#emitError(error?.message ?? "Realtime server error.");
       return;
     }
@@ -1336,9 +1337,19 @@ class VoiceControlControllerImpl implements VoiceControlController {
     }
 
     if (event.type === "response.done") {
-      const response = event.response as { output?: unknown[]; status?: string; id?: string } | undefined;
+      const response = event.response as { output?: unknown[]; status?: string; id?: string; status_details?: unknown } | undefined;
       const items = Array.isArray(response?.output) ? response.output : [];
-      console.log('[voice] response.done', { status: response?.status, responseId: response?.id, topLevelResponseId: (event as any).response_id, items: items.map((i: any) => i?.type + (i?.name ? ':' + i.name : '')) });
+      const logPayload = {
+        status: response?.status,
+        responseId: response?.id,
+        items: items.map((i: any) => i?.type + (i?.name ? ':' + i.name : '')),
+        status_details: (response as any)?.status_details ?? null,
+      };
+      if (response?.status === 'failed' || response?.status === 'incomplete') {
+        console.error('[voice] response.done FAILED', logPayload);
+      } else {
+        console.log('[voice] response.done', logPayload);
+      }
       this.#handleResponseDone(event, items.filter(isFunctionCallItem));
     }
   };
