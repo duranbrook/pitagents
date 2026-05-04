@@ -30,7 +30,7 @@ const plans = [
     desc: 'Everything you need to run one location with a full AI crew.',
     price: '$39',
     priceSub: '/month',
-    highlight: true,
+    highlight: false,
     comingSoon: true,
     features: [
       '1 shop location',
