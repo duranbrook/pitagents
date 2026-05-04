@@ -157,7 +157,11 @@ async def get_my_booking_config(
     )
     cfg = result.scalar_one_or_none()
     if cfg is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking config not found")
+        slug = secrets.token_urlsafe(8)
+        cfg = BookingConfig(shop_id=uuid.UUID(shop_id), slug=slug)
+        db.add(cfg)
+        await db.commit()
+        await db.refresh(cfg)
     return _cfg_to_response(cfg)
 
 
@@ -172,7 +176,9 @@ async def update_my_booking_config(
     )
     cfg = result.scalar_one_or_none()
     if cfg is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking config not found")
+        cfg = BookingConfig(shop_id=uuid.UUID(shop_id), slug=secrets.token_urlsafe(8))
+        db.add(cfg)
+        await db.flush()
     for field in ("working_hours_start", "working_hours_end", "slot_duration_minutes"):
         val = getattr(body, field, None)
         if val is not None:
