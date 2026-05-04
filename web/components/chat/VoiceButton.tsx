@@ -59,6 +59,10 @@ export function VoiceButton({ mode, onTranscript, disabled }: Props) {
           setHint('No speech detected')
           setTimeout(() => setHint(null), 2500)
         }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Transcription failed'
+        setHint(msg.slice(0, 40))
+        setTimeout(() => setHint(null), 3000)
       } finally {
         setLoading(false)
       }
