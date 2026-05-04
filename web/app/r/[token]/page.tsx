@@ -36,6 +36,7 @@ interface ConsumerReport {
   estimate_items?: EstimateItem[]
   total?: number
   media_urls?: string[]
+  pdf_url?: string
   created_at?: string
 }
 
@@ -84,7 +85,7 @@ export default function ConsumerReportPage() {
     )
   }
 
-  const { vehicle, summary, findings = [], estimate_items = [], total, media_urls = [], created_at } = report
+  const { vehicle, summary, findings = [], estimate_items = [], total, media_urls = [], pdf_url, created_at } = report
 
   const photos = media_urls.filter(url => !isVideoUrl(url))
   const videos = media_urls.filter(url => isVideoUrl(url))
@@ -92,13 +93,33 @@ export default function ConsumerReportPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-blue-700 text-white px-4 py-5 text-center shadow-md">
-        <h1 className="text-lg font-bold tracking-wide uppercase">Vehicle Inspection Report</h1>
-        {created_at && (
-          <p className="text-blue-200 text-xs mt-1">
-            {new Date(created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        )}
+      <header className="bg-blue-700 text-white px-4 py-5 shadow-md">
+        <div className="max-w-xl mx-auto flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-lg font-bold tracking-wide uppercase">Vehicle Inspection Report</h1>
+            {created_at && (
+              <p className="text-blue-200 text-xs mt-1">
+                {new Date(created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            )}
+          </div>
+          {pdf_url && (
+            <a
+              href={pdf_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 transition-colors text-white text-sm font-medium px-3 py-1.5 rounded-lg whitespace-nowrap"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+              PDF
+            </a>
+          )}
+        </div>
       </header>
 
       <main className="max-w-xl mx-auto px-4 py-6 space-y-6">

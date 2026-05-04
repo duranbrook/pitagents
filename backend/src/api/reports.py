@@ -377,5 +377,6 @@ def _to_consumer_view(r: Report, media_urls: list[str]) -> dict:
         "estimate_items": estimate_items,
         "total": float(r.estimate_total or 0),
         "media_urls": media_urls,
+        "pdf_url": f"https://backend-production-5320.up.railway.app/reports/{r.id}/pdf",
         "created_at": r.created_at.isoformat() if r.created_at else None,
     }
