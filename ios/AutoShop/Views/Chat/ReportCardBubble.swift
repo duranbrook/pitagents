@@ -1,11 +1,9 @@
 import SwiftUI
 
 struct ReportCardBubble: View {
-    let quoteId: String
-    @State private var quote: QuoteResponse?
+    let reportId: String
+    @State private var report: ReportDetail?
     @State private var showDetail = false
-
-    var isInspectionReport: Bool { quote?.reportId != nil }
 
     var body: some View {
         Button { showDetail = true } label: {
@@ -15,50 +13,44 @@ struct ReportCardBubble: View {
         .task { await load() }
         .fullScreenCover(isPresented: $showDetail) {
             NavigationStack {
-                if let reportId = quote?.reportId {
-                    ReportDetailView(reportId: reportId, vehicleLabel: "Inspection Report", presentedFromChat: true)
-                } else {
-                    QuoteDetailView(quoteId: quoteId, presentedFromChat: true)
-                }
+                ReportDetailView(
+                    reportId: reportId,
+                    vehicleLabel: vehicleLabel,
+                    presentedFromChat: true
+                )
             }
             .onDisappear { Task { await load() } }
         }
     }
 
+    private var vehicleLabel: String {
+        guard let v = report?.vehicle else { return "Report" }
+        let parts = [v.year.map(String.init), v.make, v.model].compactMap { $0 }
+        return parts.isEmpty ? "Report" : parts.joined(separator: " ")
+    }
+
     private var linkCard: some View {
         HStack(spacing: 12) {
-            // Icon
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(isInspectionReport ? Color.indigo : Color.accentColor)
+                    .fill(Color.indigo)
                     .frame(width: 44, height: 44)
-                Image(systemName: isInspectionReport ? "clipboard.fill" : "doc.text.fill")
+                Image(systemName: "clipboard.fill")
                     .font(.system(size: 18))
                     .foregroundStyle(.white)
             }
 
-            // Info
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(isInspectionReport ? "Inspection Report" : "Auto-Quote")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    if !isInspectionReport, let status = quote?.status {
-                        statusPill(status)
-                    }
-                }
-                if let q = quote {
-                    if isInspectionReport {
-                        Text("Tap to view findings and estimate")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("\(q.lineItems.count) item\(q.lineItems.count == 1 ? "" : "s") · \(String(format: "$%.2f", q.total))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                Text("Inspection Report")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                if let r = report {
+                    let itemCount = r.estimate.count
+                    Text("\(itemCount) item\(itemCount == 1 ? "" : "s") · \(String(format: "$%.2f", r.total))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } else {
-                    Text("Tap to review")
+                    Text("Tap to view estimate")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -77,19 +69,8 @@ struct ReportCardBubble: View {
         .frame(maxWidth: 300)
     }
 
-    @ViewBuilder
-    private func statusPill(_ status: String) -> some View {
-        Text(status == "final" ? "FINAL" : "DRAFT")
-            .font(.system(size: 9, weight: .bold))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(status == "final" ? Color.green : Color.orange)
-            .foregroundStyle(.white)
-            .clipShape(Capsule())
-    }
-
     private func load() async {
-        quote = try? await APIClient.shared.fetchQuote(id: quoteId)
+        report = try? await APIClient.shared.getReport(reportId: reportId)
     }
 }
 
