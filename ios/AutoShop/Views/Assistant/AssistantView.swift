@@ -289,10 +289,10 @@ struct AgentChatView: View {
                     ForEach(Array(vm.messages.enumerated()), id: \.element.id) { idx, msg in
                         ChatBubble(item: msg, agent: agent, showAvatar: shouldShowAvatar(at: idx))
                             .id(msg.id)
-                        if msg.role != "user", let qid = msg.quoteId {
+                        if msg.role != "user", let rid = msg.reportId {
                             HStack {
                                 Color.clear.frame(width: 28 + 6)
-                                ReportCardBubble(quoteId: qid)
+                                ReportCardBubble(reportId: rid)
                                 Spacer(minLength: 8)
                             }
                             .padding(.horizontal, 8)
