@@ -350,12 +350,24 @@ def _to_consumer_view(r: Report, media_urls: list[str]) -> dict:
             "severity": severity_map.get(raw_sev, raw_sev),
         })
 
-    # Flatten estimate to label/amount pairs
+    # Build detailed estimate items for consumer display
     estimate_data = r.estimate or {}
-    estimate_items = [
-        {"label": item.get("part", ""), "amount": item.get("line_total", 0)}
-        for item in estimate_data.get("line_items", [])
-    ]
+    estimate_items = []
+    for item in estimate_data.get("line_items", []):
+        label = item.get("part", item.get("description", ""))
+        total = float(item.get("total", item.get("line_total", 0)))
+        labor_hours = item.get("labor_hours", item.get("labor_hrs"))
+        labor_rate = item.get("labor_rate")
+        labor_cost = item.get("labor_cost")
+        parts_cost = item.get("parts_cost")
+        estimate_items.append({
+            "label": label,
+            "amount": total,
+            "labor_hours": float(labor_hours) if labor_hours is not None else None,
+            "labor_rate": float(labor_rate) if labor_rate is not None else None,
+            "labor_cost": float(labor_cost) if labor_cost is not None else None,
+            "parts_cost": float(parts_cost) if parts_cost is not None else None,
+        })
 
     return {
         "id": str(r.id),

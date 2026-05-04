@@ -13,6 +13,10 @@ interface Finding {
 interface EstimateItem {
   label: string
   amount: number
+  labor_hours?: number | null
+  labor_rate?: number | null
+  labor_cost?: number | null
+  parts_cost?: number | null
 }
 
 interface Vehicle {
@@ -158,18 +162,43 @@ export default function ConsumerReportPage() {
           <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Estimate</h2>
             {estimate_items.length > 0 && (
-              <table className="w-full text-sm mb-3">
-                <tbody className="divide-y divide-gray-100">
-                  {estimate_items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="py-2 text-gray-700">{item.label}</td>
-                      <td className="py-2 text-right text-gray-900 font-medium">
-                        ${Number(item.amount).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="divide-y divide-gray-100 mb-3">
+                {estimate_items.map((item, idx) => {
+                  const hasDetail = (item.labor_hours != null && item.labor_hours > 0)
+                    || (item.parts_cost != null && item.parts_cost > 0)
+                  return (
+                    <div key={idx} className="py-3">
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-medium text-gray-800">{item.label}</span>
+                        <span className="text-sm font-semibold text-gray-900 ml-4 shrink-0">
+                          ${Number(item.amount).toFixed(2)}
+                        </span>
+                      </div>
+                      {hasDetail && (
+                        <div className="mt-1.5 space-y-0.5 text-xs text-gray-500">
+                          {item.labor_hours != null && item.labor_hours > 0 && (
+                            <div className="flex justify-between">
+                              <span>
+                                Labor — {item.labor_hours}h
+                                {item.labor_rate != null ? ` @ $${item.labor_rate}/hr` : ''}
+                              </span>
+                              {item.labor_cost != null && (
+                                <span>${Number(item.labor_cost).toFixed(2)}</span>
+                              )}
+                            </div>
+                          )}
+                          {item.parts_cost != null && item.parts_cost > 0 && (
+                            <div className="flex justify-between">
+                              <span>Parts</span>
+                              <span>${Number(item.parts_cost).toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             )}
             {total != null && (
               <div className="flex justify-between items-center border-t border-gray-200 pt-3">

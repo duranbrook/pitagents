@@ -52,6 +52,8 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
   const [quoteId, setQuoteId] = useState<string | null>(null)
   const [reportId, setReportId] = useState<string | null>(null)
   const [drawerToken, setDrawerToken] = useState<string | null>(null)
+  const [drawerWidth, setDrawerWidth] = useState(620)
+  const drawerDragRef = useRef<{ startX: number; startWidth: number } | null>(null)
   const [clearing, setClearing] = useState(false)
   const sendingRef = useRef(false)
   const voice = useVoiceContext()
@@ -401,14 +403,37 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
             onClick={() => setDrawerToken(null)}
           />
           <div
-            className="fixed top-0 right-0 h-full z-50 flex flex-col"
+            className="fixed top-0 right-0 h-full z-50 flex flex-col select-none"
             style={{
-              width: 480,
+              width: Math.min(drawerWidth, window.innerWidth * 0.95),
               background: '#fff',
               boxShadow: '-4px 0 32px rgba(0,0,0,0.12)',
               animation: 'slideInRight 0.25s ease',
             }}
           >
+            {/* Drag handle */}
+            <div
+              className="absolute top-0 left-0 h-full z-10 cursor-col-resize"
+              style={{ width: 6, background: 'transparent' }}
+              onMouseDown={e => {
+                e.preventDefault()
+                drawerDragRef.current = { startX: e.clientX, startWidth: drawerWidth }
+                const onMove = (ev: MouseEvent) => {
+                  if (!drawerDragRef.current) return
+                  const delta = drawerDragRef.current.startX - ev.clientX
+                  setDrawerWidth(Math.max(360, Math.min(drawerDragRef.current.startWidth + delta, window.innerWidth * 0.95)))
+                }
+                const onUp = () => {
+                  drawerDragRef.current = null
+                  window.removeEventListener('mousemove', onMove)
+                  window.removeEventListener('mouseup', onUp)
+                }
+                window.addEventListener('mousemove', onMove)
+                window.addEventListener('mouseup', onUp)
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.08)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            />
             <div
               className="flex items-center justify-between px-4 py-3 flex-shrink-0"
               style={{ borderBottom: '1px solid #e5e7eb' }}
