@@ -26,6 +26,13 @@ final class APIClient {
     private let encoder = JSONEncoder()
     private var onUnauthorized: (() -> Void)?
 
+    private let chatSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 120
+        config.timeoutIntervalForResource = 120
+        return URLSession(configuration: config)
+    }()
+
     private init() {}
 
     func setUnauthorizedHandler(_ handler: @escaping () -> Void) {
@@ -100,7 +107,7 @@ final class APIClient {
     }
 
     func sendChatMessage(_ body: ChatRequest, agentId: String = "assistant") async throws -> ChatResponse {
-        try await post("/chat/\(agentId)/message/sync", body: body)
+        try await post("/chat/\(agentId)/message/sync", body: body, session: chatSession)
     }
 
     func listAgents() async throws -> [AgentListItem] {
@@ -159,7 +166,7 @@ final class APIClient {
     }
 
     private func post<B: Encodable, T: Decodable>(
-        _ path: String, body: B, auth: Bool = true
+        _ path: String, body: B, auth: Bool = true, session: URLSession = URLSession.shared
     ) async throws -> T {
         guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
         var req = URLRequest(url: url)
@@ -167,7 +174,7 @@ final class APIClient {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try encoder.encode(body)
         if auth { injectAuth(&req) }
-        let (data, response) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await session.data(for: req)
         try validate(data: data, response: response)
         return try decode(T.self, from: data)
     }
