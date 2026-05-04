@@ -25,9 +25,67 @@ REPORT_TOOL_SCHEMAS = [
         },
     },
     {
+        "name": "set_report_summary",
+        "description": (
+            "Set the summary text on a report. Call this after gathering all inspection details "
+            "to write a concise 1-3 sentence description of the vehicle's overall condition "
+            "and what was found."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "report_id": {
+                    "type": "string",
+                    "description": "UUID of the report",
+                },
+                "summary": {
+                    "type": "string",
+                    "description": "1-3 sentence summary of the inspection findings and vehicle condition",
+                },
+            },
+            "required": ["report_id", "summary"],
+        },
+    },
+    {
+        "name": "add_finding",
+        "description": (
+            "Add an inspection finding to a report. Findings describe individual issues found "
+            "during inspection — separate from the cost estimate. Each finding has a part name, "
+            "severity (high/medium/low), technician notes, and an optional photo URL. "
+            "Add one finding per issue observed."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "report_id": {
+                    "type": "string",
+                    "description": "UUID of the report",
+                },
+                "part": {
+                    "type": "string",
+                    "description": "Name of the part or system inspected (e.g. 'Front brake pads', 'Engine oil')",
+                },
+                "severity": {
+                    "type": "string",
+                    "enum": ["high", "medium", "low"],
+                    "description": "high = safety concern, needs immediate attention; medium = monitor/schedule soon; low = acceptable condition",
+                },
+                "notes": {
+                    "type": "string",
+                    "description": "Technician's observations about this finding",
+                },
+                "photo_url": {
+                    "type": "string",
+                    "description": "S3 URL of a photo of this finding (from an image the user sent in chat). Omit if no photo.",
+                },
+            },
+            "required": ["report_id", "part", "severity", "notes"],
+        },
+    },
+    {
         "name": "add_report_item",
         "description": (
-            "Add a line item to an existing report's estimate. "
+            "Add a cost line item to an existing report's estimate. "
             "Each item captures the repair description, labor hours, labor rate, and parts cost. "
             "Recalculates the estimate total after adding the item."
         ),
@@ -109,6 +167,50 @@ async def create_report(vehicle_id: str, db: AsyncSession) -> dict:
     await db.commit()
     await db.refresh(report)
     return {"report_id": str(report.id)}
+
+
+async def set_report_summary(report_id: str, summary: str, db: AsyncSession) -> dict:
+    try:
+        rid = uuid.UUID(report_id)
+    except ValueError:
+        return {"error": f"Invalid report_id: {report_id}"}
+
+    result = await db.execute(select(Report).where(Report.id == rid))
+    if not result.scalar_one_or_none():
+        return {"error": f"Report {report_id} not found"}
+
+    await db.execute(sa_update(Report).where(Report.id == rid).values(summary=summary))
+    await db.commit()
+    return {"report_id": report_id, "summary": summary}
+
+
+async def add_finding(
+    report_id: str,
+    part: str,
+    severity: str,
+    notes: str,
+    db: AsyncSession,
+    photo_url: str | None = None,
+) -> dict:
+    try:
+        rid = uuid.UUID(report_id)
+    except ValueError:
+        return {"error": f"Invalid report_id: {report_id}"}
+
+    result = await db.execute(select(Report).where(Report.id == rid))
+    report = result.scalar_one_or_none()
+    if not report:
+        return {"error": f"Report {report_id} not found"}
+
+    findings = list(report.findings or [])
+    finding = {"part": part, "severity": severity, "notes": notes}
+    if photo_url:
+        finding["photo_url"] = photo_url
+    findings.append(finding)
+
+    await db.execute(sa_update(Report).where(Report.id == rid).values(findings=findings))
+    await db.commit()
+    return {"report_id": report_id, "findings_count": len(findings)}
 
 
 async def add_report_item(

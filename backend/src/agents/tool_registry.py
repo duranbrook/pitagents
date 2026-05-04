@@ -26,6 +26,8 @@ from src.agents.tools.shop_tools import (
 from src.agents.tools.report_tools import (
     REPORT_TOOL_SCHEMAS,
     create_report,
+    set_report_summary,
+    add_finding,
     add_report_item,
     list_report_items,
 )
@@ -64,6 +66,13 @@ async def _exec_quote(name: str, inp: dict, db: AsyncSession) -> dict:
 async def _exec_report(name: str, inp: dict, db: AsyncSession) -> dict:
     if name == "create_report":
         return await create_report(inp["vehicle_id"], db)
+    if name == "set_report_summary":
+        return await set_report_summary(inp["report_id"], inp["summary"], db)
+    if name == "add_finding":
+        return await add_finding(
+            inp["report_id"], inp["part"], inp["severity"], inp["notes"], db,
+            photo_url=inp.get("photo_url"),
+        )
     if name == "add_report_item":
         return await add_report_item(
             inp["report_id"], inp["part"],
@@ -119,7 +128,7 @@ TOOL_REGISTRY: dict[str, dict] = {
         "description": "Create repair reports linked to vehicles — replaces quote_builder",
         "schemas": REPORT_TOOL_SCHEMAS,
         "executor": _exec_report,
-        "tool_names": {"create_report", "add_report_item", "list_report_items"},
+        "tool_names": {"create_report", "set_report_summary", "add_finding", "add_report_item", "list_report_items"},
     },
     "parts_search": {
         "label": "Parts Search",
