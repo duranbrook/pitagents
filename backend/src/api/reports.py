@@ -309,7 +309,7 @@ async def _to_staff_detail(r: Report) -> dict:
         if photo_url and "amazonaws.com" in photo_url:
             try:
                 key = urlparse(photo_url).path.lstrip("/")
-                f_copy["photo_url"] = await _storage.presigned_url(key, expires=86400 * 30)
+                f_copy["photo_url"] = await _storage.presigned_url(key, expires=604800)  # 7-day max for SigV4
             except Exception:
                 logger.warning("Could not presign photo URL for finding: %s", photo_url)
         findings.append(f_copy)
