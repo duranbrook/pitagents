@@ -23,6 +23,12 @@ from src.agents.tools.shop_tools import (
     get_customer_vehicles,
     find_sessions_by_vehicle,
 )
+from src.agents.tools.report_tools import (
+    REPORT_TOOL_SCHEMAS,
+    create_report,
+    add_report_item,
+    list_report_items,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -52,6 +58,19 @@ async def _exec_quote(name: str, inp: dict, db: AsyncSession) -> dict:
         return await list_quote_items(inp["quote_id"], db)
     if name == "finalize_quote":
         return await finalize_quote(inp["quote_id"], db)
+    return {"error": f"Unknown tool: {name}"}
+
+
+async def _exec_report(name: str, inp: dict, db: AsyncSession) -> dict:
+    if name == "create_report":
+        return await create_report(inp["vehicle_id"], db)
+    if name == "add_report_item":
+        return await add_report_item(
+            inp["report_id"], inp["part"],
+            inp["labor_hours"], inp["labor_rate"], inp["parts_cost"], db,
+        )
+    if name == "list_report_items":
+        return await list_report_items(inp["report_id"], db)
     return {"error": f"Unknown tool: {name}"}
 
 
@@ -94,6 +113,13 @@ TOOL_REGISTRY: dict[str, dict] = {
             "lookup_part_price", "estimate_labor", "create_quote",
             "create_quote_item", "list_quote_items", "finalize_quote",
         },
+    },
+    "report_builder": {
+        "label": "Reports & Estimates",
+        "description": "Create repair reports linked to vehicles — replaces quote_builder",
+        "schemas": REPORT_TOOL_SCHEMAS,
+        "executor": _exec_report,
+        "tool_names": {"create_report", "add_report_item", "list_report_items"},
     },
     "parts_search": {
         "label": "Parts Search",
