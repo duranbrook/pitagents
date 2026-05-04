@@ -66,7 +66,7 @@ async def get_report(
 ) -> dict:
     """Get full report detail (staff view)."""
     report = await _get_report_or_404(report_id, db)
-    return _to_staff_detail(report)
+    return await _to_staff_detail(report)
 
 
 @router.get("/reports/{report_id}/pdf")
@@ -203,7 +203,7 @@ async def patch_report_estimate(
     db.expire(report)
     await db.refresh(report)
 
-    return _to_staff_detail(report)
+    return await _to_staff_detail(report)
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +269,7 @@ def _to_list_item(r: Report) -> dict:
     }
 
 
-def _to_staff_detail(r: Report) -> dict:
+async def _to_staff_detail(r: Report) -> dict:
     estimate_data = r.estimate or {}
     line_items = estimate_data.get("line_items", [])
     estimate_rows = []
@@ -299,11 +299,26 @@ def _to_staff_detail(r: Report) -> dict:
                 "parts_cost": float(item.get("parts_cost", 0)),
                 "total": float(item.get("line_total", item.get("total", 0))),
             })
+
+    # Generate presigned URLs for finding photos (stored as private S3 URLs).
+    # Presigned URLs are valid 30 days and generated fresh each request — never stored.
+    findings = []
+    for f in (r.findings or []):
+        f_copy = dict(f)
+        photo_url = f_copy.get("photo_url")
+        if photo_url and "amazonaws.com" in photo_url:
+            try:
+                key = urlparse(photo_url).path.lstrip("/")
+                f_copy["photo_url"] = await _storage.presigned_url(key, expires=86400 * 30)
+            except Exception:
+                logger.warning("Could not presign photo URL for finding: %s", photo_url)
+        findings.append(f_copy)
+
     return {
         "id": str(r.id),
         "vehicle": r.vehicle or {},
         "summary": r.summary or "",
-        "findings": r.findings or [],
+        "findings": findings,
         "estimate": estimate_rows,
         "total": float(r.estimate_total or 0),
         "share_token": str(r.share_token),

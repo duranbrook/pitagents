@@ -2,6 +2,7 @@ import json
 import logging
 import uuid
 import re
+from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -14,6 +15,9 @@ from src.models.chat_message import ChatMessage
 from src.models.shop_agent import ShopAgent
 from src.agents.graph_factory import build_react_graph
 from src.agents.tool_registry import build_tool_schemas_and_executor
+from src.storage.s3 import StorageService
+
+_storage = StorageService()
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +78,28 @@ class MessageRequest(BaseModel):
     message: str
     image_url: str | None = None   # kept for backward compat
     image_urls: list[str] = []
+
+
+async def _presign_s3_urls(image_urls: list[str]) -> list[str]:
+    """Replace private S3 URLs with presigned URLs so Anthropic can fetch them.
+
+    The stable S3 URL remains in the message text (for the agent to extract
+    and store in findings). Only the visual image block gets the presigned URL.
+    Presigned expiry: 1 hour (enough for the Anthropic API call).
+    """
+    result = []
+    for url in image_urls:
+        if "amazonaws.com" in url and not url.startswith("data:"):
+            try:
+                key = urlparse(url).path.lstrip("/")
+                presigned = await _storage.presigned_url(key, expires=3600)
+                result.append(presigned)
+            except Exception:
+                logger.warning("Could not presign S3 URL for Anthropic: %s", url)
+                result.append(url)
+        else:
+            result.append(url)
+    return result
 
 
 def _build_user_content(message: str, image_urls: list[str]) -> list[dict]:
@@ -262,7 +288,10 @@ async def send_message(
     effective_urls = list(body.image_urls)
     if body.image_url and body.image_url not in effective_urls:
         effective_urls.append(body.image_url)
-    user_content = _build_user_content(body.message, effective_urls)
+    # Presign private S3 URLs so Anthropic can fetch them. The stable S3 URL
+    # stays in the message text for the agent to extract into add_finding.
+    presigned_urls = await _presign_s3_urls(effective_urls)
+    user_content = _build_user_content(body.message, presigned_urls)
 
     initial_state = {
         "messages": history + [{"role": "user", "content": user_content}],
@@ -330,7 +359,8 @@ async def send_message_sync(
     effective_urls = list(body.image_urls)
     if body.image_url and body.image_url not in effective_urls:
         effective_urls.append(body.image_url)
-    user_content = _build_user_content(body.message, effective_urls)
+    presigned_urls = await _presign_s3_urls(effective_urls)
+    user_content = _build_user_content(body.message, presigned_urls)
 
     initial_state = {
         "messages": history + [{"role": "user", "content": user_content}],
