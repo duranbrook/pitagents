@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from src.api.deps import get_current_user
 from src.db.base import get_db, AsyncSessionLocal
 from src.models.chat_message import ChatMessage
@@ -146,11 +146,16 @@ async def _save_messages(
     tool_calls: list[dict],
     db: AsyncSession,
 ) -> None:
+    # Use explicit timestamps so user and assistant messages don't share the
+    # same created_at (PostgreSQL now() returns transaction start time, making
+    # same-transaction inserts indistinguishable by timestamp).
+    now = datetime.now(timezone.utc)
     db.add(ChatMessage(
         user_id=user_id,
         agent_id=agent_id,
         role="user",
         content=_strip_base64_images(user_content),
+        created_at=now,
     ))
     assistant_msg = final_messages[-1]
     db.add(ChatMessage(
@@ -159,6 +164,7 @@ async def _save_messages(
         role="assistant",
         content=assistant_msg["content"],
         tool_calls=tool_calls if tool_calls else None,
+        created_at=now + timedelta(milliseconds=1),
     ))
     await db.commit()
 
