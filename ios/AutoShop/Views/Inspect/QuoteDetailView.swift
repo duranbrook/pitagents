@@ -15,8 +15,6 @@ struct QuoteDetailView: View {
     @State private var finalizeResult: FinalizeQuoteResponse?
     @State private var errorMessage: String?
 
-    private let api = SessionAPI()
-
     var body: some View {
         Group {
             if isLoading {
@@ -24,11 +22,19 @@ struct QuoteDetailView: View {
             } else if let quote {
                 quoteContent(quote)
             } else {
-                ContentUnavailableView("Quote Not Found", systemImage: "doc.text.fill")
-                    .frame(maxHeight: .infinity)
+                VStack(spacing: 12) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.largeTitle).foregroundStyle(.secondary)
+                    Text("Quote not found")
+                        .font(.headline)
+                    Text("ID: \(quoteId.prefix(8))…")
+                        .font(.caption.monospaced()).foregroundStyle(.tertiary)
+                    Button("Retry") { Task { await loadQuote() } }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle("Review Quote")
+        .navigationTitle("Repair Quote")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarItems }
         .alert("Error", isPresented: Binding(
@@ -83,7 +89,7 @@ struct QuoteDetailView: View {
     @ViewBuilder
     private func quoteContent(_ q: QuoteResponse) -> some View {
         List {
-            // Status section
+            // Status + total header
             Section {
                 HStack {
                     Text("Status")
@@ -92,19 +98,29 @@ struct QuoteDetailView: View {
                 }
                 LabeledContent("Total") {
                     Text(String(format: "$%.2f", isEditing ? editableTotal : q.total))
-                        .font(.headline)
+                        .font(.headline.monospacedDigit())
                 }
             }
 
             // Line items
-            Section("Line Items") {
+            Section {
                 if isEditing {
                     editingRows
                 } else {
                     readonlyRows(q)
                 }
+            } header: {
+                HStack {
+                    Text("Line Items")
+                    Spacer()
+                    if !isEditing && q.status == "draft" {
+                        Button("Edit") { startEditing() }
+                            .font(.caption)
+                    }
+                }
             }
 
+            // Add item buttons while editing
             if isEditing {
                 Section("Add Item") {
                     Button {
@@ -120,35 +136,35 @@ struct QuoteDetailView: View {
                 }
             }
 
-            // PDF actions (final state)
+            // PDF/share (final state)
             if q.status == "final" {
                 Section("Documents") {
-                    if let url = URL(string: "\(SessionAPI.baseURL)/quotes/\(q.quoteId)/pdf") {
+                    if let url = URL(string: "\(APIClient.shared.baseURL)/quotes/\(q.quoteId)/pdf") {
                         ShareLink(item: url) {
                             Label("Open Estimate PDF", systemImage: "printer.fill")
                         }
                     }
                     if let token = finalizeResult?.shareToken {
                         Button {
-                            UIPasteboard.general.string = "\(SessionAPI.baseURL)/r/\(token)"
+                            UIPasteboard.general.string = "\(APIClient.shared.baseURL)/r/\(token)"
                         } label: {
-                            Label("Copy Report Link", systemImage: "link")
+                            Label("Copy Customer Link", systemImage: "link")
                         }
                     }
                 }
             }
 
-            // Finalize button (draft, not editing)
+            // Finalize (draft, not editing)
             if q.status == "draft" && !isEditing {
                 Section {
                     Button {
-                        Task { await finalizeQuote() }
+                        Task { await doFinalizeQuote() }
                     } label: {
                         Group {
                             if isFinalizing {
                                 HStack(spacing: 8) {
                                     ProgressView().tint(.white)
-                                    Text("Generating PDFs…")
+                                    Text("Generating PDF…")
                                 }
                             } else {
                                 Label("Finalize Quote", systemImage: "checkmark.seal.fill")
@@ -158,8 +174,8 @@ struct QuoteDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)
                     }
-                    .disabled(isFinalizing)
-                    .listRowBackground(Color.orange)
+                    .disabled(isFinalizing || q.lineItems.isEmpty)
+                    .listRowBackground(q.lineItems.isEmpty ? Color(.systemGray4) : Color.orange)
                     .foregroundStyle(.white)
                 }
             }
@@ -176,25 +192,32 @@ struct QuoteDetailView: View {
     @ViewBuilder
     private func readonlyRows(_ q: QuoteResponse) -> some View {
         if q.lineItems.isEmpty {
-            VStack(spacing: 8) {
-                Text("No line items yet.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                Button("Refresh") { Task { await loadQuote() } }
-                    .font(.subheadline)
+            HStack(spacing: 12) {
+                Image(systemName: "list.bullet.clipboard")
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("No line items yet")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    Text("Tap Edit to add labor and parts")
+                        .font(.caption).foregroundStyle(.tertiary)
+                }
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 6)
+            .padding(.vertical, 6)
         } else {
             ForEach(q.lineItems) { item in
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: item.type == "labor" ? "wrench.and.screwdriver" : "shippingbox")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 18)
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(item.description).font(.subheadline)
-                        Text(item.type.capitalized).font(.caption).foregroundStyle(.secondary)
+                        Text("\(item.type.capitalized)  ×\(formatQty(item.qty))  @ $\(String(format: "%.2f", item.unitPrice))")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 3) {
-                        Text(String(format: "$%.2f", item.total)).font(.subheadline.bold())
-                        Text("× \(formatQty(item.qty))").font(.caption).foregroundStyle(.secondary)
-                    }
+                    Text(String(format: "$%.2f", item.total))
+                        .font(.subheadline.bold().monospacedDigit())
                 }
                 .padding(.vertical, 2)
             }
@@ -208,19 +231,13 @@ struct QuoteDetailView: View {
         ForEach($editableItems) { $item in
             EditableLineItemRow(item: $item)
         }
-        .onDelete { indexSet in
-            editableItems.remove(atOffsets: indexSet)
-        }
-        .onMove { from, to in
-            editableItems.move(fromOffsets: from, toOffset: to)
-        }
+        .onDelete { editableItems.remove(atOffsets: $0) }
+        .onMove  { editableItems.move(fromOffsets: $0, toOffset: $1) }
     }
 
     // MARK: - Helpers
 
-    private var editableTotal: Double {
-        editableItems.reduce(0) { $0 + $1.total }
-    }
+    private var editableTotal: Double { editableItems.reduce(0) { $0 + $1.total } }
 
     private func startEditing() {
         guard let q = quote else { return }
@@ -238,8 +255,7 @@ struct QuoteDetailView: View {
         defer { isSaving = false }
         do {
             let items = editableItems.map { $0.toLineItem() }
-            let updated = try await api.updateLineItems(quoteId: quoteId, lineItems: items)
-            quote = updated
+            quote = try await APIClient.shared.updateQuoteLineItems(quoteId: quoteId, lineItems: items)
             isEditing = false
             editableItems = []
         } catch {
@@ -262,19 +278,18 @@ struct QuoteDetailView: View {
 
     private func loadQuote() async {
         do {
-            quote = try await api.getQuote(quoteId: quoteId)
+            quote = try await APIClient.shared.fetchQuote(id: quoteId)
         } catch {
             errorMessage = error.localizedDescription
         }
         isLoading = false
     }
 
-    private func finalizeQuote() async {
+    private func doFinalizeQuote() async {
         isFinalizing = true
         defer { isFinalizing = false }
         do {
-            let result = try await api.finalizeQuote(quoteId: quoteId)
-            finalizeResult = result
+            finalizeResult = try await APIClient.shared.finalizeQuote(quoteId: quoteId)
             await loadQuote()
         } catch {
             errorMessage = error.localizedDescription
@@ -292,7 +307,6 @@ private struct EditableLineItemRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Type picker + description
             HStack(spacing: 8) {
                 Picker("", selection: $item.type) {
                     Text("Labor").tag("labor")
@@ -305,38 +319,29 @@ private struct EditableLineItemRow: View {
                     .font(.subheadline)
             }
 
-            // Qty × Unit price = Total
             HStack(spacing: 6) {
-                Group {
-                    TextField(item.type == "labor" ? "Hrs" : "Qty", text: $qtyText)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 52)
-                        .onChange(of: qtyText) { _, v in
-                            if let d = Double(v) { item.qty = d }
-                        }
-                }
+                TextField(item.type == "labor" ? "Hrs" : "Qty", text: $qtyText)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 52)
+                    .onChange(of: qtyText) { _, v in if let d = Double(v) { item.qty = d } }
                 Text("×").foregroundStyle(.secondary)
                 Text("$").foregroundStyle(.secondary)
                 TextField("Unit price", text: $priceText)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 72)
-                    .onChange(of: priceText) { _, v in
-                        if let d = Double(v) { item.unitPrice = d }
-                    }
+                    .onChange(of: priceText) { _, v in if let d = Double(v) { item.unitPrice = d } }
                 Spacer()
                 Text(String(format: "= $%.2f", item.total))
                     .font(.subheadline.bold())
-                    .foregroundStyle(.primary)
             }
             .font(.subheadline)
         }
         .padding(.vertical, 4)
         .onAppear {
             qtyText = item.qty.truncatingRemainder(dividingBy: 1) == 0
-                ? String(Int(item.qty))
-                : String(format: "%.2f", item.qty)
+                ? String(Int(item.qty)) : String(format: "%.2f", item.qty)
             priceText = String(format: "%.2f", item.unitPrice)
         }
     }

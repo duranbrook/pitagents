@@ -352,3 +352,5 @@ extension ChatHistoryItem {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
+
+struct EmptyBody: Encodable {}

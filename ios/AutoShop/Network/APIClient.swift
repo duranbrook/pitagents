@@ -22,7 +22,7 @@ enum APIError: LocalizedError {
 final class APIClient {
     static let shared = APIClient()
 
-    private let baseURL = SessionAPI.baseURL
+    let baseURL = SessionAPI.baseURL
     private let encoder = JSONEncoder()
     private var onUnauthorized: (() -> Void)?
 
@@ -111,6 +111,17 @@ final class APIClient {
         try await get("/quotes/\(id)")
     }
 
+    func updateQuoteLineItems(quoteId: String, lineItems: [QuoteLineItem]) async throws -> QuoteResponse {
+        struct Payload: Encodable {
+            let line_items: [QuoteLineItem]
+        }
+        return try await patch("/quotes/\(quoteId)/line-items", body: Payload(line_items: lineItems))
+    }
+
+    func finalizeQuote(quoteId: String) async throws -> FinalizeQuoteResponse {
+        try await put("/quotes/\(quoteId)/finalize", body: EmptyBody())
+    }
+
     func uploadVideo(data: Data, filename: String, mimeType: String = "video/quicktime") async throws -> VideoUploadResponse {
         guard let url = URL(string: baseURL + "/upload/video") else { throw APIError.invalidURL }
         let boundary = UUID().uuidString
@@ -163,6 +174,20 @@ final class APIClient {
         guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
         var req = URLRequest(url: url)
         req.httpMethod = "PATCH"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try encoder.encode(body)
+        injectAuth(&req)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try validate(data: data, response: response)
+        return try decode(T.self, from: data)
+    }
+
+    private func put<B: Encodable, T: Decodable>(
+        _ path: String, body: B
+    ) async throws -> T {
+        guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
+        var req = URLRequest(url: url)
+        req.httpMethod = "PUT"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try encoder.encode(body)
         injectAuth(&req)
