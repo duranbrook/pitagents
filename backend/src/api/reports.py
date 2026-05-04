@@ -337,18 +337,32 @@ async def _to_staff_detail(r: Report) -> dict:
 
 
 def _to_consumer_view(r: Report, media_urls: list[str]) -> dict:
-    # Normalize findings for consumer: {description, severity}
+    # Normalize findings for consumer: {description, severity, photo_url}
     severity_map = {"high": "urgent", "medium": "moderate", "low": "low"}
     findings = []
+    finding_photo_urls: list[str] = []
     for f in (r.findings or []):
         part = f.get("part", "")
         notes = f.get("notes", "")
         description = f"{part} — {notes}" if notes else part
         raw_sev = (f.get("severity") or "low").lower()
-        findings.append({
+        photo_url = f.get("photo_url")
+        finding = {
             "description": description,
             "severity": severity_map.get(raw_sev, raw_sev),
-        })
+        }
+        if photo_url:
+            finding["photo_url"] = photo_url
+            finding_photo_urls.append(photo_url)
+        findings.append(finding)
+
+    # Merge finding photos into media_urls (deduplicated, findings first)
+    seen: set[str] = set(finding_photo_urls)
+    all_media = list(finding_photo_urls)
+    for u in media_urls:
+        if u not in seen:
+            seen.add(u)
+            all_media.append(u)
 
     # Build detailed estimate items for consumer display
     estimate_data = r.estimate or {}
@@ -376,7 +390,7 @@ def _to_consumer_view(r: Report, media_urls: list[str]) -> dict:
         "findings": findings,
         "estimate_items": estimate_items,
         "total": float(r.estimate_total or 0),
-        "media_urls": media_urls,
+        "media_urls": all_media,
         "pdf_url": f"https://backend-production-5320.up.railway.app/reports/{r.id}/pdf",
         "created_at": r.created_at.isoformat() if r.created_at else None,
     }

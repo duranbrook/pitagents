@@ -8,6 +8,7 @@ import { getConsumerReport } from '@/lib/api'
 interface Finding {
   description: string
   severity: 'urgent' | 'moderate' | 'low'
+  photo_url?: string
 }
 
 interface EstimateItem {
@@ -165,13 +166,25 @@ export default function ConsumerReportPage() {
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Findings</h2>
             <ul className="space-y-3">
               {findings.map((finding, idx) => (
-                <li key={idx} className="flex items-start gap-3">
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap mt-0.5 ${severityStyles[finding.severity] ?? severityStyles.low}`}
-                  >
-                    {finding.severity}
-                  </span>
-                  <span className="text-gray-800 text-sm leading-relaxed">{finding.description}</span>
+                <li key={idx} className="space-y-2">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap mt-0.5 ${severityStyles[finding.severity] ?? severityStyles.low}`}
+                    >
+                      {finding.severity}
+                    </span>
+                    <span className="text-gray-800 text-sm leading-relaxed">{finding.description}</span>
+                  </div>
+                  {finding.photo_url && (
+                    <a href={finding.photo_url} target="_blank" rel="noopener noreferrer" className="block ml-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={finding.photo_url}
+                        alt="Finding photo"
+                        className="w-full max-h-48 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition-opacity"
+                      />
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
