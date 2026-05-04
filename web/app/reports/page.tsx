@@ -16,12 +16,12 @@ function severityIcon(s: string) {
   switch ((s ?? '').toLowerCase()) {
     case 'high':
     case 'urgent':
-      return { icon: '✕', color: '#f87171' }
+      return { icon: '✕', color: '#ef4444' }
     case 'medium':
     case 'moderate':
-      return { icon: '⚠', color: '#fb923c' }
+      return { icon: '⚠', color: '#f97316' }
     default:
-      return { icon: '✓', color: '#4ade80' }
+      return { icon: '✓', color: '#22c55e' }
   }
 }
 
@@ -33,7 +33,7 @@ function FindingCard({ f }: { f: Finding }) {
         <span className="text-base leading-none mt-0.5 flex-shrink-0" style={{ color }}>{icon}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold text-white">{f.part}</p>
+            <p className="text-sm font-semibold text-gray-900">{f.part}</p>
             <span
               className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
               style={{ background: `${color}18`, color }}
@@ -41,7 +41,7 @@ function FindingCard({ f }: { f: Finding }) {
               {f.severity}
             </span>
           </div>
-          <p className="text-sm mt-1 leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>{f.notes}</p>
+          <p className="text-sm mt-1 leading-relaxed text-gray-500">{f.notes}</p>
         </div>
       </div>
       {f.photo_url && (
@@ -49,7 +49,7 @@ function FindingCard({ f }: { f: Finding }) {
           src={f.photo_url}
           alt={f.part}
           className="mt-2 w-full max-h-52 object-cover rounded-lg"
-          style={{ border: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ border: '1px solid #e5e7eb' }}
         />
       )}
     </div>
@@ -59,7 +59,7 @@ function FindingCard({ f }: { f: Finding }) {
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+      <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-0.5 text-gray-400">
         {title}
       </p>
       <div className="glass-card rounded-xl p-4">
@@ -94,10 +94,10 @@ function EstimateTable({
 }) {
   const colStyle = 'text-[10px] font-medium text-right'
   const cellStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.15)',
+    background: '#f9fafb',
+    border: '1px solid #e5e7eb',
     borderRadius: '4px',
-    color: 'white',
+    color: '#111827',
     fontSize: '12px',
     textAlign: 'right',
     padding: '2px 4px',
@@ -112,14 +112,13 @@ function EstimateTable({
         className="grid gap-2 pb-2 mb-2"
         style={{
           gridTemplateColumns: '1fr 64px 64px 72px 72px',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: '1px solid #e5e7eb',
         }}
       >
         {['Service', 'Hours', '$/hr', 'Parts', 'Total'].map(h => (
           <p
             key={h}
-            className={`text-[10px] font-medium ${h !== 'Service' ? 'text-right' : ''}`}
-            style={{ color: 'rgba(255,255,255,0.3)' }}
+            className={`text-[10px] font-medium text-gray-400 ${h !== 'Service' ? 'text-right' : ''}`}
           >
             {h}
           </p>
@@ -138,12 +137,12 @@ function EstimateTable({
             className="grid gap-2 py-2.5"
             style={{
               gridTemplateColumns: '1fr 64px 64px 72px 72px',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              borderBottom: '1px solid #f3f4f6',
             }}
           >
             <div>
-              <p className="text-sm font-medium text-white">{item.part}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <p className="text-sm font-medium text-gray-900">{item.part}</p>
+              <p className="text-[10px] mt-0.5 text-gray-400">
                 {item.labor_hours > 0 ? `${item.labor_hours.toFixed(1)} hrs @ $${item.labor_rate.toFixed(0)}/hr` : ''}
               </p>
             </div>
@@ -160,8 +159,7 @@ function EstimateTable({
                 />
               ) : (
                 <p
-                  className={`${colStyle} cursor-pointer hover:text-white`}
-                  style={{ color: 'rgba(255,255,255,0.5)' }}
+                  className={`${colStyle} cursor-pointer text-gray-500 hover:text-gray-900`}
                   onClick={() => onCellFocus(i, 'hours')}
                 >
                   {item.labor_hours.toFixed(1)}
@@ -181,8 +179,7 @@ function EstimateTable({
                 />
               ) : (
                 <p
-                  className={`${colStyle} cursor-pointer hover:text-white`}
-                  style={{ color: 'rgba(255,255,255,0.5)' }}
+                  className={`${colStyle} cursor-pointer text-gray-500 hover:text-gray-900`}
                   onClick={() => onCellFocus(i, 'rate')}
                 >
                   ${item.labor_rate.toFixed(0)}
@@ -202,8 +199,7 @@ function EstimateTable({
                 />
               ) : (
                 <p
-                  className={`${colStyle} cursor-pointer hover:text-white`}
-                  style={{ color: 'rgba(255,255,255,0.5)' }}
+                  className={`${colStyle} cursor-pointer text-gray-500 hover:text-gray-900`}
                   onClick={() => onCellFocus(i, 'parts')}
                 >
                   {item.parts_cost === 0 ? '—' : `$${item.parts_cost.toFixed(2)}`}
@@ -211,7 +207,7 @@ function EstimateTable({
               )}
             </div>
 
-            <p className="text-sm font-semibold text-right self-center text-white">
+            <p className="text-sm font-semibold text-right self-center text-gray-900">
               ${liveTotal}
             </p>
           </div>
@@ -219,15 +215,13 @@ function EstimateTable({
       })}
 
       {patchError && (
-        <p className="text-xs mt-2" style={{ color: '#f87171' }}>{patchError}</p>
+        <p className="text-xs mt-2 text-red-500">{patchError}</p>
       )}
 
       <button
         onClick={onAddLine}
-        className="mt-3 text-xs px-3 py-1.5 rounded-lg transition-colors"
-        style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', background: 'transparent' }}
-        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)'}
-        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'}
+        className="mt-3 text-xs px-3 py-1.5 rounded-lg transition-colors text-gray-400 hover:text-gray-700"
+        style={{ border: '1px solid #e5e7eb', background: 'transparent' }}
       >
         + Add line
       </button>
@@ -410,9 +404,9 @@ function ReportsPageInner() {
         >
           <div
             className="p-3 flex items-center gap-2"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            style={{ borderBottom: '1px solid #e5e7eb' }}
           >
-            <span className="text-sm font-semibold text-white flex-1">Reports</span>
+            <span className="text-sm font-semibold text-gray-900 flex-1">Reports</span>
             {vehicleFilter && (
               <Link href="/reports" className="text-xs" style={{ color: 'var(--accent)' }}>
                 clear filter
@@ -421,7 +415,7 @@ function ReportsPageInner() {
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
             {isLoading && (
-              <p className="text-xs px-2 py-3" style={{ color: 'rgba(255,255,255,0.3)' }}>Loading…</p>
+              <p className="text-xs px-2 py-3 text-gray-400">Loading…</p>
             )}
             {displayed.map(r => {
               const active = selectedId === r.id
@@ -431,7 +425,7 @@ function ReportsPageInner() {
                   onClick={() => setSelectedId(r.id)}
                   className="w-full text-left px-3 py-2.5 rounded-lg transition-colors"
                   style={active ? {
-                    background: 'rgba(255,255,255,0.06)',
+                    background: '#fff7ed',
                     borderLeft: '2px solid var(--accent)',
                     paddingLeft: '10px',
                   } : {
@@ -439,8 +433,8 @@ function ReportsPageInner() {
                     paddingLeft: '10px',
                   }}
                 >
-                  <p className="text-xs font-semibold text-white truncate">{vehicleLabel(r)}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  <p className="text-xs font-semibold text-gray-900 truncate">{vehicleLabel(r)}</p>
+                  <p className="text-xs mt-0.5 text-gray-400">
                     {r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}
                     {r.total ? ` · $${r.total.toFixed(0)}` : ''}
                   </p>
@@ -448,7 +442,7 @@ function ReportsPageInner() {
               )
             })}
             {!isLoading && displayed.length === 0 && (
-              <p className="text-xs px-2 py-4 text-center" style={{ color: 'rgba(255,255,255,0.25)' }}>No reports</p>
+              <p className="text-xs px-2 py-4 text-center text-gray-300">No reports</p>
             )}
           </div>
         </div>
@@ -456,29 +450,29 @@ function ReportsPageInner() {
         {/* Right panel: report detail */}
         <div className="glass-panel flex-1 overflow-y-auto" style={{ borderRadius: 12, padding: '20px 24px' }}>
           {!selectedId ? (
-            <div className="flex h-full items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.2)' }}>
+            <div className="flex h-full items-center justify-center text-sm text-gray-300">
               Select a report
             </div>
           ) : detailLoading ? (
-            <div className="flex h-full items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <div className="flex h-full items-center justify-center text-sm text-gray-400">
               Loading…
             </div>
           ) : detail ? (
             <div className="max-w-3xl space-y-5">
               {/* Vehicle header */}
               <div>
-                <h1 className="text-xl font-semibold text-white">
+                <h1 className="text-xl font-semibold text-gray-900">
                   {[detail.vehicle?.year, detail.vehicle?.make, detail.vehicle?.model]
                     .filter(Boolean).join(' ') || 'Unknown Vehicle'}
                 </h1>
                 <div className="flex items-center gap-3 mt-1.5">
                   {detail.vehicle?.vin && (
-                    <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    <p className="text-xs font-mono text-gray-400">
                       VIN: {detail.vehicle.vin}
                     </p>
                   )}
                   {detail.created_at && (
-                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    <p className="text-xs text-gray-400">
                       {new Date(detail.created_at).toLocaleDateString()}
                     </p>
                   )}
@@ -488,7 +482,7 @@ function ReportsPageInner() {
               {/* Summary */}
               {detail.summary && (
                 <SectionCard title="Summary">
-                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                  <p className="text-sm leading-relaxed text-gray-600">
                     {detail.summary}
                   </p>
                 </SectionCard>
@@ -518,8 +512,8 @@ function ReportsPageInner() {
                       onCellBlur={handleCellBlur}
                       onAddLine={handleAddLine}
                     />
-                    <div className="flex items-center justify-between pt-3">
-                      <p className="text-sm font-semibold text-white">Grand Total</p>
+                    <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid #e5e7eb', marginTop: '12px' }}>
+                      <p className="text-sm font-semibold text-gray-900">Grand Total</p>
                       <p className="text-lg font-bold" style={{ color: 'var(--accent)' }}>
                         ${items.reduce((sum, it) => sum + (it.labor_hours * it.labor_rate + it.parts_cost), 0).toFixed(2)}
                       </p>
@@ -532,10 +526,8 @@ function ReportsPageInner() {
               <div className="flex gap-3 pt-1 pb-6">
                 <button
                   onClick={() => navigator.clipboard.writeText(`${window.location.origin}/r/${detail.share_token}`)}
-                  className="text-sm px-4 py-2 rounded-lg transition-colors"
-                  style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', background: 'transparent' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                  className="text-sm px-4 py-2 rounded-lg transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  style={{ border: '1px solid #e5e7eb', background: 'transparent' }}
                 >
                   📋 Copy Share Link
                 </button>
@@ -548,7 +540,7 @@ function ReportsPageInner() {
                   {pdfLoading ? 'Loading…' : '🖨 Open Report PDF'}
                 </button>
                 {pdfError && (
-                  <p className="text-xs self-center" style={{ color: '#f87171' }}>{pdfError}</p>
+                  <p className="text-xs self-center text-red-500">{pdfError}</p>
                 )}
               </div>
             </div>
