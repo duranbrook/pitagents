@@ -64,7 +64,15 @@ export function VoiceControlWidget() {
     toolChoice: 'auto' as const,
     postToolResponse: false,
     autoConnect: true,
-  }), [tools])
+    audio: {
+      turnDetection: {
+        type: 'server_vad' as const,
+        threshold: 0.6,
+        silenceDurationMs: 700,
+        prefixPaddingMs: 300,
+      },
+    },
+  }), [tools, instructions])
 
   const controller = useVoiceControl(voiceOptions)
 
