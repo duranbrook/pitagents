@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { getChatHistory, streamChatMessage, rateFeedback, ChatHistoryItem, ToolCallRecord } from '@/lib/api'
+import { getChatHistory, clearChatHistory, streamChatMessage, rateFeedback, ChatHistoryItem, ToolCallRecord } from '@/lib/api'
 import { MessageBubble } from './MessageBubble'
 import { VoiceButton } from './VoiceButton'
 import { ImageAttach } from './ImageAttach'
@@ -52,6 +52,7 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
   const [quoteId, setQuoteId] = useState<string | null>(null)
   const [reportId, setReportId] = useState<string | null>(null)
   const [drawerToken, setDrawerToken] = useState<string | null>(null)
+  const [clearing, setClearing] = useState(false)
   const sendingRef = useRef(false)
   const voice = useVoiceContext()
 
@@ -111,6 +112,19 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
       await rateFeedback(agentId, messageId, rating)
     } catch {
       // silent
+    }
+  }
+
+  async function handleClear() {
+    if (clearing || sending) return
+    setClearing(true)
+    try {
+      await clearChatHistory(agentId)
+      setQuoteId(null)
+      setReportId(null)
+      await qc.invalidateQueries({ queryKey: ['chat', agentId] })
+    } finally {
+      setClearing(false)
     }
   }
 
@@ -213,6 +227,19 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
           >
             AI
           </span>
+          {!isEmpty && (
+            <button
+              onClick={handleClear}
+              disabled={clearing || sending}
+              title="New session"
+              className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full transition-colors disabled:opacity-40"
+              style={{ background: '#f3f4f6', color: '#9ca3af', border: '1px solid #e5e7eb' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#374151' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#9ca3af' }}
+            >
+              {clearing ? '…' : '+ New'}
+            </button>
+          )}
         </div>
 
         {/* Messages */}

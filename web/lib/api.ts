@@ -92,6 +92,9 @@ export type SSEEvent =
 export const getChatHistory = (agentId: string): Promise<ChatHistoryItem[]> =>
   api.get(`/chat/${agentId}/history`).then(r => r.data)
 
+export const clearChatHistory = (agentId: string): Promise<void> =>
+  api.delete(`/chat/${agentId}/history`).then(() => undefined)
+
 export async function* streamChatMessage(
   agentId: string,
   message: string,
