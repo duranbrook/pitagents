@@ -322,7 +322,7 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
         {/* Glass input bar */}
         <div className="px-4 pb-4 pt-2">
           <div
-            className="flex items-end gap-2 rounded-2xl px-3 py-2"
+            className="flex items-center gap-2 rounded-2xl px-3 py-2"
             style={{ background: '#f3f4f6', border: '1px solid #e5e7eb' }}
           >
             <ImageAttach onImageUrl={setPendingImageUrl} disabled={sending} />
