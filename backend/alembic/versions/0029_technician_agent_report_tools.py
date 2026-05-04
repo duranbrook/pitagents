@@ -37,7 +37,7 @@ def upgrade() -> None:
     conn = op.get_bind()
     conn.execute(
         text(
-            "UPDATE shop_agents SET system_prompt = :prompt, tools = :tools::jsonb "
+            "UPDATE shop_agents SET system_prompt = :prompt, tools = CAST(:tools AS jsonb) "
             "WHERE name = 'Technician'"
         ),
         {"prompt": NEW_SYSTEM_PROMPT, "tools": NEW_TOOLS},
@@ -64,7 +64,7 @@ def downgrade() -> None:
     conn = op.get_bind()
     conn.execute(
         text(
-            "UPDATE shop_agents SET system_prompt = :prompt, tools = :tools::jsonb "
+            "UPDATE shop_agents SET system_prompt = :prompt, tools = CAST(:tools AS jsonb) "
             "WHERE name = 'Technician'"
         ),
         {"prompt": old_prompt, "tools": old_tools},
