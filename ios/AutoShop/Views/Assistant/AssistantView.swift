@@ -277,7 +277,7 @@ struct AgentChatView: View {
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 2) {
+                VStack(spacing: 2) {
                     if vm.isLoading && vm.messages.isEmpty {
                         ProgressView().padding(.top, 60)
                     } else if vm.hasOlderMessages {
@@ -301,17 +301,17 @@ struct AgentChatView: View {
                     }
                     if vm.isSending {
                         TypingIndicator(agent: agent)
-                            .id("__typing__")
                     }
+                    Color.clear.frame(height: 1).id("__bottom__")
                 }
                 .padding(.vertical, 8)
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: vm.messages.count) { _ in
-                withAnimation { proxy.scrollTo(vm.messages.last?.id ?? "__typing__", anchor: .bottom) }
+                withAnimation { proxy.scrollTo("__bottom__", anchor: .bottom) }
             }
             .onChange(of: vm.isSending) { sending in
-                if sending { withAnimation { proxy.scrollTo("__typing__", anchor: .bottom) } }
+                if sending { withAnimation { proxy.scrollTo("__bottom__", anchor: .bottom) } }
             }
         }
     }
