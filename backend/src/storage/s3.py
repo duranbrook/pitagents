@@ -3,8 +3,11 @@ import logging
 import os
 
 import aioboto3
+from botocore.config import Config
 
 from src.config import settings
+
+_SIGV4_CONFIG = Config(signature_version="s3v4")
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +35,7 @@ class StorageService:
         )
 
     def _client_kwargs(self) -> dict:
-        kwargs: dict = {"service_name": "s3"}
+        kwargs: dict = {"service_name": "s3", "config": _SIGV4_CONFIG}
         if settings.S3_ENDPOINT_URL:
             kwargs["endpoint_url"] = settings.S3_ENDPOINT_URL
         return kwargs
