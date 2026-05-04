@@ -65,11 +65,13 @@ export function VoiceControlWidget() {
     postToolResponse: false,
     autoConnect: true,
     audio: {
-      turnDetection: {
-        type: 'server_vad' as const,
-        threshold: 0.6,
-        silenceDurationMs: 700,
-        prefixPaddingMs: 300,
+      input: {
+        turnDetection: {
+          type: 'server_vad' as const,
+          threshold: 0.6,
+          silenceDurationMs: 700,
+          prefixPaddingMs: 300,
+        },
       },
     },
   }), [tools, instructions])
