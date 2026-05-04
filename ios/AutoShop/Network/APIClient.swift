@@ -3,6 +3,7 @@ import Foundation
 enum APIError: LocalizedError {
     case invalidURL
     case unauthorized
+    case clientError(Int, String)
     case serverError(Int, String)
     case decodingError(Error)
 
@@ -10,6 +11,7 @@ enum APIError: LocalizedError {
         switch self {
         case .invalidURL: return "Invalid URL"
         case .unauthorized: return "Session expired — please log in again"
+        case .clientError(let code, let body): return "Request error \(code): \(body)"
         case .serverError(let code, let body): return "Server error \(code): \(body)"
         case .decodingError(let e): return "Decoding failed: \(e.localizedDescription)"
         }
@@ -84,9 +86,11 @@ final class APIClient {
 
     // MARK: - Chat
 
-    func chatHistory(agentId: String = "assistant", limit: Int = 20, before: String? = nil) async throws -> [ChatHistoryItem] {
+    func chatHistory(agentId: String = "assistant", limit: Int = 5, before: String? = nil) async throws -> [ChatHistoryItem] {
         var path = "/chat/\(agentId)/history?limit=\(limit)"
-        if let before { path += "&before=\(before)" }
+        if let before, let encoded = before.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+            path += "&before=\(encoded)"
+        }
         return try await get(path)
     }
 
@@ -186,6 +190,9 @@ final class APIClient {
         }
         guard (200..<300).contains(http.statusCode) else {
             let body = String(data: data, encoding: .utf8) ?? "<binary>"
+            if (400..<500).contains(http.statusCode) {
+                throw APIError.clientError(http.statusCode, body)
+            }
             throw APIError.serverError(http.statusCode, body)
         }
     }
