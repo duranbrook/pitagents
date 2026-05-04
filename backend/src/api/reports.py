@@ -245,7 +245,7 @@ async def consumer_view(
         )
         media_urls = [m.s3_url for m in media_result.scalars().all() if m.s3_url and m.s3_url.startswith("http")]
 
-    return _to_consumer_view(report, media_urls)
+    return await _to_consumer_view(report, media_urls)
 
 
 # ---------------------------------------------------------------------------
@@ -336,7 +336,7 @@ async def _to_staff_detail(r: Report) -> dict:
     }
 
 
-def _to_consumer_view(r: Report, media_urls: list[str]) -> dict:
+async def _to_consumer_view(r: Report, media_urls: list[str]) -> dict:
     # Normalize findings for consumer: {description, severity, photo_url}
     severity_map = {"high": "urgent", "medium": "moderate", "low": "low"}
     findings = []
@@ -352,14 +352,31 @@ def _to_consumer_view(r: Report, media_urls: list[str]) -> dict:
             "severity": severity_map.get(raw_sev, raw_sev),
         }
         if photo_url:
+            if "amazonaws.com" in photo_url:
+                try:
+                    key = urlparse(photo_url).path.lstrip("/")
+                    photo_url = await _storage.presigned_url(key, expires=604800)
+                except Exception:
+                    logger.warning("Could not presign consumer finding photo: %s", photo_url)
             finding["photo_url"] = photo_url
             finding_photo_urls.append(photo_url)
         findings.append(finding)
 
+    # Presign raw S3 media_urls
+    presigned_media: list[str] = []
+    for url in media_urls:
+        if "amazonaws.com" in url:
+            try:
+                key = urlparse(url).path.lstrip("/")
+                url = await _storage.presigned_url(key, expires=604800)
+            except Exception:
+                logger.warning("Could not presign consumer media URL: %s", url)
+        presigned_media.append(url)
+
     # Merge finding photos into media_urls (deduplicated, findings first)
     seen: set[str] = set(finding_photo_urls)
     all_media = list(finding_photo_urls)
-    for u in media_urls:
+    for u in presigned_media:
         if u not in seen:
             seen.add(u)
             all_media.append(u)
