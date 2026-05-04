@@ -116,7 +116,7 @@ final class AgentChatViewModel: ObservableObject {
     @Published var isSending = false
     @Published var errorMessage: String?
 
-    private let pageSize = 20
+    private let pageSize = 5
 
     func load(agentId: String) async {
         isLoading = true

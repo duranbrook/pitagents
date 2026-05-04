@@ -166,14 +166,20 @@ async def _save_messages(
 @router.get("/{agent_id}/history")
 async def get_history(
     agent_id: str,
-    limit: int = 20,
+    limit: int = 5,
     before: str | None = None,   # ISO-8601 cursor: return messages older than this timestamp
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    # Lightweight existence check — avoids compiling the LangGraph just to read history.
     shop_id = current_user.get("shop_id", "")
-    graph = await _get_agent_graph(agent_id, shop_id, db)
-    if not graph:
+    agent_row = await db.execute(
+        select(ShopAgent).where(
+            ShopAgent.id == uuid.UUID(agent_id),
+            ShopAgent.shop_id == uuid.UUID(shop_id),
+        )
+    )
+    if not agent_row.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Agent '{agent_id}' not found")
 
     user_id = uuid.UUID(current_user["sub"])
