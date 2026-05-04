@@ -345,23 +345,41 @@ class PDFService:
         if line_items:
             story.append(Paragraph("Repair Estimate", bold))
             story.append(Spacer(1, 0.05*inch))
-            est_rows = [[Paragraph("<b>Service</b>", bold), Paragraph("<b>Total</b>", bold)]]
+            est_rows = [[
+                Paragraph("<b>Service</b>", bold),
+                Paragraph("<b>Labor</b>", bold),
+                Paragraph("<b>Parts</b>", bold),
+                Paragraph("<b>Total</b>", bold),
+            ]]
             grand = 0.0
             for item in line_items:
-                itotal = float(item.get("total", 0))
+                # Support both report format (part/line_total) and quote format (description/total)
+                name = item.get("part", item.get("description", ""))
+                labor_cost = float(item.get("labor_cost", 0))
+                parts_cost = float(item.get("parts_cost", 0))
+                itotal = float(item.get("line_total", item.get("total", labor_cost + parts_cost)))
+                labor_hrs = float(item.get("labor_hours", item.get("labor_hrs", 0)))
+                labor_rate = float(item.get("labor_rate", 0))
                 grand += itotal
+                labor_str = (f"${labor_cost:,.2f}"
+                             + (f"\n{labor_hrs:.1f}h @ ${labor_rate:.0f}/hr" if labor_hrs else ""))
                 est_rows.append([
-                    Paragraph(item.get("description",""), styles["Normal"]),
-                    f"${itotal:,.2f}",
+                    Paragraph(name, styles["Normal"]),
+                    Paragraph(labor_str, small_grey),
+                    f"${parts_cost:,.2f}" if parts_cost else "—",
+                    Paragraph(f"<b>${itotal:,.2f}</b>", bold),
                 ])
-            est_rows.append([Paragraph("<b>Grand Total</b>", bold), Paragraph(f"<b>${grand:,.2f}</b>", bold)])
-            et = Table(est_rows, colWidths=[5.5*inch, 1.4*inch])
+            est_rows.append(["", "", Paragraph("<b>Grand Total</b>", bold), Paragraph(f"<b>${grand:,.2f}</b>", bold)])
+            et = Table(est_rows, colWidths=[3.4*inch, 1.5*inch, 1.0*inch, 1.0*inch])
             et.setStyle(TableStyle([
-                ("LINEBELOW",   (0,-2), (-1,-2), 1.5, colors.black),
-                ("LINEBELOW",   (0,0),  (-1,-3), 0.5, colors.HexColor("#f0f0f0")),
-                ("ALIGN",       (1,0),  (1,-1),  "RIGHT"),
+                ("BACKGROUND",  (0,0),  (-1,0),  colors.HexColor("#f5f5f5")),
+                ("LINEBELOW",   (0,0),  (-1,0),  1.5, colors.grey),
+                ("LINEBELOW",   (0,1),  (-1,-2), 0.5, colors.HexColor("#f0f0f0")),
+                ("LINEABOVE",   (0,-1), (-1,-1), 1.5, colors.black),
+                ("ALIGN",       (1,0),  (-1,-1), "RIGHT"),
                 ("TOPPADDING",  (0,0),  (-1,-1), 4),
                 ("BOTTOMPADDING",(0,0), (-1,-1), 4),
+                ("LEFTPADDING", (0,0),  (0,-1),  6),
             ]))
             story.append(et)
             story.append(Spacer(1, 0.15*inch))

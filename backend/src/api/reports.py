@@ -94,9 +94,24 @@ async def get_report_pdf(
         "phone": "",
     }
 
-    # Build s3_url → presigned_url mapping for all photo media files.
-    # Findings store stable original S3 URLs; presigned URLs are generated fresh
-    # here each render so the PDF renderer can actually download them.
+    # Presign finding photos directly from their stored S3 URL.
+    # Chat-uploaded photos are not in MediaFile records, so we can't rely on a
+    # session-scoped MediaFile lookup — presign each finding's photo_url directly.
+    findings_for_pdf: list[dict] = []
+    assigned_s3_urls: set[str] = set()
+    for f in (report.findings or []):
+        f_copy = dict(f)
+        s3_url = f_copy.get("photo_url")
+        if s3_url and "amazonaws.com" in s3_url:
+            try:
+                key = urlparse(s3_url).path.lstrip("/")
+                f_copy["photo_url"] = await _storage.presigned_url(key, expires=3600)
+                assigned_s3_urls.add(s3_url)
+            except Exception:
+                logger.warning("Could not generate presigned URL for finding photo %s", s3_url)
+        findings_for_pdf.append(f_copy)
+
+    # Build gallery from session MediaFile records (photos not already in a finding).
     s3_to_presigned: dict[str, str] = {}
     if report.session_id:
         media_result = await db.execute(
@@ -112,21 +127,8 @@ async def get_report_pdf(
                 s3_to_presigned[mf.s3_url] = await _storage.presigned_url(key, expires=3600)
             except Exception:
                 logger.warning("Could not generate presigned URL for %s", mf.s3_url)
-                s3_to_presigned[mf.s3_url] = mf.s3_url
 
-    # Convert each finding's photo_url from stable S3 URL → presigned for the PDF renderer.
-    # Track which S3 URLs are assigned so the unassigned gallery excludes them.
-    assigned_s3_urls: set[str] = set()
-    findings_for_pdf: list[dict] = []
-    for f in (report.findings or []):
-        f_copy = dict(f)
-        s3_url = f_copy.get("photo_url")
-        if s3_url and s3_url in s3_to_presigned:
-            f_copy["photo_url"] = s3_to_presigned[s3_url]
-            assigned_s3_urls.add(s3_url)
-        findings_for_pdf.append(f_copy)
-
-    # Unassigned photos go into the gallery section of the PDF.
+    # Unassigned session photos go into the gallery section of the PDF.
     media_urls = [p for s3, p in s3_to_presigned.items() if s3 not in assigned_s3_urls]
 
     report_dict = {
