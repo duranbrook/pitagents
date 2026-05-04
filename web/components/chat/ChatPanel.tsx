@@ -157,6 +157,15 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
           if (te.output && typeof te.output.report_id === 'string') {
             setReportId(te.output.report_id)
           }
+          // If a tool returns report_url, extract the share token and open the drawer
+          const extractToken = (url: unknown) => {
+            if (typeof url !== 'string') return null
+            const m = url.match(/\/r\/([0-9a-f-]{36})/i)
+            return m ? m[1] : null
+          }
+          const token = extractToken(te.output?.report_url)
+            ?? (Array.isArray(te.output) ? extractToken(te.output[0]?.report_url) : null)
+          if (token) setDrawerToken(token)
         } else if (event.type === 'done') {
           onNewMessage(accumulated.slice(0, 60))
         } else if (event.type === 'error') {
@@ -342,7 +351,7 @@ export function ChatPanel({ agentId, agent, onNewMessage }: Props) {
           </div>
         )}
 
-        {reportId && (
+        {reportId && !drawerToken && (
           <div className="px-5 pb-3">
             <a
               href={`/reports?id=${reportId}`}

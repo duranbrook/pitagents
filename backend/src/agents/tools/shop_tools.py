@@ -136,6 +136,7 @@ async def get_report(db: AsyncSession, session_id: str) -> dict:
         "summary": report.summary,
         "findings": report.findings,
         "estimate_total": float(report.estimate_total) if report.estimate_total else None,
+        "report_url": f"https://pitagents.vercel.app/r/{report.share_token}",
         "created_at": report.created_at.isoformat() if report.created_at else None,
     }
 

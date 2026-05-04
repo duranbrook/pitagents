@@ -166,7 +166,10 @@ async def create_report(vehicle_id: str, db: AsyncSession) -> dict:
     db.add(report)
     await db.commit()
     await db.refresh(report)
-    return {"report_id": str(report.id)}
+    return {
+        "report_id": str(report.id),
+        "report_url": f"https://pitagents.vercel.app/r/{report.share_token}",
+    }
 
 
 async def set_report_summary(report_id: str, summary: str, db: AsyncSession) -> dict:
