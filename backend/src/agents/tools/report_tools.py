@@ -88,9 +88,18 @@ async def create_report(vehicle_id: str, db: AsyncSession) -> dict:
     if not vehicle:
         return {"error": f"Vehicle {vehicle_id} not found"}
 
+    vehicle_json = {
+        "year": vehicle.year,
+        "make": vehicle.make,
+        "model": vehicle.model,
+        "trim": vehicle.trim,
+        "vin": vehicle.vin,
+        "color": vehicle.color,
+    }
     report = Report(
         session_id=None,
         vehicle_id=vid,
+        vehicle=vehicle_json,
         status="draft",
         findings=[],
         estimate={"line_items": []},
